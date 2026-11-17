@@ -1,0 +1,466 @@
+<title>Wallet Archive</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: a museum-catalogue shell. A sticky top bar (wordmark, Discover / Artists / Years, search, grid), then one view at a time:
+   a central timeline with the active designer's wallets either side of the axis, or a wallet's detail with Overview / Materials & Source / Behaviour.
+   Colour: white and light grey ground, near-black ink, one blue for "where you are", amber only for "not recorded". */
+:root {
+  --bg: #fafaf9; --surface: #ffffff; --fg: #161616; --muted: #6b6b6b; --faint: #a9a9a9; --line: #e5e5e3; --axis: #cfcfcc;
+  --blue: #1d5ba1; --blue-soft: #dbe7f5; --amber: #b25f00; --amber-soft: #fbefdc; --plate: #f1f1ef; --ink: #2a2a2a;
+  --accent: #b3261e; --ink2: #1d5ba1; --zone: #f6e3e1; --grid: #e6e6e4; --ok: #2d6a3e; --okbg: #e8f1ea;
+  --shadow: 0 1px 14px rgba(0, 0, 0, .06);
+  --body: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111111; --surface: #181818; --fg: #ececea; --muted: #9b9b98; --faint: #5f5f5d; --line: #2c2c2a; --axis: #3d3d3a;
+  --blue: #7fb0ea; --blue-soft: #1d2e44; --amber: #e8b05c; --amber-soft: #33281a; --plate: #1f1f1d; --ink: #d9d9d6;
+  --accent: #ef6a60; --ink2: #7fb0ea; --zone: #3a1f1d; --grid: #262624; --ok: #7fc293; --okbg: #1c2e22;
+  --shadow: 0 1px 14px rgba(0, 0, 0, .4); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #111111; --surface: #181818; --fg: #ececea; --muted: #9b9b98; --faint: #5f5f5d; --line: #2c2c2a; --axis: #3d3d3a;
+  --blue: #7fb0ea; --blue-soft: #1d2e44; --amber: #e8b05c; --amber-soft: #33281a; --plate: #1f1f1d; --ink: #d9d9d6;
+  --accent: #ef6a60; --ink2: #7fb0ea; --zone: #3a1f1d; --grid: #262624; --ok: #7fc293; --okbg: #1c2e22;
+  --shadow: 0 1px 14px rgba(0, 0, 0, .4); color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5; font-weight: 400; -webkit-font-smoothing: antialiased;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 56px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--surface); }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 3px; }
+h1, h2, h3 { margin: 0; font-weight: 300; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { font-size: clamp(1.8rem, 4.6vw, 2.9rem); line-height: 1.1; } h2 { font-size: clamp(1.5rem, 3.4vw, 2.1rem); line-height: 1.15; } h3 { font-size: 1.05rem; font-weight: 500; letter-spacing: 0; }
+.eyebrow { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.muted { color: var(--muted); } .small { font-size: .84rem; } .tnum { font-variant-numeric: tabular-nums; }
+
+/* top bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px))) calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); box-shadow: var(--shadow); }
+.bar-in { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 12px 34px; flex-wrap: wrap; min-height: 64px; padding-block: 6px; }
+.brand { font-size: 1.35rem; font-weight: 300; letter-spacing: .02em; white-space: nowrap; } .brand .b2 { color: var(--muted); }
+.tabs { display: flex; gap: 6px; } .tabs a { padding: 20px 8px 17px; font-size: .98rem; color: var(--muted); border-bottom: 2px solid transparent; }
+.tabs a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--fg); } .tabs a:hover { color: var(--fg); }
+.tools { margin-left: auto; display: flex; align-items: center; gap: 14px; position: relative; }
+.search { display: flex; align-items: center; gap: 8px; background: var(--plate); border-radius: 8px; padding: 0 12px; height: 38px; width: min(300px, 62vw); }
+.search svg { flex: none; color: var(--muted); } .search input { all: unset; flex: 1; min-width: 0; font-size: .95rem; color: var(--fg); } .search input::placeholder { color: var(--muted); }
+.gridbtn { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 8px; color: var(--muted); } .gridbtn:hover, .gridbtn[aria-current="page"] { background: var(--plate); color: var(--fg); }
+.results { position: absolute; top: 46px; right: 52px; width: min(360px, 88vw); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px; z-index: 40; }
+.results a { display: grid; gap: 1px; padding: 8px 10px; border-radius: 6px; } .results a:hover, .results a:focus-visible { background: var(--plate); } .results .none { padding: 10px; color: var(--muted); font-size: .9rem; }
+
+main { max-width: 1280px; margin: 0 auto; padding-top: 28px; min-width: 0; }
+.foot { max-width: 1280px; margin: 56px auto 0; color: var(--muted); font-size: .8rem; display: grid; gap: 4px; }
+
+/* provenance chips */
+.chip { display: inline-block; font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--axis); color: var(--muted); white-space: nowrap; vertical-align: 1px; }
+.chip.measured { background: var(--fg); color: var(--bg); border-color: var(--fg); } .chip.reported { border-color: var(--muted); color: var(--fg); }
+.chip.inferred { border-style: dashed; border-color: var(--muted); color: var(--fg); } .chip.assumed { border-color: var(--amber); color: var(--amber); }
+.chip.model { border-color: var(--blue); color: var(--blue); }
+.unk { color: var(--amber); font-size: .9rem; }
+
+/* discover: the central timeline */
+.timeline { display: grid; position: relative; min-height: min(560px, calc(100vh - 230px)); align-content: start; }
+.timeline::before { content: ""; position: absolute; left: calc(50% - .5px); top: -28px; bottom: 0; width: 1px; background: var(--axis); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) 360px minmax(0, 1fr); align-items: center; min-height: 74px; }
+.row .mid { display: grid; grid-template-columns: 1fr 26px 1fr; align-items: center; align-self: stretch; position: relative; text-align: left; background: none; border: 0; padding: 0; width: 100%; color: inherit; }
+.row .yr { text-align: right; padding-right: 10px; font-size: 1.05rem; color: var(--faint); font-variant-numeric: tabular-nums; }
+.row .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--axis); justify-self: center; position: relative; z-index: 1; box-shadow: 0 0 0 5px var(--bg); }
+.row .who { padding-left: 12px; color: var(--faint); display: grid; gap: 0; }
+.row .who b { font-weight: 500; font-size: 1.05rem; } .row .who span { font-size: .95rem; }
+.row .mid:hover .who, .row .mid:hover .yr { color: var(--muted); }
+.row.active { min-height: 300px; }
+.row.active .yr { color: var(--blue); } .row.active .dot { background: var(--blue); box-shadow: 0 0 0 5px var(--blue-soft); } .row.active .dot.undated { background: var(--amber); box-shadow: 0 0 0 5px var(--amber-soft); }
+.row.active .yr.undated { color: var(--amber); } .row.active .who { color: var(--fg); }
+.row .side { display: flex; gap: 22px; align-items: flex-start; min-width: 0; padding-block: 10px; }
+.row .side.left { justify-content: flex-end; padding-right: 26px; } .row .side.right { justify-content: flex-start; padding-left: 26px; }
+.row:not(.active) .side { display: none; }
+.row .side { position: relative; } .row .side.paged { padding-inline: 46px; }
+.pager { position: absolute; top: 52px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); display: grid; place-items: center; }
+.pager[data-dir="-1"] { left: 0; } .pager[data-dir="1"] { right: 0; } .pager[disabled] { opacity: .35; cursor: default; }
+.card { display: grid; gap: 10px; flex: 0 1 clamp(140px, 14vw, 230px); min-width: 0; align-content: start; } .card .plate { border-radius: 6px; }
+.plate { background: var(--plate); aspect-ratio: 3 / 2; display: grid; place-items: center; overflow: hidden; border-radius: 6px; } .plate svg, .plate img { max-width: 100%; max-height: 100%; display: block; }
+.card .cap { display: grid; gap: 1px; font-size: .95rem; } .card .cap .series { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); } .card .cap .st { font-size: .8rem; color: var(--muted); }
+.card:hover .nm { text-decoration: underline; text-underline-offset: 3px; }
+.bio { grid-column: 1 / -1; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; margin: 4px auto 14px; max-width: 640px; display: grid; gap: 6px; font-size: .92rem; }
+.biobtn { background: none; border: 1px solid var(--line); border-radius: 6px; font-size: .78rem; padding: 2px 10px; margin-top: 4px; justify-self: start; color: var(--muted); } .biobtn:hover { color: var(--fg); border-color: var(--muted); }
+.hint { text-align: center; color: var(--muted); font-size: .86rem; margin-top: 18px; }
+
+/* lists and grid */
+.page-h { display: grid; gap: 6px; margin-bottom: 26px; }
+.list { display: grid; border-top: 1px solid var(--line); } .list > * { border-bottom: 1px solid var(--line); }
+.item { display: grid; grid-template-columns: minmax(0, 240px) minmax(0, 1fr) auto; gap: 8px 24px; padding: 18px 2px; align-items: baseline; }
+.item .links { display: flex; flex-wrap: wrap; gap: 4px 18px; } .item .links a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--axis); }
+.item .count { color: var(--muted); font-size: .88rem; }
+.allgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 30px 24px; } .allgrid .card { flex: none; }
+
+/* wallet detail */
+.crumb { font-size: .86rem; color: var(--muted); display: inline-flex; gap: 6px; margin-bottom: 18px; } .crumb:hover { color: var(--fg); }
+.whead { display: grid; gap: 8px; margin-bottom: 22px; }
+.wtabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 30px; overflow-x: auto; }
+.wtabs a { padding: 10px 8px 12px; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; } .wtabs a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--fg); }
+.banner { background: var(--amber-soft); color: var(--amber); border-radius: 6px; padding: 11px 15px; font-size: .9rem; max-width: 86ch; margin-bottom: 26px; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 40px; align-items: start; } .two > * { min-width: 0; }
+.hero { aspect-ratio: 4 / 3; } .caption { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+dl.facts { margin: 0; display: grid; } .fact { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.fact dt { color: var(--muted); font-size: .88rem; } .fact dd { margin: 0; display: grid; gap: 3px; } .fact .ref { color: var(--muted); font-size: .8rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.sect { display: grid; gap: 14px; margin-top: 44px; min-width: 0; } .sect > p { margin: 0; max-width: 72ch; }
+.srcbar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--plate); max-width: 520px; } .srcbar i { display: block; height: 100%; }
+.srcbar .measured { background: var(--fg); } .srcbar .reported { background: var(--muted); } .srcbar .inferred { background: var(--faint); } .srcbar .literature, .srcbar .design { background: var(--axis); } .srcbar .assumed { background: var(--amber); }
+.srckey { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .84rem; color: var(--muted); }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: .92rem; }
+
+/* materials and source */
+.process { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; position: relative; margin: 8px 0 12px; }
+.process::before { content: ""; position: absolute; left: 24px; right: 0; top: 17px; height: 1px; background: var(--axis); }
+.step { display: grid; gap: 6px; justify-items: start; position: relative; padding-right: 14px; }
+.step .n { width: 34px; height: 34px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: .92rem; } .step .n.unknown { background: var(--surface); color: var(--amber); border: 1px dashed var(--amber); }
+.step .lab { font-size: .76rem; letter-spacing: .1em; text-transform: uppercase; } .step .val { font-size: .92rem; } .step .ref { color: var(--muted); font-size: .78rem; }
+.sources { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 20px 40px; align-items: center; margin-top: 8px; }
+.matrix { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 0 28px; align-items: center; }
+.comps { display: grid; min-width: 0; }
+.comp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(40px, 120px) minmax(0, 220px); align-items: center; gap: 0 6px; padding: 14px 0; border-top: 1px solid var(--line); }
+.comp .link { height: 0; border-top: 1px dotted var(--faint); }
+.comp .tilecap { display: grid; gap: 2px; font-size: .9rem; } .comp .tilecap .reg { color: var(--amber); font-size: .8rem; } .comp .tilecap .reg.known { color: var(--fg); }
+.hide { width: 100%; background: var(--plate); border-radius: 6px; padding: 8px; } .hide svg { display: block; width: 100%; height: auto; }
+.hide .body { fill: var(--surface); stroke: var(--faint); stroke-width: 1.2; } .hide .div { stroke: var(--faint); stroke-width: .8; stroke-dasharray: 2 3; }
+.hide .rl { fill: var(--faint); font: 7.5px var(--body); letter-spacing: .06em; text-transform: uppercase; } .hide .zone { fill: var(--blue); opacity: .28; }
+.cmp { display: grid; gap: 12px; } .sect > * { min-width: 0; } .cmp select { width: 100%; font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); max-width: 100%; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; } th { font-weight: 500; font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); } tr:last-child td { border-bottom: 0; }
+
+/* behaviour */
+.chartwrap { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 14px 8px; overflow-x: auto; }
+.chart { width: 100%; min-width: 620px; height: auto; display: block; }
+.chart .zone { fill: var(--zone); } .chart .grid { stroke: var(--grid); stroke-width: 1; }
+.chart .tick, .chart .rowsub, .chart .axis, .chart .end { fill: var(--muted); font: 11.5px var(--body); } .chart .zonelabel { fill: var(--accent); font: 600 11.5px var(--body); }
+.chart .rowname { fill: var(--fg); font: 600 14px var(--body); } .chart .val { fill: var(--fg); font: 600 12.5px var(--body); font-variant-numeric: tabular-nums; }
+.chart .femval { fill: var(--ink2); font: 600 12px var(--body); font-variant-numeric: tabular-nums; } .chart .range { stroke: var(--accent); stroke-width: 3; opacity: .45; stroke-linecap: round; }
+.chart .rec { fill: var(--accent); } .chart .fem { fill: var(--ink2); } .chart .fem.hollow { fill: var(--surface); stroke: var(--ink2); stroke-width: 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: .82rem; color: var(--muted); padding: 4px 4px 10px; }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; margin-right: 7px; vertical-align: -1px; }
+.legend .l1::before { background: var(--accent); border-radius: 50%; } .legend .l2::before { background: var(--accent); opacity: .45; height: 4px; vertical-align: 3px; width: 20px; border-radius: 2px; }
+.legend .l3::before { background: var(--ink2); transform: rotate(45deg) scale(.8); } .legend .l4::before { border: 2px solid var(--ink2); transform: rotate(45deg) scale(.7); }
+.frame { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); display: block; min-height: 700px; }
+.pill { display: inline-block; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; padding: 1px 8px; border-radius: 99px; background: var(--plate); color: var(--muted); white-space: nowrap; }
+.pill.computed { background: var(--blue-soft); color: var(--blue); } .pill.flagged, .pill.unknown { background: var(--amber-soft); color: var(--amber); } .pill.not-triggered { background: var(--okbg); color: var(--ok); }
+.fm td:nth-child(1) { color: var(--muted); } .fm td:nth-child(4) { min-width: 300px; }
+.notyet { border: 1px dashed var(--axis); border-radius: 8px; padding: 16px 18px; display: grid; gap: 6px; max-width: 72ch; }
+.empty { border: 1px dashed var(--axis); border-radius: 8px; padding: 22px; color: var(--muted); max-width: 72ch; } code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em; background: var(--plate); padding: 1px 6px; border-radius: 4px; }
+
+@media (max-width: 860px) {
+  .two, .sources { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  .process { grid-template-columns: minmax(0, 1fr); gap: 18px; } .process::before { left: 17px; right: auto; top: 0; bottom: 0; width: 1px; height: auto; }
+  .step { grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; justify-items: start; } .step .n { grid-row: 1 / span 3; }
+  .item { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .matrix { grid-template-columns: minmax(0, 1fr); gap: 16px; } .comp { grid-template-columns: minmax(0, 1fr) 24px minmax(0, 150px); }
+}
+@media (max-width: 760px) {
+  .tabs a { padding: 12px 6px 10px; } .tools { margin-left: 0; width: 100%; } .search { flex: 1; width: auto; } .results { right: 0; left: 0; width: auto; top: 46px; }
+  .brand { font-size: 1.05rem; } .tabs { gap: 0; margin-left: auto; } .tabs a { font-size: .9rem; padding: 14px 7px 12px; } .bar-in { gap: 0 14px; min-height: 0; padding-block: 4px 10px; }
+  .timeline::before { left: 31px; }
+  .row { grid-template-columns: 64px minmax(0, 1fr); min-height: 64px; align-items: start; }
+  .row .mid { grid-column: 1 / -1; grid-row: 1; grid-template-columns: 64px minmax(0, 1fr); } .row .side.left { grid-row: 2; } .row .side.right { grid-row: 3; }
+  .row .yr { grid-column: 1; grid-row: 1; padding: 0; text-align: center; font-size: .78rem; } .row .dot { display: none; } .row .who { grid-column: 2; padding: 14px 0 14px 8px; }
+  .row .mid::after { content: ""; position: absolute; left: 25px; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--axis); transform: translateY(-50%); }
+  .row.active .mid::after { background: var(--blue); box-shadow: 0 0 0 5px var(--blue-soft); } .row.active .yr { display: none; }
+  .row.active { min-height: 0; } .row .side { grid-column: 2; padding: 0 0 18px 8px !important; overflow-x: auto; justify-content: flex-start !important; scroll-snap-type: x proximity; } .row .side.left { padding-right: 0; }
+  .row .side .card { flex: none; width: 168px; scroll-snap-align: start; } .row.active .side.right { padding-top: 0; } .pager { display: none; }
+  .fact { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+@media (prefers-reduced-motion: no-preference) { .row, .row .dot, .row .who { transition: color .2s ease, background .2s ease; } }
+</style>
+
+<header class="bar"><div class="bar-in">
+  <a class="brand" href="#discover" aria-label="Wallet Archive, home"><span>WALLET</span> <span class="b2">ARCHIVE</span></a>
+  <nav class="tabs" aria-label="Archive"><a href="#discover" data-nav="discover">Discover</a><a href="#artists" data-nav="artists">Artists</a><a href="#years" data-nav="years">Years</a></nav>
+  <div class="tools">
+    <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search" autocomplete="off" aria-label="Search the archive"></label>
+    <a class="gridbtn" href="#all" data-nav="all" aria-label="All wallets"><svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="15" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="15" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/><circle cx="15" cy="15" r="1.5"/></svg></a>
+    <div class="results" id="results" hidden></div>
+  </div>
+</div></header>
+<main id="app"></main>
+<div class="foot" id="foot"></div>
+
+<script>
+{{GEOMETRY_JS}}
+</script>
+<script>
+(function () {
+  "use strict";
+  var DATA = __DATA__;
+  var W = DATA.wallets, byId = {};
+  W.forEach(function (w) { byId[w.id] = w; });
+  var app = document.getElementById("app");
+  var S = { active: null, page: {}, bio: null, compare: {} };
+
+  // ---- helpers ------------------------------------------------------------------------------------------------------------------------------------------
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function short(n) { return String(n).replace(/\s*\([^)]*\)\s*$/, ""); }
+  function chip(src, ref) { return src ? '<span class="chip ' + esc(src) + '"' + (ref ? ' title="' + esc(ref) + '"' : "") + ">" + esc(src) + "</span>" : ""; }
+  function val(v, src, ref, none) {                                     // a value with its provenance, or the plain statement that the record has none
+    if (v == null || v === "") return '<span class="unk">' + esc(none || "not recorded") + "</span>";
+    return esc(v) + (src ? " " + chip(src, ref) : "");
+  }
+  function pct(x) { return Math.floor(100 * x + 0.5) + " %"; }
+  function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  function yearLabel(y) { return y == null ? "Undated" : String(y); }
+  function groups() {
+    var m = {};
+    W.forEach(function (w) { var k = (w.year == null ? "undated" : w.year) + "|" + w.designer; (m[k] = m[k] || { key: k, year: w.year, designer: w.designer, wallets: [] }).wallets.push(w); });
+    var a = Object.keys(m).map(function (k) { return m[k]; });
+    a.sort(function (x, y) { return ((x.year == null) - (y.year == null)) || (x.year - y.year) || x.designer.localeCompare(y.designer); });
+    return a;
+  }
+  function sides(g) {                                                  // series alternate left and right of the axis; a single series is split in half
+    var sers = [], L = [], R = [];
+    g.wallets.forEach(function (w) { if (sers.indexOf(w.series) < 0) sers.push(w.series); });
+    if (sers.length > 1) sers.forEach(function (s, i) { var t = i % 2 ? R : L; g.wallets.filter(function (w) { return w.series === s; }).forEach(function (w) { t.push(w); }); });
+    else { var h = Math.ceil(g.wallets.length / 2); L = g.wallets.slice(0, h); R = g.wallets.slice(h); }
+    return { L: L, R: R };
+  }
+
+  // ---- drawings: the wallet's cross-section from its record, and a schematic hide ----------------------------------------------------------------
+  function glyph(w, vw, vh) {
+    vw = vw || 300; vh = vh || 200;
+    if (!w.viewer) return '<span class="small muted" style="padding:14px;text-align:center">No structure drawn for this record</span>';
+    var cfg = w.viewer.cfg, m = cfg.models[0], p = {}; m.params.forEach(function (q) { p[q.id] = q.value; });
+    var g = WalletGeometry.build(cfg, m, cfg.size, p, {}), T = cfg.T, polys = [], b = { x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9 };
+    g.strips.forEach(function (s) {
+      var up = [], dn = [];
+      s.forEach(function (q) { var nx = -Math.sin(q.phi) * T / 2, ny = Math.cos(q.phi) * T / 2; up.push([q.x + nx, q.y + ny]); dn.push([q.x - nx, q.y - ny]); });
+      var poly = up.concat(dn.reverse()); poly.forEach(function (q) { b.x0 = Math.min(b.x0, q[0]); b.x1 = Math.max(b.x1, q[0]); b.y0 = Math.min(b.y0, q[1]); b.y1 = Math.max(b.y1, q[1]); }); polys.push(poly);
+    });
+    g.blocks.forEach(function (k) { b.x0 = Math.min(b.x0, k.x0); b.x1 = Math.max(b.x1, k.x1); b.y0 = Math.min(b.y0, k.y0); b.y1 = Math.max(b.y1, k.y1); });
+    var pad = 26, sc = Math.min((vw - 2 * pad) / (b.x1 - b.x0), (vh - 2 * pad) / (b.y1 - b.y0)), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
+    var X = function (x) { return (vw / 2 + (x - cx) * sc).toFixed(1); }, Y = function (y) { return (vh / 2 - (y - cy) * sc).toFixed(1); };
+    var out = '<svg viewBox="0 0 ' + vw + " " + vh + '" role="img" aria-label="Cross-section of ' + esc(short(w.name)) + ', drawn from its record">';
+    g.blocks.forEach(function (k) { out += '<rect x="' + X(k.x0) + '" y="' + Y(k.y1) + '" width="' + ((k.x1 - k.x0) * sc).toFixed(1) + '" height="' + ((k.y1 - k.y0) * sc).toFixed(1) + '" fill="none" stroke="var(--faint)" stroke-dasharray="3 3"/>'; });
+    polys.forEach(function (poly) { out += '<polygon fill="var(--ink)" stroke="var(--plate)" stroke-width=".6" points="' + poly.map(function (q) { return X(q[0]) + "," + Y(q[1]); }).join(" ") + '"/>'; });
+    return out + "</svg>";
+  }
+  function plate(w, cls) {
+    if (w.hero) return '<div class="plate ' + (cls || "") + '"><img src="' + w.hero + '" alt="' + esc(short(w.name)) + '"></div>';
+    return '<div class="plate ' + (cls || "") + '">' + glyph(w) + "</div>";
+  }
+  var HIDE = "M18,58 L30,46 L52,40 L60,18 L74,16 L80,38 L128,36 L140,16 L156,18 L160,44 L190,48 L206,64 L196,84 L160,86 L156,112 L140,114 L128,90 L82,92 L76,114 L60,112 L54,86 L30,80 Z";
+  var ZONES = { neck: [18, 56, 0, 130], shoulder: [56, 100, 0, 130], back: [100, 150, 0, 70], belly: [60, 160, 70, 130], butt: [150, 210, 0, 130] };
+  var zid = 0;
+  function hide(region) {                                              // a schematic hide: shaded only where the record names a region
+    var id = "hz" + (++zid), r = (region || "").toLowerCase(), z = Object.keys(ZONES).filter(function (k) { return r.indexOf(k) >= 0; })[0];
+    var s = '<svg viewBox="0 0 224 130" role="img" aria-label="Schematic hide' + (z ? ", " + z + " shaded" : ", no region shaded") + '"><defs><clipPath id="' + id + '"><path d="' + HIDE + '"/></clipPath></defs><path class="body" d="' + HIDE + '"/>';
+    if (z) { var q = ZONES[z]; s += '<rect class="zone" clip-path="url(#' + id + ')" x="' + q[0] + '" y="' + q[2] + '" width="' + (q[1] - q[0]) + '" height="' + (q[3] - q[2]) + '"/>'; }
+    s += '<line class="div" x1="56" y1="36" x2="56" y2="92" clip-path="url(#' + id + ')"/><line class="div" x1="100" y1="36" x2="100" y2="92" clip-path="url(#' + id + ')"/><line class="div" x1="150" y1="36" x2="150" y2="92" clip-path="url(#' + id + ')"/>';
+    s += '<text class="rl" x="22" y="68">neck</text><text class="rl" x="64" y="68">shoulder</text><text class="rl" x="112" y="62">back</text><text class="rl" x="112" y="82">belly</text><text class="rl" x="164" y="68">butt</text></svg>';
+    return s;
+  }
+
+  // ---- discover -----------------------------------------------------------------------------------------------------------------------------------------
+  function card(w) {
+    return '<a class="card" href="#w-' + esc(w.id) + '">' + plate(w) + '<span class="cap"><span class="series">' + esc(w.series || w.designer) + '</span><span class="nm">' + esc(short(w.name)) +
+      '</span><span class="st">' + esc(w.status_label) + "</span></span></a>";
+  }
+  function sideHTML(g, items, cls) {
+    var per = 2, key = g.key + cls, pg = S.page[key] || 0, pages = Math.max(1, Math.ceil(items.length / per));
+    pg = Math.min(pg, pages - 1);
+    var shown = items.slice(pg * per, pg * per + per), out = '<div class="side ' + cls + (pages > 1 ? " paged" : "") + '">';
+    if (pages > 1) out += '<button class="pager" data-page="' + esc(key) + '" data-dir="-1" aria-label="Previous"' + (pg === 0 ? " disabled" : "") + '>&#8249;</button>';
+    out += shown.map(card).join("");
+    if (pages > 1) out += '<button class="pager" data-page="' + esc(key) + '" data-dir="1" aria-label="Next"' + (pg === pages - 1 ? " disabled" : "") + ">&#8250;</button>";
+    return out + "</div>";
+  }
+  function discover() {
+    var gs = groups();
+    if (!gs.length) { app.innerHTML = '<div class="empty">No wallet records found. Add one under <code>wallets/</code> and run <code>walletsim build-site</code>.</div>'; return; }
+    if (!S.active || !gs.some(function (g) { return g.key === S.active; })) S.active = gs[0].key;
+    var html = '<div class="timeline">';
+    gs.forEach(function (g) {
+      var on = g.key === S.active, sd = sides(g), und = g.year == null;
+      html += '<section class="row' + (on ? " active" : "") + '" data-key="' + esc(g.key) + '">' + (on ? sideHTML(g, sd.L, "left") : "<div></div>") +
+        '<button class="mid" data-activate="' + esc(g.key) + '" aria-pressed="' + on + '" aria-label="' + esc(g.designer + ", " + yearLabel(g.year)) + '"><span class="yr' + (und ? " undated" : "") + '">' + yearLabel(g.year) + '</span><span class="dot' + (und ? " undated" : "") +
+        '"></span><span class="who"><b>' + esc(short(g.designer)) + "</b><span>" + esc(yearLabel(g.year).toLowerCase()) + " · " + g.wallets.length + (g.wallets.length === 1 ? " wallet" : " wallets") + "</span></span></button>" +
+        (on ? sideHTML(g, sd.R, "right") : "<div></div>");
+      if (on) html += (S.bio === g.key ? bioHTML(g) : "");
+      html += "</section>";
+    });
+    html += "</div>";
+    var act = gs.filter(function (g) { return g.key === S.active; })[0];
+    html += '<p class="hint">' + (gs.length > 1 ? "Choose a year on the axis, or press the up and down arrow keys. " : "") +
+      '<button class="biobtn" data-bio="' + esc(act.key) + '">' + (S.bio === act.key ? "Hide bio" : "Read bio") + "</button></p>";
+    if (act.year == null) html += '<p class="hint">These wallets have no recorded design year, so they sit at the end of the axis. A year appears here once a record has one.</p>';
+    app.innerHTML = html;
+  }
+  function bioHTML(g) {
+    var w = g.wallets.filter(function (x) { return x.bio_ref; })[0];
+    return '<div class="bio"><h3>' + esc(g.designer) + "</h3>" + (w ? "<div>Biography: " + esc(w.bio_ref) + "</div>" :
+      '<div class="muted">No biography is recorded for this designer. Biographies and portraits need the designer\'s permission, so the archive leaves this empty until a record supplies one.</div>') +
+      '<div class="small muted">' + g.wallets.length + " wallet" + (g.wallets.length === 1 ? "" : "s") + " in the archive: " + g.wallets.map(function (x) { return esc(short(x.name)); }).join(", ") + "</div></div>";
+  }
+
+  // ---- artists, years, all ------------------------------------------------------------------------------------------------------------------------------
+  function artists() {
+    var m = {};
+    W.forEach(function (w) { (m[w.designer] = m[w.designer] || []).push(w); });
+    var names = Object.keys(m).sort();
+    app.innerHTML = '<div class="page-h"><p class="eyebrow">Artists</p><h2>' + names.length + (names.length === 1 ? " designer" : " designers") + '</h2></div><div class="list">' + names.map(function (n) {
+      var ws = m[n], sers = []; ws.forEach(function (w) { if (w.series && sers.indexOf(w.series) < 0) sers.push(w.series); });
+      return '<div class="item"><b style="font-weight:500">' + esc(n) + '</b><div class="links">' + ws.map(function (w) { return '<a href="#w-' + esc(w.id) + '">' + esc(short(w.name)) + "</a>"; }).join("") +
+        '</div><span class="count">' + ws.length + (ws.length === 1 ? " wallet" : " wallets") + (sers.length ? " · " + esc(sers.join(", ")) : "") + "</span></div>";
+    }).join("") + "</div>";
+  }
+  function years() {
+    var m = {};
+    W.forEach(function (w) { var k = w.year == null ? "Undated" : String(w.year); (m[k] = m[k] || []).push(w); });
+    var ks = Object.keys(m).sort(function (a, b) { return (a === "Undated") - (b === "Undated") || a.localeCompare(b); });
+    app.innerHTML = '<div class="page-h"><p class="eyebrow">Years</p><h2>' + (m.Undated && ks.length === 1 ? "No design year is recorded yet" : ks.length + " years") + '</h2></div><div class="list">' + ks.map(function (k) {
+      var ws = m[k];
+      return '<div class="item"><b style="font-weight:500;color:' + (k === "Undated" ? "var(--amber)" : "inherit") + '">' + esc(k) + '</b><div class="links">' + ws.map(function (w) { return '<a href="#w-' + esc(w.id) + '">' + esc(short(w.name)) + "</a>"; }).join("") +
+        '</div><span class="count">' + ws.length + (ws.length === 1 ? " wallet" : " wallets") + "</span></div>";
+    }).join("") + "</div>" + (m.Undated ? '<p class="small muted" style="margin-top:18px;max-width:64ch">The retailer records behind these wallets give no design date. A date a shop first listed a wallet is not a design date, so none is filled in.</p>' : "");
+  }
+  function all() {
+    app.innerHTML = '<div class="page-h"><p class="eyebrow">All wallets</p><h2>' + W.length + (W.length === 1 ? " record" : " records") + '</h2></div><div class="allgrid">' + W.map(card).join("") + "</div>";
+  }
+
+  // ---- wallet detail -------------------------------------------------------------------------------------------------------------------------------------
+  function srcBar(counts) {
+    var order = ["measured", "reported", "inferred", "literature", "design", "assumed"], tot = order.reduce(function (a, k) { return a + (counts[k] || 0); }, 0) || 1;
+    return '<div class="srcbar" role="img" aria-label="Where the inputs come from">' + order.map(function (k) { return counts[k] ? '<i class="' + k + '" style="width:' + (100 * counts[k] / tot) + '%"></i>' : ""; }).join("") + "</div>" +
+      '<div class="srckey">' + order.map(function (k) { return "<span>" + (counts[k] || 0) + " " + k + "</span>"; }).join("") + "</div>";
+  }
+  function overview(w) {
+    var shown = w.facts.map(function (f) { return '<div class="fact"><dt>' + esc(f.label) + "</dt><dd><span>" + val(f.value, f.source, f.ref) + "</span>" + (f.ref && f.value ? '<span class="ref" title="' + esc(f.ref) + '">' + esc(f.ref) + "</span>" : "") + "</dd></div>"; }).join("");
+    var hero = w.hero ? "" : '<p class="caption">Cross-section drawn from the record\'s fold structure. The photographs are not shown' + (w.rights_note ? ": research documentation only." : ".") + "</p>";
+    var photos = w.photos.length ? "<ul class=\"plain\">" + w.photos.map(function (p) { return "<li>" + esc(p.role) + ' <span class="muted">(' + esc(p.path) + ")</span></li>"; }).join("") + "</ul>" : '<p class="muted small">No photographs are referenced.</p>';
+    var cor = w.corpus ? "Wallet-corpus- archive, item " + esc(w.corpus.item) + ", commit " + esc(w.corpus.commit) : "No archive item is named.";
+    return '<div class="two"><div>' + plate(w, "hero") + hero + '</div><dl class="facts">' + shown + "</dl></div>" +
+      '<div class="sect"><h3>What the record is built from</h3><p class="muted">' + esc(w.status_note) + " " + (w.usage && w.usage.used ? "" : "") + "</p>" + srcBar(w.counts) +
+      '<p class="small muted">' + cor + ". " + esc(w.rights_note || "") + "</p></div>" +
+      '<div class="sect"><h3>Photographs the record points to</h3>' + photos + "</div>";
+  }
+  function materials(w) {
+    var steps = '<div class="process">' + w.pipeline.map(function (s) {
+      var known = s.value != null && s.value !== "";
+      return '<div class="step"><span class="n' + (known || s.source ? "" : " unknown") + '">' + s.n + '</span><span class="lab">' + esc(s.label) + '</span><span class="val">' + val(s.value, s.source, s.ref) + "</span>" +
+        (s.ref && known ? '<span class="ref">' + esc(s.ref.length > 90 ? s.ref.slice(0, 88) + "…" : s.ref) + "</span>" : "") + "</div>";
+    }).join("") + "</div>";
+    var comps = w.components.map(function (c) {
+      var sp = c.species.value, reg = c.region.value;
+      return '<div class="comp"><div class="tilecap who"><b style="font-weight:500">' + esc(cap(c.role)) + '</b><span>' + esc(c.thickness.value != null ? c.thickness.value + " mm" : "thickness not recorded") + " " + chip(c.thickness.source, c.thickness.ref) + "</span></div>" +
+        '<div class="link"></div><div><div class="hide">' + hide(reg) + '</div><div class="tilecap" style="margin-top:8px"><span><b style="font-weight:500">' + (sp ? esc(cap(String(sp))) : '<span class="unk">Species not recorded</span>') + "</b> " + chip(c.species.source, c.species.ref) + "</span>" +
+        '<span class="reg' + (reg ? " known" : "") + '">' + (reg ? "Region: " + esc(reg) + " " + chip(c.region.source, c.region.ref) : "Region not recorded: no cut zone is drawn") + "</span></div></div></div>";
+    }).join("");
+    var others = W.filter(function (x) { return x.id !== w.id; }).sort(function (a, b) { return (b.designer === w.designer) - (a.designer === w.designer); });
+    var sel = S.compare[w.id] || "";
+    var cmp = "";
+    if (others.length) {
+      cmp = '<div class="sect cmp"><h3>Compare</h3><label class="small muted" for="cmp">Compare with another wallet' + "</label><select id=\"cmp\" data-compare=\"" + esc(w.id) + '"><option value="">Choose a wallet</option>' +
+        others.map(function (o) { return '<option value="' + esc(o.id) + '"' + (o.id === sel ? " selected" : "") + ">" + esc(short(o.name)) + (o.designer === w.designer ? " (same designer)" : "") + "</option>"; }).join("") + "</select>";
+      if (sel && byId[sel]) {
+        var o = byId[sel], labels = [];
+        w.facts.concat(o.facts).forEach(function (f) { if (labels.indexOf(f.label) < 0) labels.push(f.label); });
+        var cell = function (x, l) { var f = x.facts.filter(function (q) { return q.label === l; })[0]; return f ? val(f.value, f.source, f.ref) : '<span class="unk">not recorded</span>'; };
+        cmp += '<div class="scroll"><table><thead><tr><th></th><th>' + esc(short(w.name)) + "</th><th>" + esc(short(o.name)) + "</th></tr></thead><tbody>" +
+          labels.map(function (l) { return "<tr><td class=\"muted\">" + esc(l) + "</td><td>" + cell(w, l) + "</td><td>" + cell(o, l) + "</td></tr>"; }).join("") + "</tbody></table></div>";
+      }
+      cmp += "</div>";
+    }
+    var matrix = '<div class="matrix"><div>' + plate(w) + '<p class="caption">' + esc(short(w.name)) + ", cross-section from the record</p></div><div class=\"comps\">" + comps + "</div></div>";
+    return '<h2>Materials &amp; Source</h2><p class="muted" style="margin:6px 0 26px">‘' + esc(short(w.name)) + '’</p><p class="eyebrow">Treatment process</p>' + steps +
+      '<p class="small muted" style="max-width:70ch">' + (w.pipeline.every(function (s) { return s.value == null; }) ? "The record has no treatment steps for this wallet." : "Only the steps the record states are filled in; the rest stay marked as not recorded.") + "</p>" +
+      '<div class="sect"><p class="eyebrow">Leather and where it comes from</p>' + matrix + '<p class="small muted">The hide is a schematic, not a scan. A cut zone is shaded only when the record names the region. A region says where a piece came from, not how strong it is.</p></div>' + cmp;
+  }
+  function behaviour(w) {
+    var b = w.behaviour, out = '<h2>Behaviour</h2><p class="muted" style="margin:6px 0 18px;max-width:70ch">What the fold model says about this wallet, how far to trust it, and what a measurement would settle.</p>';
+    out += '<div class="banner">' + esc(w.status_note) + " Every radius and stack below is a stated value, an inference or an assumption; the figures are model output for those inputs, not a prediction of how this wallet wears.</div>";
+    if (!b.has_run) return out + '<div class="empty">No simulation run is stored for this wallet. Run <code>' + esc(b.command) + "</code> and rebuild the site.</div>";
+    out += '<div class="sect" style="margin-top:8px"><h3>Strain at each fold</h3><p>' + esc(b.finding) + '</p><div class="chartwrap">' + b.chart +
+      '<div class="legend"><span class="l1">closed form, recorded stack</span><span class="l2">across the stack range</span><span class="l3">simulation, taut</span><span class="l4">simulation, bridging</span></div></div>' +
+      '<p class="small muted">The dot is the strain if the leather follows its stack exactly. The bar spans the stack range allowed in the record. The diamond is the finite-element result at the recorded stack; hollow means the simulated leather bridges the stack instead of turning round it. 20 % is a screening line, not a failure limit.</p></div>';
+    if (w.viewer) out += '<div class="sect"><h3>How it folds</h3><p class="muted small">A structural sketch drawn from the record: one strip of leather folded the way the record says, coloured by the strain at each fold. It is not a scan or a leather simulation.</p>' +
+      '<iframe class="frame" id="vframe" title="3D sketch of how ' + esc(short(w.name)) + ' folds" sandbox="allow-scripts"></iframe></div>';
+    out += '<div class="sect"><h3>Failure modes</h3><p class="muted small">All fourteen, in the order of the failure-mode catalogue. Anything the model does not compute is marked, not hidden.</p><div class="scroll"><table class="fm"><thead><tr><th>#</th><th>Mode</th><th>Status</th><th>For this wallet</th></tr></thead><tbody>' +
+      b.modes.map(function (m) { var st = String(m.status).split(" (")[0]; return "<tr><td>" + m.id + "</td><td>" + esc(m.name) + '</td><td><span class="pill ' + esc(st.replace(/ /g, "-")) + '">' + esc(m.status) + "</span></td><td>" + esc(m.text) + "</td></tr>"; }).join("") + "</tbody></table></div></div>";
+    out += '<div class="sect"><h3>What would make it real</h3><ul class="plain">' + b.measure.map(function (m) { return "<li><b style=\"font-weight:500\">" + esc(m.name) + ".</b> " + esc(m.how) + "</li>"; }).join("") + "</ul></div>";
+    out += '<div class="sect"><h3>Not in the app yet</h3><div class="notyet"><span>The same wallet in another leather or thickness, with the ranges that result.</span><span>The same wallet with a different spine construction, side by side.</span>' +
+      '<span>Predicted hot spots next to photographs of real wear.</span><span class="small muted">These need runs of the simulator that have not been stored for this wallet. The report run shown here is <code>' + esc(b.run) + "</code>, walletsim " + esc(b.meta.walletsim) + ", " + esc(b.meta.ccx) + ".</span></div></div>";
+    return out;
+  }
+  function wallet(id, tab) {
+    var w = byId[id];
+    if (!w) { app.innerHTML = '<div class="empty">No wallet with that id. <a href="#discover" style="text-decoration:underline">Back to Discover</a></div>'; return; }
+    var T = [["overview", "Overview"], ["materials", "Materials & Source"], ["behaviour", "Behaviour"]];
+    var body = tab === "materials" ? materials(w) : tab === "behaviour" ? behaviour(w) : overview(w);
+    app.innerHTML = '<a class="crumb" href="#discover">&#8592; Discover</a><div class="whead"><p class="eyebrow">' + esc(w.designer) + (w.series ? " · " + esc(w.series) : "") + " · " + esc(yearLabel(w.year).toLowerCase()) + "</p><h1>" + esc(short(w.name)) + "</h1>" +
+      '<div><span class="chip ' + (w.status === "measured" ? "measured" : "reported") + '" style="margin-right:6px">' + esc(w.status_label) + "</span>" + (w.usage && w.usage.used ? '<span class="small muted">Used. ' + esc(w.usage.condition || "") + "</span>" : "") + "</div></div>" +
+      '<nav class="wtabs" aria-label="Wallet views">' + T.map(function (t) { return '<a href="#w-' + esc(id) + (t[0] === "overview" ? "" : "--" + t[0]) + '"' + (t[0] === tab ? ' aria-current="page"' : "") + ">" + esc(t[1]) + "</a>"; }).join("") + "</nav>" + body;
+    if (tab === "behaviour" && w.viewer) mountFrame(w);
+  }
+  function mountFrame(w) {                                              // the 3D sketch runs in its own frame; it reports its height so the frame fits it
+    var f = document.getElementById("vframe"); if (!f) return;
+    var th = document.documentElement.getAttribute("data-theme");
+    setTimeout(function () {                                           // a frame that never answers (blocked by the host page, or no connection for Three.js) gets a plain note
+      var g = document.getElementById("vframe"); if (g && !g.dataset.ok && !document.getElementById("vnote")) g.insertAdjacentHTML("afterend", '<p class="small muted" id="vnote">If the 3D sketch does not appear, it needs a connection to load Three.js; the same sketch is saved as <code>viewer.html</code> in this wallet\'s folder.</p>');
+    }, 6000);
+    f.srcdoc = '<!doctype html><html lang="en"' + (th ? ' data-theme="' + th + '"' : "") + "><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"></head><body>" + w.viewer.html + "</body></html>";
+  }
+  window.addEventListener("message", function (e) {
+    var d = e.data; if (!d || typeof d.walletViewerHeight !== "number") return;
+    var f = document.getElementById("vframe"); if (f && f.contentWindow === e.source) f.dataset.ok = "1"; var n = document.getElementById("vnote"); if (n) n.remove();
+    if (f && f.contentWindow === e.source) f.style.height = Math.max(700, Math.ceil(d.walletViewerHeight) + 6) + "px";
+  });
+
+  // ---- routing ------------------------------------------------------------------------------------------------------------------------------------------------
+  function route() {
+    var h = (location.hash || "").replace(/^#/, ""), view = "discover", m;
+    document.getElementById("results").hidden = true;
+    if ((m = /^w-(.+?)(?:--(materials|behaviour))?$/.exec(h))) { view = "wallet"; wallet(m[1], m[2] || "overview"); }
+    else if (h === "artists") { view = "artists"; artists(); } else if (h === "years") { view = "years"; years(); } else if (h === "all") { view = "all"; all(); } else { discover(); }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"), function (a) { if (a.dataset.nav === (view === "wallet" ? "discover" : view)) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    if (view === "wallet") window.scrollTo(0, 0);
+    document.title = view === "wallet" && byId[m[1]] ? short(byId[m[1]].name) + " · Wallet Archive" : "Wallet Archive";
+  }
+  window.addEventListener("hashchange", route);
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-activate],[data-page],[data-bio]");
+    if (t) {
+      if (t.dataset.activate) { S.active = t.dataset.activate; S.bio = null; discover(); var r = document.querySelector(".row.active"); if (r) r.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); }
+      else if (t.dataset.page) { S.page[t.dataset.page] = Math.max(0, (S.page[t.dataset.page] || 0) + (+t.dataset.dir)); discover(); }
+      else if (t.dataset.bio) { S.bio = S.bio === t.dataset.bio ? null : t.dataset.bio; discover(); }
+    }
+    if (!e.target.closest(".tools")) document.getElementById("results").hidden = true;
+  });
+  document.addEventListener("change", function (e) { var s = e.target.closest("[data-compare]"); if (s) { S.compare[s.dataset.compare] = s.value; route(); } });
+  document.addEventListener("keydown", function (e) {
+    if (!/^(ArrowUp|ArrowDown)$/.test(e.key) || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || document.querySelector(".row") == null) return;
+    var gs = groups(), i = gs.map(function (g) { return g.key; }).indexOf(S.active), j = Math.max(0, Math.min(gs.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+    if (j !== i && (location.hash === "" || location.hash === "#discover")) { e.preventDefault(); S.active = gs[j].key; S.bio = null; discover(); }
+  });
+
+  // ---- search -----------------------------------------------------------------------------------------------------------------------------------------------------
+  var q = document.getElementById("q"), res = document.getElementById("results");
+  function haystack(w) {
+    var bits = [w.name, w.designer, w.series, w.status_label, yearLabel(w.year)];
+    w.facts.forEach(function (f) { if (/^(Species|Tanning|Finishing)$/.test(f.label) && f.value) bits.push(f.value); });
+    return bits.join(" ").toLowerCase();
+  }
+  q.addEventListener("input", function () {
+    var s = q.value.trim().toLowerCase(); if (!s) { res.hidden = true; return; }
+    var terms = s.split(/\s+/), hits = W.filter(function (w) { var hs = haystack(w); return terms.every(function (t) { return hs.indexOf(t) >= 0; }); });
+    res.innerHTML = hits.length ? hits.map(function (w) { return '<a href="#w-' + esc(w.id) + '"><b style="font-weight:500">' + esc(short(w.name)) + '</b><span class="small muted">' + esc(w.designer) + (w.series ? " · " + esc(w.series) : "") + "</span></a>"; }).join("") :
+      '<div class="none">Nothing in the archive matches &ldquo;' + esc(q.value.trim()) + "&rdquo;.</div>";
+    res.hidden = false;
+  });
+  q.addEventListener("keydown", function (e) { if (e.key === "Enter") { var a = res.querySelector("a"); if (a) { location.hash = a.getAttribute("href"); q.value = ""; res.hidden = true; } } if (e.key === "Escape") { res.hidden = true; } });
+  res.addEventListener("click", function () { q.value = ""; res.hidden = true; });
+
+  var hd = DATA.hidden_designs && DATA.hidden_designs.length ? " " + DATA.hidden_designs.length + " generated test design" + (DATA.hidden_designs.length === 1 ? " is" : "s are") + " not shown." : "";
+  document.getElementById("foot").innerHTML = "<span>" + W.length + " wallet record" + (W.length === 1 ? "" : "s") + ", built by walletsim " + esc(DATA.version) + "." + esc(hd) + "</span><span>Every figure shows where it came from: measured, reported, inferred, design, literature or assumed. Nothing is shown that a record does not state.</span>";
+  window.__archive = { data: DATA, route: route, state: S, groups: groups, setData: function (d) { W = d.wallets; byId = {}; W.forEach(function (w) { byId[w.id] = w; }); DATA = d; S.active = null; route(); } };
+  route();
+})();
+</script>

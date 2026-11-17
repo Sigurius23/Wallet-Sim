@@ -1,5 +1,22 @@
 # UI outline (rough draft, not final)
 
+## Status: first build (`walletsim build-site`)
+The first version is built and runs on the real records in `wallets/` (not mock data). `walletsim build-site` reads every `wallets/<id>/wallet.yaml`, its latest stored report run and its 3D sketch, and writes
+`site/index.html`: one file, no server. What it has, against the outline below:
+
+| Outline | Built | How it handles what the records do not say |
+|---|---|---|
+| Discover: central timeline, focused scrolling, carousel either side of the axis, arrows, Read bio | yes: click a node or press the up and down keys; series alternate left and right; arrows page when a side has more than two | a record with no year sits at the end of the axis as **Undated**; no year is invented. Bio says that none is recorded |
+| Artists, Years, search, app-grid (all wallets) | yes | Years says plainly when no record has a year |
+| Wallet detail: Overview | yes: facts with a provenance chip on each, what the record is built from, photographs referenced | missing facts read "not recorded" in amber |
+| Materials & Source: treatment pipeline, hide with cut zone, component to hide mapping, compare two wallets | yes, with a **schematic hide** in place of the 3D animal models | the pipeline is the four windows; steps the record lacks are marked. A zone is shaded only if the record names the region |
+| Behaviour: strain per fold with its range, the 3D fold sketch, all 14 failure modes, what to measure first | yes, from the stored report run and the viewer | "Not in the app yet" lists the leather swap, the spine comparison and hot spots against wear photos |
+| Product photographs as the hero | only if a record names a `hero_image`; the corpus images are research documentation, so none is shown | the cross-section drawn from the record's fold structure takes its place |
+
+Not built: the 3D animal models with cut zones (no licensed templates yet, and no record has a region), the Overview | Wallet | Desktop frame of sketch 4, the fold-style comparison and leather swap in Behaviour, and real timeline data
+(every record is undated). The app checks itself on phone width and in dark mode; the nested 3D sketch loads Three.js from a CDN.
+
+
 Source: the user's sketches (`docs/ui/`) and written description. This is the outline to build toward, not a spec. Names in the
 sketches (designers, wallets, dates) are placeholders.
 

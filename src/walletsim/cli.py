@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | wallet-page | wallet-viewer | edge-turn | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | wallet-page | wallet-viewer | build-site | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -210,6 +210,17 @@ def _wallet_viewer(a: argparse.Namespace) -> int:
     return 0
 
 
+def _build_site(a: argparse.Namespace) -> int:
+    from .site import write_site
+    try:
+        out = write_site(a.wallets, a.out, a.include_designs)
+    except (FileNotFoundError, ValueError, KeyError, NotADirectoryError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"archive app written to {out} ({out.stat().st_size / 1e6:.2f} MB; one file, the 3D sketches load Three.js from a CDN)")
+    return 0
+
+
 def _edge_turn(a: argparse.Namespace) -> int:
     from .fold_styles import edge_turn_table, format_edge_turn_report
     print(format_edge_turn_report(edge_turn_table(a.t, tuple(a.skive_ratios), tuple(a.cores)), a.t))
@@ -329,6 +340,11 @@ def main(argv: list[str] | None = None) -> int:
     wv.add_argument("wallet", help="a wallets/<id> folder")
     wv.add_argument("--out", default=None, help="default: wallets/<id>/viewer.html")
     wv.set_defaults(fn=_wallet_viewer)
+    bs = sub.add_parser("build-site", help="build the archive app (one HTML file) from every record in wallets/")
+    bs.add_argument("--wallets", default="wallets", help="the folder of wallet records")
+    bs.add_argument("--out", default="site/index.html")
+    bs.add_argument("--include-designs", action="store_true", help="also list generated test designs (status design)")
+    bs.set_defaults(fn=_build_site)
     et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
     et.add_argument("--t", type=float, default=1.2)
     et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])

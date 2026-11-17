@@ -149,7 +149,8 @@ def _flap(rec: WalletRecord) -> dict:
     return {"cfg": cfg, "text": text, "n": 0}
 
 
-def build_viewer(wallet_dir: str | Path) -> str:
+def config(wallet_dir: str | Path) -> tuple[WalletRecord, dict, dict]:
+    """The record, the viewer's configuration (what the geometry library draws) and its page text, all read from the record."""
     rec = load_wallet(wallet_dir)
     if rec.wallet_type != CUSTOM:
         raise ViewerError("only custom (one-sheet) records have a 3D sketch so far; bifold, trifold and z-fold have the fold simulator's plots")
@@ -160,7 +161,13 @@ def build_viewer(wallet_dir: str | Path) -> str:
         built = _flap(rec)
     else:
         raise ViewerError("the record has neither stack_from_loops nor stack_from_closed_thickness, so there is no structure to draw")
-    cfg, tx = built["cfg"], built["text"]
+    return rec, {**built["cfg"], "id": rec.id}, built["text"]
+
+
+def build_viewer(wallet_dir: str | Path, embed: bool = False) -> str:
+    """The standalone page. With embed=True the page hides its own title block and reports its height to the page that frames it (the archive app)."""
+    rec, cfg, tx = config(wallet_dir)
+    cfg = {**cfg, "embed": bool(embed)}
     sz = cfg["sizes"]
     item = _item(rec)
     foot = ("Source: retailer or reseller text and product photographs in the Wallet-corpus- archive"
@@ -168,11 +175,12 @@ def build_viewer(wallet_dir: str | Path) -> str:
             + ". The photographs are research documentation only and are not shown here. Sizes "
             + ", ".join(f"{k}: {v['txt']}" for k, v in sz.items()) + " are read as the closed footprint. Strain is the closed form t / (2R + t), where t is the sheet thickness and R the inside radius.")
     tpl = resources.files("walletsim").joinpath("viewer_template.html").read_text(encoding="utf-8")
+    geometry = resources.files("walletsim").joinpath("geometry.js").read_text(encoding="utf-8")
     cfg_json = json.dumps(cfg, separators=(",", ":")).replace("</", "<\\/")
     li = lambda xs: "".join(f"<li>{x}</li>" for x in xs)
     return (tpl.replace("{{TITLE}}", E(f"{rec.name} 3D")).replace("{{EYEBROW}}", tx["eyebrow"]).replace("{{H1}}", E(f"{rec.name} in 3D"))
                .replace("{{BANNER}}", tx["banner"]).replace("{{SHOWS}}", li(tx["shows"])).replace("{{REAL}}", li(tx["real"])).replace("{{FOOT}}", E(foot))
-               .replace("__CFG__", cfg_json))
+               .replace("{{GEOMETRY_JS}}", geometry).replace("__CFG__", cfg_json))
 
 
 def write_viewer(wallet_dir: str | Path, out: str | Path | None = None) -> Path:

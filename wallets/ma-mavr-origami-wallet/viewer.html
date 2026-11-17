@@ -98,38 +98,28 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-(function () {
+/* Fold geometry shared by the 3D viewer and the archive app: pure functions, no DOM and no three.js.
+ *
+ * A model is a centre line of fixed-length hinge arcs and straight runs ("turtle"). Each fold turns through a fixed length of sheet, so a fold that opens
+ * gets a larger radius. Strain at a fold = |turn| / 180 x t / (2 R + t), the closed form for a full hairpin at the closed inside radius, scaled with the angle.
+ * It is a sketch of how the sheet folds, not a simulation.
+ *
+ *   WalletGeometry.build(CFG, model, size, p, v) -> { strips, blocks, marks, W, text }
+ *     model  one entry of CFG.models        size  a key of CFG.sizes
+ *     p      {paramId: value}                v     {controlId: 0..1}  (0 closed, 1 open)
+ */
+var WalletGeometry = (function () {
   "use strict";
-  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"flap","kind":"flap","label":"Flap and spine","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"stack","label":"Stack the hinge wraps","min":10.0,"max":16.0,"step":0.5,"value":16.0,"unit":"mm","dec":1}],"hinges":[{"id":"main","name":"Main fold","closed":-180,"open":-20,"drv":"flap","tag":"translate(-108%, -50%)"}]},{"id":"gusset","kind":"gusset","label":"Bill-pocket gusset","controls":[{"id":"gusset","label":"Open the bill pocket"}],"params":[{"id":"rIn","label":"Crease radius, inside","min":0.25,"max":2.0,"step":0.05,"value":0.5,"unit":"mm","dec":2}],"hinges":[{"id":"crease","name":"Crease (the one in the report)","closed":0,"open":0,"drv":"gusset","tag":"translate(16px, -50%)"},{"id":"edgeF","name":"Front edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, -140%)"},{"id":"edgeB","name":"Back edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, 120%)"}]}],"sizes":{"one size":{"L":95,"W":145,"txt":"14.5 x 9.5 cm"}},"size":"one size","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"gusset":{"w":60.0,"a":18.0,"depth":70.0,"maxPhi":100.0}};
-  var T = CFG.T;                                          // sheet thickness, mm
-  var MODELS = CFG.models, byId = {};
-  MODELS.forEach(function (m) { byId[m.id] = m; });
-  var state = { model: MODELS[0].id, size: CFG.size, p: {}, v: {}, colour: true, labels: true, view: "3d" };
-  MODELS.forEach(function (m) { m.params.forEach(function (q) { state.p[m.id + "." + q.id] = q.value; }); m.controls.forEach(function (c) { state.v[c.id] = 0; }); });
-  function M() { return byId[state.model]; }
-  function P(id) { return state.p[state.model + "." + id]; }
-
   var ease = function (u) { return u * u * (3 - 2 * u); };
   var lerp = function (a, b, u) { return a + (b - a) * u; };
-  var RAMP = [[0, "#5d6872"], [0.2, "#e5a93d"], [0.5, "#c4301f"], [0.67, "#6d0d0d"]];
-  function hex(c) { return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)].map(function (v) { return v / 255; }); }
-  function rampColour(e) {
-    var s = RAMP, i = 0; while (i < s.length - 2 && e > s[i + 1][0]) i++;
-    var u = Math.max(0, Math.min(1, (e - s[i][0]) / (s[i + 1][0] - s[i][0]))), a = hex(s[i][1]), b = hex(s[i + 1][1]);
-    return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
-  }
-  document.getElementById("ramp").style.background = "linear-gradient(90deg," + RAMP.map(function (s) { return s[1] + " " + (s[0] / 0.67 * 100).toFixed(0) + "%"; }).join(",") + ")";
-  document.getElementById("vedge").textContent = CFG.edgeLabel;
 
-  // ---- the turtle: a centre line of fixed-length hinge arcs and straight runs -------------------------------------------------------------
-  function Turtle(x, y, phi) { this.x = x; this.y = y; this.phi = phi; this.pts = []; this.marks = {}; this.push(0); }
+  function Turtle(T, x, y, phi) { this.T = T; this.x = x; this.y = y; this.phi = phi; this.pts = []; this.marks = {}; this.push(0); }
   Turtle.prototype.push = function (e) { this.pts.push({ x: this.x, y: this.y, phi: this.phi, e: e }); };
   Turtle.prototype.straight = function (len, e) {
     var n = Math.max(2, Math.ceil(len / 10)), dx = Math.cos(this.phi) * len / n, dy = Math.sin(this.phi) * len / n;
     for (var k = 0; k < n; k++) { this.x += dx; this.y += dy; this.push(e); }
   };
-  // A fold turns through `deg` degrees (positive = anticlockwise) along a neutral arc whose LENGTH is fixed (ell), so its radius grows as it opens.
-  // Strain = |turn| / 180 x epsFull, where epsFull = t / (2 R + t) is the closed form for a full hairpin at the closed inside radius.
+  // A fold turns through `deg` degrees (positive = anticlockwise) along a neutral arc of fixed LENGTH ell, so its radius grows as it opens.
   Turtle.prototype.fold = function (id, deg, ell, epsFull) {
     var th = deg * Math.PI / 180, e = Math.abs(deg) / 180 * epsFull;
     if (Math.abs(th) < 1e-3) { this.straight(ell, e); this.marks[id] = { x: this.x, y: this.y, e: e, ang: deg, r: Infinity }; return; }
@@ -141,38 +131,39 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
       if (k === Math.round(m / 2)) mid = { x: cx - s * r * qx, y: cy - s * r * qy };
     }
     var last = this.pts[this.pts.length - 1]; this.x = last.x; this.y = last.y; this.phi = last.phi;
-    this.marks[id] = { x: mid.x, y: mid.y, e: e, ang: deg, r: r - T / 2 };
+    this.marks[id] = { x: mid.x, y: mid.y, e: e, ang: deg, r: r - this.T / 2 };
   };
-  function turn(h) { return lerp(h.closed, h.open, ease(state.v[h.drv])); }          // current signed turn of a hinge, degrees
-  function epsFull(rIn) { return T / (2 * rIn + T); }
 
-  // ---- the models: each returns strips (centre lines), blocks, marks, the extrusion width and a line of text -------------------------------
-  var BUILD = {
-    // One sheet folded as an accordion: bottom panel, spine, top panel, then n tight hairpins with a leaf after each (loops turn one way, left folds the other).
-    chain: function (m) {
-      var n = CFG.leaves, rIn = P("rIn"), rn = rIn + T / 2, rs = (n + 1) * rn, rInSpine = rs - T / 2, L = CFG.sizes[state.size].L;
-      var Lt = L - rs - rn - T, xf = rn + T + 1.0, La = Lt - xf, Lb = Lt - 3, Lc = La - 8;
-      var t = new Turtle(Lb, 0, Math.PI);
-      t.straight(Lb, 0); t.fold(m.hinges[0].id, turn(m.hinges[0]), Math.PI * rs, epsFull(rInSpine));
-      for (var k = 1; k <= n; k++) { t.straight(k === 1 ? Lt : La, 0); t.fold(m.hinges[k].id, turn(m.hinges[k]), Math.PI * rn, epsFull(rIn)); }
+  function build(CFG, model, size, p, v) {
+    var T = CFG.T, sz = CFG.sizes[size];
+    var epsFull = function (rIn) { return T / (2 * rIn + T); };
+    var turn = function (h) { return lerp(h.closed, h.open, ease(v[h.drv] || 0)); };       // current signed turn of a hinge, degrees
+    var t, rIn, rn, rs, L, W;
+    if (model.kind === "chain") {
+      // One sheet folded as an accordion: bottom panel, spine, top panel, then n tight hairpins with a leaf after each (loops turn one way, left folds the other).
+      var n = CFG.leaves, hs = model.hinges; rIn = p.rIn; rn = rIn + T / 2; rs = (n + 1) * rn; L = sz.L;
+      var rInSpine = rs - T / 2, Lt = L - rs - rn - T, xf = rn + T + 1.0, La = Lt - xf, Lb = Lt - 3, Lc = La - 8;
+      t = new Turtle(T, Lb, 0, Math.PI);
+      t.straight(Lb, 0); t.fold(hs[0].id, turn(hs[0]), Math.PI * rs, epsFull(rInSpine));
+      for (var k = 1; k <= n; k++) { t.straight(k === 1 ? Lt : La, 0); t.fold(hs[k].id, turn(hs[k]), Math.PI * rn, epsFull(rIn)); }
       t.straight(Lc, 0);
-      return { strips: [t.pts], blocks: [], marks: t.marks, W: CFG.sizes[state.size].W,
+      return { strips: [t.pts], blocks: [], marks: t.marks, W: sz.W,
                text: "The layers sit one loop-gap apart, so the spine wraps " + (2 * rs - T).toFixed(1) + " mm here (inside radius " + rInSpine.toFixed(1) + " mm)." };
-    },
-    // One hinge, seen along the length: a back panel, the hinge, and the flap that lies over the front; a block stands for the pack the hinge wraps.
-    flap: function (m) {
-      var stack = P("stack"), rs = stack / 2 + T / 2, rIn = rs - T / 2, L = CFG.sizes[state.size].L, W = CFG.sizes[state.size].W;
-      var Lb = L - rs, Lf = Lb - 2, h = m.hinges[0], t = new Turtle(Lb, 0, Math.PI);
-      t.straight(Lb, 0); t.fold(h.id, turn(h), Math.PI * rs, epsFull(rIn)); t.straight(Lf, 0);
-      var blk = { x0: 3, x1: Lb - 4, y0: T / 2, y1: T / 2 + stack, z0: -W / 2 + 6, z1: W / 2 - 6, label: "pack the hinge wraps" };
-      return { strips: [t.pts], blocks: [blk], marks: t.marks, W: W,
+    }
+    if (model.kind === "flap") {
+      // One hinge, seen along the length: a back panel, the hinge, and the flap that lies over the front; a block stands for the pack the hinge wraps.
+      var stack = p.stack, h0 = model.hinges[0]; rs = stack / 2 + T / 2; rIn = rs - T / 2; L = sz.L; W = sz.W;
+      var Lb2 = L - rs, Lf = Lb2 - 2;
+      t = new Turtle(T, Lb2, 0, Math.PI);
+      t.straight(Lb2, 0); t.fold(h0.id, turn(h0), Math.PI * rs, epsFull(rIn)); t.straight(Lf, 0);
+      return { strips: [t.pts], blocks: [{ x0: 3, x1: Lb2 - 4, y0: T / 2, y1: T / 2 + stack, z0: -W / 2 + 6, z1: W / 2 - 6, label: "pack the hinge wraps" }], marks: t.marks, W: W,
                text: "The hinge wraps " + stack.toFixed(1) + " mm here (inside radius " + rIn.toFixed(1) + " mm). The grey block is that pack; it is not modelled." };
-    },
-    // A side gusset of the bill pocket, seen across the width: front panel, a V-shaped pleat at each side, back panel. phi is the included angle of the V.
-    gusset: function (m) {
-      var G = CFG.gusset, rIn = P("rIn"), rn = rIn + T / 2, ell = Math.PI * rn, ef = epsFull(rIn);
-      var phi = lerp(0, G.maxPhi, ease(state.v.gusset)), ph2 = phi / 2;
-      var t = new Turtle(0, 0, Math.PI);
+    }
+    if (model.kind === "gusset") {
+      // A side gusset of the bill pocket, seen across the width: front panel, a V-shaped pleat at each side, back panel. phi is the included angle of the V.
+      var G = CFG.gusset; rIn = p.rIn; rn = rIn + T / 2;
+      var ell = Math.PI * rn, ef = epsFull(rIn), phi = lerp(0, G.maxPhi, ease(v.gusset || 0)), ph2 = phi / 2;
+      t = new Turtle(T, 0, 0, Math.PI);
       t.straight(G.w, 0);
       t.fold("edgeF", 180 - ph2, ell, ef); t.straight(G.a, 0);
       t.fold("crease", -(180 - phi), ell, ef); t.straight(G.a, 0);
@@ -182,7 +173,37 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
       return { strips: [t.pts, other], blocks: [], marks: t.marks, W: G.depth,
                text: "The V of the pleat is open " + phi.toFixed(0) + "&deg;; front and back panels are " + gap.toFixed(1) + " mm apart, centre line to centre line." };
     }
-  };
+    throw new Error("unknown model kind " + model.kind);
+  }
+  return { build: build, ease: ease, lerp: lerp };
+})();
+
+</script>
+<script>
+(function () {
+  "use strict";
+  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"flap","kind":"flap","label":"Flap and spine","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"stack","label":"Stack the hinge wraps","min":10.0,"max":16.0,"step":0.5,"value":16.0,"unit":"mm","dec":1}],"hinges":[{"id":"main","name":"Main fold","closed":-180,"open":-20,"drv":"flap","tag":"translate(-108%, -50%)"}]},{"id":"gusset","kind":"gusset","label":"Bill-pocket gusset","controls":[{"id":"gusset","label":"Open the bill pocket"}],"params":[{"id":"rIn","label":"Crease radius, inside","min":0.25,"max":2.0,"step":0.05,"value":0.5,"unit":"mm","dec":2}],"hinges":[{"id":"crease","name":"Crease (the one in the report)","closed":0,"open":0,"drv":"gusset","tag":"translate(16px, -50%)"},{"id":"edgeF","name":"Front edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, -140%)"},{"id":"edgeB","name":"Back edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, 120%)"}]}],"sizes":{"one size":{"L":95,"W":145,"txt":"14.5 x 9.5 cm"}},"size":"one size","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"gusset":{"w":60.0,"a":18.0,"depth":70.0,"maxPhi":100.0}};
+  var T = CFG.T;                                          // sheet thickness, mm
+  var MODELS = CFG.models, byId = {};
+  MODELS.forEach(function (m) { byId[m.id] = m; });
+  var state = { model: MODELS[0].id, size: CFG.size, p: {}, v: {}, colour: true, labels: true, view: "3d" };
+  MODELS.forEach(function (m) { m.params.forEach(function (q) { state.p[m.id + "." + q.id] = q.value; }); m.controls.forEach(function (c) { state.v[c.id] = 0; }); });
+  function M() { return byId[state.model]; }
+  function P(id) { return state.p[state.model + "." + id]; }
+
+  var RAMP = [[0, "#5d6872"], [0.2, "#e5a93d"], [0.5, "#c4301f"], [0.67, "#6d0d0d"]];
+  function hex(c) { return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)].map(function (v) { return v / 255; }); }
+  function rampColour(e) {
+    var s = RAMP, i = 0; while (i < s.length - 2 && e > s[i + 1][0]) i++;
+    var u = Math.max(0, Math.min(1, (e - s[i][0]) / (s[i + 1][0] - s[i][0]))), a = hex(s[i][1]), b = hex(s[i + 1][1]);
+    return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+  }
+  document.getElementById("ramp").style.background = "linear-gradient(90deg," + RAMP.map(function (s) { return s[1] + " " + (s[0] / 0.67 * 100).toFixed(0) + "%"; }).join(",") + ")";
+  document.getElementById("vedge").textContent = CFG.edgeLabel;
+
+  var ease = WalletGeometry.ease, lerp = WalletGeometry.lerp;
+  function paramsOf(m) { var o = {}; m.params.forEach(function (q) { o[q.id] = state.p[m.id + "." + q.id]; }); return o; }
+  function buildModel(m) { return WalletGeometry.build(CFG, m, state.size, paramsOf(m), state.v); }
 
   // ---- three.js -----------------------------------------------------------------------------------------------------------------------------
   var host = document.getElementById("stage");
@@ -252,7 +273,7 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
   }
   var current = null;
   function build() {
-    current = BUILD[M().kind](M());
+    current = buildModel(M());
     disposeGroup();
     current.strips.forEach(function (s) { addStrip(s, current.W); });
     current.blocks.forEach(addBlock);
@@ -267,7 +288,7 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     var keep = JSON.parse(JSON.stringify(state.v)), ids = M().controls.map(function (c) { return c.id; }), b = { x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9, W: 0 };
     poses.forEach(function (ps) {
       ids.forEach(function (id, i) { state.v[id] = ps[i] || 0; });
-      var r = BUILD[M().kind](M()); b.W = Math.max(b.W, r.W);
+      var r = buildModel(M()); b.W = Math.max(b.W, r.W);
       r.strips.forEach(function (s) { s.forEach(function (q) { b.x0 = Math.min(b.x0, q.x - T); b.x1 = Math.max(b.x1, q.x + T); b.y0 = Math.min(b.y0, q.y - T); b.y1 = Math.max(b.y1, q.y + T); }); });
       r.blocks.forEach(function (k) { b.x0 = Math.min(b.x0, k.x0); b.x1 = Math.max(b.x1, k.x1); b.y0 = Math.min(b.y0, k.y0); b.y1 = Math.max(b.y1, k.y1); });
     });

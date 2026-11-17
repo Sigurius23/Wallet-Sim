@@ -49,6 +49,36 @@ def latest_run(wallet_dir: str | Path) -> Path:
     return runs[-1]
 
 
+def chart_rows(d: dict) -> list[dict]:
+    """One row per fold for the strain chart: the closed-form strain at the recorded stack, its range across the stack sweeps, and the simulated value."""
+    folds, sweeps = d["folds"], d.get("sweeps") or []
+    rows = []
+    for f in folds:
+        mine = [s for s in sweeps if s["fold"] == f["fold"]]
+        vals = [f["closed_form"]] + [s["closed_form"] for s in mine]
+        stacks = [f["stack_mm"]] + [s["stack_mm"] for s in mine]
+        rows.append({"name": _short(f["fold"]), "rec": f["closed_form"], "lo": min(vals), "hi": max(vals), "fem": f["tension_taut"],
+                     "bridges": (f["standoff_loose_mm"] or 0) > f["inside_radius_mm"], "stack_lo": min(stacks), "stack_hi": max(stacks)})
+    return rows
+
+
+def finding_text(rows: list[dict]) -> str:
+    """The sentence that states what the chart shows, computed from the rows so it cannot disagree with them."""
+    tight = [r for r in rows if r["rec"] >= STRAIN_LINE]
+    easy = [r for r in rows if r["rec"] < STRAIN_LINE]
+    if tight and easy:
+        names = ", ".join(r["name"] for r in tight)
+        mild = min(r["lo"] for r in tight)
+        top = max(r["hi"] for r in easy)
+        return (f"{len(tight)} of {len(rows)} folds are above the 20 % screening line at the recorded stack: {names}. "
+                + (f"Even at their tightest, the others reach {_pct(top)} against the tight folds' mildest {_pct(mild)}." if top < mild
+                   else f"The others reach {_pct(top)} at their tightest, which overlaps the tight folds' mildest case ({_pct(mild)}). The ranking depends on the unmeasured stacks.")
+                + f" At the tight end of the range a fold is {_pct(max(r['hi'] for r in tight))} kinematic strain.")
+    if tight:
+        return f"Every fold is above the 20 % screening line at the recorded stack. The tightest reaches {_pct(max(r['hi'] for r in tight))} at the tight end of its range."
+    return f"No fold is above the 20 % screening line at the recorded stack; the highest reaches {_pct(max(r['hi'] for r in rows))} at the tight end of its range."
+
+
 def _chart(rows: list[dict]) -> str:
     W, H, L, R, T, B = 760, 70 + 62 * len(rows), 168, 30, 38, 52
     xmax = max(0.70, min(1.0, max(r["hi"] for r in rows) * 1.08))
@@ -153,29 +183,8 @@ def build_page(run_dir: str | Path) -> str:
     d = json.loads((run / "result.json").read_text())
     rec = load_wallet(run.parents[1])
     folds, sweeps = d["folds"], d["sweeps"]
-    # ---- chart rows
-    rows = []
-    for f in folds:
-        mine = [s for s in sweeps if s["fold"] == f["fold"]]
-        vals = [f["closed_form"]] + [s["closed_form"] for s in mine]
-        stacks = [f["stack_mm"]] + [s["stack_mm"] for s in mine]
-        rows.append({"name": _short(f["fold"]), "rec": f["closed_form"], "lo": min(vals), "hi": max(vals), "fem": f["tension_taut"],
-                     "bridges": (f["standoff_loose_mm"] or 0) > f["inside_radius_mm"], "stack_lo": min(stacks), "stack_hi": max(stacks)})
-    tight = [r for r in rows if r["rec"] >= STRAIN_LINE]
-    easy = [r for r in rows if r["rec"] < STRAIN_LINE]
-    # ---- the finding, computed
-    if tight and easy:
-        names = ", ".join(r["name"] for r in tight)
-        mild = min(r["lo"] for r in tight)
-        top = max(r["hi"] for r in easy)
-        finding = (f"{len(tight)} of {len(rows)} folds are above the 20 % screening line at the recorded stack: {names}. "
-                   + (f"Even at their tightest, the others reach {_pct(top)} against the tight folds' mildest {_pct(mild)}." if top < mild
-                      else f"The others reach {_pct(top)} at their tightest, which overlaps the tight folds' mildest case ({_pct(mild)}). The ranking depends on the unmeasured stacks.")
-                   + f" At the tight end of the range a fold is {_pct(max(r['hi'] for r in tight))} kinematic strain.")
-    elif tight:
-        finding = f"Every fold is above the 20 % screening line at the recorded stack. The tightest reaches {_pct(max(r['hi'] for r in tight))} at the tight end of its range."
-    else:
-        finding = f"No fold is above the 20 % screening line at the recorded stack; the highest reaches {_pct(max(r['hi'] for r in rows))} at the tight end of its range."
+    rows = chart_rows(d)
+    finding = finding_text(rows)
     # ---- fold cards
     inputs = {i["name"]: i for i in d["inputs"]}
     cards = []

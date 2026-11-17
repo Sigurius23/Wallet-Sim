@@ -4,7 +4,7 @@
 **Bending styles first** (set by you): simulate different fold constructions, with the leather and thickness swappable, before any
 whole-wallet model or UI. Status and results: [`FOLD_STYLES.md`](FOLD_STYLES.md). Next in that thread: your wallet's real fold
 and layup, measured leather cards (lining stiffness first), a stitched hinge and grain-in wraps in the comparison table, a simulated assembly of the folds (replacing the nesting rule and showing part-way opening), then permanent
-set and wear once flex data exist (the pleat crease and the turned-edge turn both depend on it). The UI outline ([`UI.md`](UI.md)) waits until there is something worth showing in its Behaviour view.
+set and wear once flex data exist (the pleat crease and the turned-edge turn both depend on it). The UI outline ([`UI.md`](UI.md)) has a first build on the real records (`walletsim build-site`): timeline, wallet detail and a Behaviour view fed by the stored runs.
 
 ## Decisions needed from you
 1. **First real wallet.** Records for three **M.A+ wallets** now exist (One Piece Wallet, One Piece Double Wallet, and the MAV.R pig-leather origami; `wallets/ma-*`, from the Wallet-corpus- archive), but only from retailer or reseller text and photographs. A physical one, measured, is the next step (closed thickness, loop radius, sheet thickness); does a used one exist? (`slim-6card-design` is a stand-in generated design.)
@@ -33,7 +33,7 @@ set and wear once flex data exist (the pleat crease and the turned-edge turn bot
 | 3 | **FEM fold cycle** | strain and contact-pressure maps for one fold cycle with contents, CalculiX backend; compared with level 0 at each fold | phase 2 |
 | 4 | **Wear** | hot-spot maps, location ranking, card-pull wear (Archard), predicted vs photographed wear on used wallets; calibrated cycles to crack if flex data exist | phase 3, wear photos, optional flex tests |
 | 5 | **Drop test** | defined after decision 6 | phase 3 |
-| 6a | **Clickable UI prototype** (`UI.md`) | timeline, carousel and the Materials and Source view with mock data, in the sketched style, so layout can be judged before real data exists | your answers to the UI questions |
+| 6a | **Clickable UI prototype** (`UI.md`) | timeline, carousel and the Materials and Source view in the sketched style. **First build done on the real records** (`walletsim build-site`), with Behaviour from stored runs; no 3D animals, no photographs, every record undated | more records with years, a hide region and photographs that may be shown |
 | 6 | **Archive and viewer** | browse wallets, replay folds, compare designs side by side, Behaviour mode | several wallets |
 
 Research items with no model yet (see `FAILURE_MODES.md`): permanent set under repeated flexing, finish crazing and delamination, wet and salt flex.
