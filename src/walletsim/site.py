@@ -166,6 +166,34 @@ def _behaviour(rec: WalletRecord, wdir: Path) -> dict:
     }
 
 
+def _fold_models(rec: WalletRecord) -> dict | None:
+    """How each fold's stack depends on the sheet thickness, so the app can recompute the closed-form strain live when a viewer moves the thickness slider.
+
+    fixed: the stack is a number; closed: stack = closed depth - shells x t; loops: stack = leaves x t + (leaves + 1) x gap, the gap being another fold's stack."""
+    if rec.wallet_type != "custom":
+        return None
+    cons = rec.raw.get("construction") or {}
+    cl = _leaf(cons.get("closed_thickness_mm"))
+    out = []
+    for sp, f in zip(cons.get("folds_modelled") or [], rec.custom_folds):
+        d = {"name": f.name, "sense": f.sense, "source": f.source}
+        if "stack_from_closed_thickness" in sp:
+            s = sp["stack_from_closed_thickness"]
+            d.update(kind="closed", depth=cl["value"], shells=s.get("shells", 2), low=s.get("low"))
+        elif "stack_from_loops" in sp:
+            s = sp["stack_from_loops"]
+            d.update(kind="loops", leaves=_leaf(s["leaves"])["value"], gap_from=s["gap_from"])
+        else:
+            d.update(kind="fixed", stack=f.stack_mm, low=f.low_mm, high=f.high_mm)
+        out.append(d)
+    return {"t": float(rec.shell_t), "folds": out}
+
+
+def _styles(wdir: Path) -> dict | None:
+    p = wdir / "sim" / "styles.json"
+    return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
+
+
 def wallet_entry(wdir: Path) -> dict:
     rec = load_wallet(wdir)
     arch = rec.raw.get("archive") or {}
@@ -182,7 +210,7 @@ def wallet_entry(wdir: Path) -> dict:
         "status": rec.status, "status_label": STATUS_LABEL.get(rec.status, rec.status), "status_note": STATUS_NOTE.get(rec.status, ""),
         "usage": rec.raw.get("usage") or {}, "bio_ref": arch.get("bio_ref"), "rights": arch.get("rights") or {}, "rights_note": rec.raw.get("rights_note", ""),
         "hero": _hero(rec, wdir), "facts": _facts(rec, behaviour), "components": _components(rec), "pipeline": _pipeline(rec),
-        "photos": _photos(rec), "corpus": _corpus(rec), "behaviour": behaviour, "viewer": viewer,
+        "photos": _photos(rec), "corpus": _corpus(rec), "behaviour": behaviour, "viewer": viewer, "swap": _fold_models(rec), "styles": _styles(wdir),
         "counts": rec.provenance_counts(),
     }
 
@@ -196,7 +224,14 @@ def build_data(wallets_root: str | Path = "wallets", include_designs: bool = Fal
             skipped.append(rec.name)
             continue
         entries.append(wallet_entry(wdir))
-    return {"version": _version, "wallets": entries, "hidden_designs": skipped}
+    lab_path = root.parent / "lab" / "results.json"
+    lab = json.loads(lab_path.read_text(encoding="utf-8")) if lab_path.exists() else None
+    from .materials import calfskin_upper_literature
+    card = calfskin_upper_literature()
+    mat = [{"name": card.name, "species": card.species, "tanning": card.tanning, "E": card.states["new"].youngs_modulus_mpa.value if hasattr(card.states["new"], "youngs_modulus_mpa") else 72.0,
+            "source": "literature"}]
+    animals = json.loads(resources.files("walletsim").joinpath("assets/animals.json").read_text(encoding="utf-8"))
+    return {"version": _version, "wallets": entries, "hidden_designs": skipped, "lab": lab, "materials": mat, "animals": animals}
 
 
 def build_site(wallets_root: str | Path = "wallets", include_designs: bool = False) -> str:

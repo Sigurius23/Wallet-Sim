@@ -4,6 +4,7 @@ import re
 import shutil
 from pathlib import Path
 
+import pytest
 import yaml
 
 from walletsim.site import build_data, build_site, write_site
@@ -81,3 +82,53 @@ def test_a_hero_photograph_is_embedded_only_when_the_record_names_one(tmp_path):
     w = build_data(root)["wallets"][0]
     assert w["hero"].startswith("data:image/png;base64,")
     assert w["behaviour"]["has_run"] is False                                  # no stored run in this copy: the app says so instead of showing numbers
+
+
+# ---- the lab, the what-if and the animals
+def test_the_cow_pig_horse_and_sheep_are_the_cc0_models_and_decode_to_whole_triangles():
+    import base64
+    a = build_data(WALLETS)["animals"]
+    assert a["license"].startswith("CC0") and a["author"] == "Quaternius"
+    assert set(a["models"]) == {"bovine", "porcine", "equine", "ovine"}                 # no goat: no free goat model was found
+    for key, m in a["models"].items():
+        floats = len(base64.b64decode(m["positions"])) // 4
+        assert floats == 9 * m["triangles"] and m["triangles"] > 300
+        x0, x1, y0, y1, z0, z1 = m["bbox"]
+        assert x1 - x0 == pytest.approx(2.6) and y0 == pytest.approx(0.0)                # body length 2.6, feet on the ground
+
+
+def test_each_wallet_carries_what_the_thickness_slider_needs_and_its_style_comparison():
+    d = {w["id"]: w for w in build_data(WALLETS)["wallets"]}
+    kinds = {i: [f["kind"] for f in w["swap"]["folds"]] for i, w in d.items()}
+    assert kinds["ma-mavr-origami-wallet"] == ["closed", "fixed"] and kinds["ma-one-piece-wallet"][0] == "loops"
+    assert d["ma-mavr-origami-wallet"]["swap"]["folds"][0]["depth"] == 18.0
+    for w in d.values():
+        s = w["styles"]
+        assert s and len(s["rows"]) == 7 and {r["style"] for r in s["rows"]} >= {"plain", "skived", "hinged"}
+        assert next(r for r in s["rows"] if r["style"] == "plain")["vs_plain_taut"] == pytest.approx(1.0)
+
+
+def test_the_lab_stores_each_tools_command_and_verbatim_output():
+    lab = build_data(WALLETS)["lab"]
+    ids = [r["id"] for r in lab["results"]]
+    assert ids == ["screen", "validate", "sweep", "styles", "gusset", "box", "edge", "types"]
+    assert all(r["returncode"] == 0 and r["command"].startswith("walletsim ") and r["output"] for r in lab["results"])
+
+
+def test_lab_run_stores_a_command_and_its_output(tmp_path):
+    from walletsim.lab import run_lab
+    out = run_lab(tmp_path / "lab.json", only=["screen"])
+    r = json.loads(out.read_text())["results"][0]
+    assert r["command"] == "walletsim screen --t 1.0 --radius 2.0" and "outer-fibre strain" in r["output"]
+
+
+@pytest.mark.fem
+@pytest.mark.skipif(shutil.which("ccx") is None, reason="CalculiX not installed")
+def test_wallet_styles_runs_the_comparison_at_the_wallets_own_radius(tmp_path):
+    from walletsim.lab import wallet_styles
+    w = tmp_path / "w"
+    shutil.copytree(WALLETS / "sr-whalet-sr202-2022", w, ignore=shutil.ignore_patterns("sim", "viewer.html"))
+    s = json.loads(wallet_styles(w).read_text())
+    assert s["inside_radius_mm"] == pytest.approx(4.0) and [r["style"] for r in s["rows"]][:2] == ["plain", "skived"]
+    plain = s["rows"][0]
+    assert plain["wrap_taut"] == pytest.approx(0.118, abs=0.01) and plain["limit"] == pytest.approx(1 / 9, abs=0.002)   # matches the wallet report's 11.8 % and 11.1 %

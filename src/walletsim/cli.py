@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | wallet-page | wallet-viewer | build-site | edge-turn | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | wallet-page | wallet-viewer | build-site | lab-run | wallet-styles | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -221,6 +221,26 @@ def _build_site(a: argparse.Namespace) -> int:
     return 0
 
 
+def _lab_run(a: argparse.Namespace) -> int:
+    from .lab import run_lab
+    path = run_lab(a.out, a.only)
+    print(f"lab results written to {path}")
+    return 0
+
+
+def _wallet_styles(a: argparse.Namespace) -> int:
+    from .fem.fold import FemUnavailable as _NoFem
+    from .lab import wallet_styles
+    for w in a.wallets:
+        try:
+            path = wallet_styles(w)
+        except (FemUnavailable, _NoFem, ValueError, FileNotFoundError, KeyError) as exc:
+            print(f"error: {w}: {exc}", file=sys.stderr)
+            return 1
+        print(f"styles written to {path}")
+    return 0
+
+
 def _edge_turn(a: argparse.Namespace) -> int:
     from .fold_styles import edge_turn_table, format_edge_turn_report
     print(format_edge_turn_report(edge_turn_table(a.t, tuple(a.skive_ratios), tuple(a.cores)), a.t))
@@ -345,6 +365,13 @@ def main(argv: list[str] | None = None) -> int:
     bs.add_argument("--out", default="site/index.html")
     bs.add_argument("--include-designs", action="store_true", help="also list generated test designs (status design)")
     bs.set_defaults(fn=_build_site)
+    lr = sub.add_parser("lab-run", help="run the generic simulator tools and store their output for the archive app's Lab (about 2 minutes)")
+    lr.add_argument("--out", default="lab/results.json")
+    lr.add_argument("--only", nargs="+", default=None, help="a subset of tool ids, e.g. screen styles")
+    lr.set_defaults(fn=_lab_run)
+    ws = sub.add_parser("wallet-styles", help="run the fold-style comparison for wallets at their own thickness and main-fold radius")
+    ws.add_argument("wallets", nargs="+", help="wallets/<id> folders")
+    ws.set_defaults(fn=_wallet_styles)
     et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
     et.add_argument("--t", type=float, default=1.2)
     et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])

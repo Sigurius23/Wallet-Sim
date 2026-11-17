@@ -1,0 +1,105 @@
+{
+ "walletsim": "0.1.0",
+ "results": [
+  {
+   "id": "screen",
+   "title": "Strain screen",
+   "args": [
+    "screen",
+    "--t",
+    "1.0",
+    "--radius",
+    "2.0"
+   ],
+   "what": "The level-0 closed form, eps = t / (2R + t), with screening flags. No solver.",
+   "command": "walletsim screen --t 1.0 --radius 2.0",
+   "seconds": 0.1,
+   "returncode": 0,
+   "output": "t=1 mm, R_in=2 mm (R/t=2.00): outer-fibre strain 20.0 %\n  - outer-fibre strain >= 20 % (screening threshold, not a validated failure criterion)"
+  },
+  {
+   "id": "validate",
+   "title": "FEM backend check",
+   "args": [
+    "validate-fem"
+   ],
+   "what": "A strip bent 180 degrees in CalculiX against the closed form: the check that the solver can be trusted for this.",
+   "command": "walletsim validate-fem",
+   "seconds": 7.7,
+   "returncode": 0,
+   "output": "strip bent 180 deg, t=1 mm, Poisson 0 (closed form assumes none): inside radius 12.23 mm\n  outer-fibre strain  closed form 3.93 %   CalculiX 3.97 %  (+1.1 %)\n  bending moment      beam theory 3.272 N mm   CalculiX 3.266 N mm  (ratio 0.998)   [7.6 s]"
+  },
+  {
+   "id": "sweep",
+   "title": "Thickness sweep",
+   "args": [
+    "sweep"
+   ],
+   "what": "How strain and bending moment change with leather thickness at a fixed fold radius.",
+   "command": "walletsim sweep",
+   "seconds": 28.0,
+   "returncode": 0,
+   "output": "fold around inside radius 3 mm, 180 deg, E=72 MPa, Poisson 0.3, neo-Hookean\n  t [mm]  closed-form strain  FEM strain   moment [N mm]  (beam)   moment ratio to t=first\n   0.60              9.1 %       10.1 %           4.24  (  3.93)   x1.0\n   1.00             14.3 %       16.3 %          18.17  ( 17.14)   x4.3\n   1.40             18.9 %       22.2 %          46.25  ( 44.50)   x10.9\n   2.00             25.0 %       30.1 %         120.87  (120.00)   x28.5\nmoment scales linearly with E for this (small-stress) case; strain does not depend on E."
+  },
+  {
+   "id": "styles",
+   "title": "Fold styles",
+   "args": [
+    "fold-styles"
+   ],
+   "what": "Plain, skived, lined, skived + lined, hinged, turned-edge and bound-edge folds, free and wrapped around a 5-card stack.",
+   "command": "walletsim fold-styles",
+   "seconds": 28.3,
+   "returncode": 0,
+   "output": "fold styles: shell 1.2 mm, E = 72 MPa (supply your own: strain does not depend on it, moment does)\nstack of 5 cards -> inside radius 1.90 mm (R/t = 1.6). Layers perfectly bonded, isotropic neo-Hookean, plane strain.\n\nA. FREE FOLD, 180 deg, nothing inside: where does each construction bend?\n  style           closing moment  tension face  compression face    share of the fold in the central 8 mm\n                   [N mm per mm]\n  plain                     1.19          6.5%             -6.1%                                      27%\n  skived                    0.42          9.5%             -8.7%                                      70%\n  lined                     3.37          9.2%             -8.6%                                      27%\n  skived+lined              1.93         12.9%            -12.0%                                      54%\n  hinged                    0.32          9.9%             -9.0%                                      66%\n  turned edge               4.00          9.8%             -9.1%                                      27%\n  bound edge                6.88         11.8%            -10.8%                                      27%\n  (a uniform strip shares the fold evenly: 8 mm of a 30 mm half-length is 27 %)\n\nB. WRAP around the stack: what does the leather see when the wallet is closed?\n  style           tension face: loose   taut   limit  compression face (taut)  stand-off, loose  closing moment (taut)\n                                             (no solver)                                       [mm]          [N mm per mm]\n  plain                         16.9%  17.9%   24.0%                   -15.6%              0.89                   3.28\n  skived                        12.7%  14.5%   13.6%                   -12.6%              0.24                   0.63\n  lined                         22.7%  23.2%   30.9%                   -20.8%              0.92                   8.39\n  skived+lined                  20.1%  20.6%   22.4%                   -18.1%              0.28                   3.14\n  hinged                        13.4%  16.4%   15.9%                   -13.9%              0.45                   0.53\n  turned edge                   24.0%  24.6%   32.1%                   -22.0%              0.82                   9.80\n  bound edge                    27.3%  27.7%   36.2%                   -24.9%              0.94                  16.07\n  loose = the leather lies on the stack with no pull; taut = a pull of 0.1 N per mm width on the panel; limit = the leather follows the\n  stack exactly (closed form, no solver). A real wallet is somewhere between loose and the limit; the pull from the closed panels is not known.\n\nC. DAMAGE RATE PER FOLD relative to plain (strain ratio ^ m, tension face). No leather-specific m is known, so both ends are shown:\n  plain          wrap: m=3   1.00x  m=12    1.000x      free fold: m=3   1.00x  m=12    1.000x\n  skived         wrap: m=3   0.53x  m=12    0.079x      free fold: m=3   3.14x  m=12   97.306x\n  lined          wrap: m=3   2.19x  m=12   23.043x      free fold: m=3   2.89x  m=12   69.295x\n  skived+lined   wrap: m=3   1.53x  m=12    5.497x      free fold: m=3   7.81x  m=12 3722.075x\n  hinged         wrap: m=3   0.77x  m=12    0.355x      free fold: m=3   3.53x  m=12  155.754x\n  turned edge    wrap: m=3   2.59x  m=12   44.932x      free fold: m=3   3.44x  m=12  139.513x\n  bound edge     wrap: m=3   3.70x  m=12  186.807x      free fold: m=3   5.95x  m=12 1257.267x\n\nNOTES\n  - tension-face strain >= 20 % (screening threshold, not a failure criterion; the neo-Hookean model is unvalidated there): lined, skived+lined, turned edge, bound edge\n  - the ranking can flip between A and B: a skived or hinged fold concentrates the bend (higher strain in a free fold) but is thinner at the stack (lower strain around it).\n  - strains within one thickness of the fold centre or of the start of the bend are excluded (constraint effects).\n  - not modelled: permanent set, creep, finish-film cracking, glue-line shear, stitching, friction, and anything that changes with age."
+  },
+  {
+   "id": "gusset",
+   "title": "Gussets",
+   "args": [
+    "gusset"
+   ],
+   "what": "V, S and W pleats at several openings: the strain follows the fold angle.",
+   "command": "walletsim gusset",
+   "seconds": 16.1,
+   "returncode": 0,
+   "output": "gusset (accordion pleat): shell 1.2 mm, E = 72 MPa (supply your own: strain does not depend on it, moment does)\ncrease groove: flesh side skived to 0.5 x t over 2 mm with 1.5 mm tapers (an assumption you vary). Free fold, 15 mm legs, plane strain, layers bonded.\nA pleat is two opposed folds (an S). Fold 1 has the grain outside (grain in tension); fold 2 is its mirror, grain inside (grain in compression).\nFold angle 180 = pleat collapsed, smaller = opened. Moment is per mm of width: it is what the pleat pushes back with.\n'grain' = the grain face of the shell; 'back' = the opposite face of the whole layup (the flesh side of a single leather, the lining of a lined one).\n\nlayup: plain\n   fold  opened   moment    crease  central |  fold 1 grain   fold 1 back |  fold 2 grain   fold 2 back |  legs\n  angle      by  N mm/mm    radius     6 mm |     (tension)      (compr.) |      (compr.)     (tension) | clear\n    180      0%     1.19    9.7 mm      20% |          6.5%         -6.1% |         -6.1%          6.5% |   yes\n    135     38%     0.89   12.9 mm      20% |          4.8%         -4.6% |         -4.6%          4.8% |   yes\n     90     71%     0.60   19.4 mm      20% |          3.2%         -3.1% |         -3.1%          3.2% |   yes\n     45     92%     0.30   38.8 mm      20% |          1.6%         -1.6% |         -1.6%          1.6% |   yes\n  strain swing of the grain face between 180 and 90 deg: fold 1 3.3 points, fold 2 3.0 points (per open/close cycle)\n\nlayup: grooved\n   fold  opened   moment    crease  central |  fold 1 grain   fold 1 back |  fold 2 grain   fold 2 back |  legs\n  angle      by  N mm/mm    radius     6 mm |     (tension)      (compr.) |      (compr.)     (tension) | clear\n    180      0%     0.70    2.0 mm      53% |         16.0%        -13.7% |        -14.0%         16.0% |   yes\n    135     38%     0.52    2.7 mm      53% |         11.8%        -10.5% |        -10.6%         11.8% |   yes\n     90     71%     0.35    4.0 mm      53% |          7.7%         -7.1% |         -7.2%          7.7% |   yes\n     45     92%     0.18    8.1 mm      53% |          3.8%         -3.6% |         -3.7%          3.8% |   yes\n  strain swing of the grain face between 180 and 90 deg: fold 1 8.3 points, fold 2 6.7 points (per open/close cycle)\n\nlayup: grooved+lined\n   fold  opened   moment    crease  central |  fold 1 grain   fold 1 back |  fold 2 grain   fold 2 back |  legs\n  angle      by  N mm/mm    radius     6 mm |     (tension)      (compr.) |      (compr.)     (tension) | clear\n    180      0%     2.58    3.3 mm      39% |         15.5%        -14.3% |        -13.7%         16.3% |   yes\n    135     38%     1.95    4.4 mm      39% |         11.4%        -10.9% |        -10.4%         12.0% |   yes\n     90     71%     1.31    6.7 mm      38% |          7.5%         -7.3% |         -7.1%          7.8% |   yes\n     45     92%     0.66   13.4 mm      38% |          3.7%         -3.7% |         -3.6%          3.9% |   yes\n  strain swing of the grain face between 180 and 90 deg: fold 1 8.0 points, fold 2 6.7 points (per open/close cycle)\n\nKINDS OF GUSSET (all built from the two folds above)\n  kind                                    creases  how it is simulated\n  V gusset (one fold)                           1  one crease; fold 1 (grain out) or fold 2 (grain in) depending on which way it is folded\n  S / Z accordion (two opposed folds)           2  fold 1 and fold 2 of `walletsim gusset`\n  W / M accordion (three folds)                 3  the same two folds, one of them twice: each crease behaves as in the S\n  n-fold zigzag                                 n  ceil(n/2) creases like fold 1 and floor(n/2) like fold 2\n  round (U) gusset                              0  no crease: the strip wraps the contents; use `fold-styles --radius` with half the depth\n  box gusset / flat spine                       0  two corners and a flat wall: `walletsim box-spine`\n  'opened by' = how far the gusset has opened, as a fraction of its unfolded length: length x cos(fold angle / 2). For a zigzag of equal segments this is\n  independent of the number of creases, so more creases do NOT lower the strain per crease at a given opening; they put the same strain on more creases.\n\nNOTES\n  - crease radius = radius of the neutral fibre at the fold centre as the FEM found it. A pleat is normally pressed into a sharper crease, which this elastic model cannot do\n    (no permanent set), so real creases are tighter and more strained than the groove alone gives.\n  - 'legs clear' = the inner face stays on its own side of the symmetry plane; contact between the two legs and with the contents is not modelled.\n  - the strain swing, not the peak, is what repeats each time the pleat opens and closes. How often that happens per use is not known here.\n  - not modelled: permanent set, creep, finish cracking, glue-line shear, stitching of the pleat edges, friction, ageing."
+  },
+  {
+   "id": "box",
+   "title": "Box spine",
+   "args": [
+    "box-spine"
+   ],
+   "what": "A box-shaped spine with a flat wall, compared with the round spine.",
+   "command": "walletsim box-spine",
+   "seconds": 31.1,
+   "returncode": 0,
+   "output": "box-shaped spine: plain layup, shell 1.2 mm, E = 72 MPa; stack half thickness 1.9 mm (= 5.0 cards of 0.76 mm). Wrap load case, plane strain, layers bonded.\nThe end of the stack goes from a half-round (corner radius = half thickness) to a flat wall with two corners of smaller radius.\n\n   corner  flat wall |  tension face at the corner  |  compression  stand-off\n   radius     height |    loose     taut     limit |  face (taut)  loose, mm\n   1.90 mm      round |    16.9%    17.9%     24.0% |       -15.6%       0.89\n   1.50 mm     0.8 mm |    17.7%    18.8%     28.6% |       -16.0%       0.71\n   1.00 mm     1.8 mm |    18.8%    19.8%     37.5% |       -16.6%       0.72\n   0.50 mm     2.8 mm |    20.1%    21.1%     54.5% |       -17.5%       0.61\n\n  limit = the leather follows the corner exactly (closed form, no solver).\n\nNOTES\n  - a square corner is not followed: the leather bridges it (stand-off), so the strain stays far below the limit. That is partly the model's elastic\n    leather; a real corner is pressed and set, and would be tighter.\n  - the flat wall is straight, so it carries no strain of its own; only the two corners do.\n  - no closing moment is reported: the solver measures it at the fold centre, which on a box is the middle of the flat wall and says nothing about the corners,\n    so it cannot be compared with the round spine's.\n  - the stack is a rigid, frictionless block; not modelled: permanent set, creep, finish cracking, stitching, friction, ageing."
+  },
+  {
+   "id": "edge",
+   "title": "Turned edge",
+   "args": [
+    "edge-turn"
+   ],
+   "what": "The 180 degree turn of a turned edge for several skive depths (closed form).",
+   "command": "walletsim edge-turn",
+   "seconds": 0.1,
+   "returncode": 0,
+   "output": "turned edge, the 180 deg turn: 1.2 mm leather folded around a core (glue line, tape, or the other leg); kinematic strain t_turn / (2R + t_turn), R = core / 2\n\n   skive  leather at   core   R/t  tension face    thickness that would give 20 %\n   ratio    the turn   [mm]         (kinematic)                      at this core\n    1.00     1.20 mm   0.60  0.25           67%                        0.150 mm\n    1.00     1.20 mm   0.30  0.12           80%                        0.075 mm\n    1.00     1.20 mm   0.10  0.04           92%                        0.025 mm\n    0.50     0.60 mm   0.60  0.50           50%                        0.150 mm\n    0.50     0.60 mm   0.30  0.25           67%                        0.075 mm\n    0.50     0.60 mm   0.10  0.08           86%                        0.025 mm\n    0.35     0.42 mm   0.60  0.71           41%                        0.150 mm\n    0.35     0.42 mm   0.30  0.36           58%                        0.075 mm\n    0.35     0.42 mm   0.10  0.12           81%                        0.025 mm\n    0.25     0.30 mm   0.60  1.00           33%                        0.150 mm\n    0.25     0.30 mm   0.30  0.50           50%                        0.075 mm\n    0.25     0.30 mm   0.10  0.17           75%                        0.025 mm\n\nNOTES\n  - every row is far above the 20 % screening threshold (33 % to 92 %). Strains like these are not elastic, so a real turn must rely on\n    permanent deformation, thinning and the glue. This model has none of those (no permanent set), so it cannot say whether a given turn survives.\n  - what it does say is how much skiving buys: the kinematic strain falls as the leather at the turn gets thinner, and the last column is the thickness\n    that would bring a turn around that core down to the screening threshold.\n  - the hem as a double layer where the spine fold crosses it IS simulated: see the 'turned edge' row of `walletsim fold-styles`.\n  - an elastic FEM of this turn was tried and rejected: around a 0.3-0.6 mm core the leather bridges the gap (strain 10-22 % against 41-80 % kinematic),\n    because nothing in the model presses and glues it down."
+  },
+  {
+   "id": "types",
+   "title": "Wallet types",
+   "args": [
+    "wallet-types"
+   ],
+   "what": "Bifold, trifold and z-fold at the same contents: the stack each fold wraps and which fold wears first.",
+   "command": "walletsim wallet-types",
+   "seconds": 36.4,
+   "returncode": 0,
+   "output": "overall wallet fold types: 8 cards = 6.08 mm of contents (pocket leather per card: 0 mm). plain layup, shell 1.2 mm, E = 72 MPa, round spine.\nEvery fold is run on its own with the stack it wraps in the closed wallet (wrap, loose and taut as in `fold-styles`). Cycles per use are an assumption: 1 each.\n\nbifold: two panels, one spine that wraps all the contents; closed thickness 8.5 mm\n  fold                   grain   stack  radius   R/t |      tension face      | grain face  moment\n                                  [mm]    [mm]       |   loose    taut   limit |     (taut)    taut\n  spine                    out    6.08    3.04  2.53 |   14.1%   15.2%   16.5% |      15.2%    2.79\n\ntrifold: letter fold: the inner fold wraps 50 % of the contents; the outer fold wraps all of them plus one folded-in panel; closed thickness 9.7 mm\n  fold                   grain   stack  radius   R/t |      tension face      | grain face  moment\n                                  [mm]    [mm]       |   loose    taut   limit |     (taut)    taut\n  inner fold (M|R)         out    3.04    1.52  1.27 |   18.3%   19.5%   28.3% |      19.5%    3.48\n  outer fold (L|M)         out    7.28    3.64  3.03 |   12.9%   13.9%   14.2% |      13.9%    2.57\n  highest tension-face strain: inner fold (M|R)\n  highest GRAIN-face tension (finish cracking): inner fold (M|R)\n\nz-fold (3 panels): accordion of 3 panels: 2 alternating folds, each wrapping an equal share of the contents; closed thickness 9.7 mm\n  fold                   grain   stack  radius   R/t |      tension face      | grain face  moment\n                                  [mm]    [mm]       |   loose    taut   limit |     (taut)    taut\n  fold 1 (grain out)       out    3.04    1.52  1.27 |   18.3%   19.5%   28.3% |      19.5%    3.48\n  fold 2 (grain in)         in    3.04    1.52  1.27 |   18.3%   19.5%   28.3% |     -16.8%    3.48\n  highest tension-face strain: fold 1 (grain out) and fold 2 (grain in) (tied within 0.5 point)\n  highest GRAIN-face tension (finish cracking): fold 1 (grain out)\n\nz-fold (4 panels): accordion of 4 panels: 3 alternating folds, each wrapping an equal share of the contents; closed thickness 10.9 mm\n  fold                   grain   stack  radius   R/t |      tension face      | grain face  moment\n                                  [mm]    [mm]       |   loose    taut   limit |     (taut)    taut\n  fold 1 (grain out)       out    2.03    1.01  0.84 |   20.1%   21.4%   37.2% |      21.4%    3.77\n  fold 2 (grain in)         in    2.03    1.01  0.84 |   20.1%   21.4%   37.2% |     -18.3%    3.77\n  fold 3 (grain out)       out    2.03    1.01  0.84 |   20.1%   21.4%   37.2% |      21.4%    3.77\n  highest tension-face strain: fold 1 (grain out) and fold 2 (grain in) and fold 3 (grain out) (tied within 0.5 point)\n  highest GRAIN-face tension (finish cracking): fold 1 (grain out) and fold 3 (grain out) (tied within 0.5 point)\n\nSUMMARY (same contents; worst fold = highest taut tension-face strain; damage rate = (strain / bifold's)^m, m = 3 to 12)\n  type               folds   closed                 worst fold   loose    taut   damage rate of the worst fold  total moment\n                               [mm]                                                                  vs bifold     [N mm/mm]\n  bifold                 1      8.5                      spine   14.1%   15.2%         1.00x to      1.000x          2.79\n  trifold                2      9.7           inner fold (M|R)   18.3%   19.5%         2.12x to     20.355x          6.04\n  z-fold (3 panels)      2      9.7 fold 1 (grain out) +1 tied   18.3%   19.5%         2.12x to     20.355x          6.95\n  z-fold (4 panels)      3     10.9 fold 1 (grain out) +2 tied   20.1%   21.4%         2.81x to     62.372x         11.31\n\nNOTES\n  - tension-face strain >= 20 % (screening threshold, not a failure criterion; the neo-Hookean model is unvalidated there): z-fold (4 panels)\n  - folds are evaluated one at a time with the stack each wraps; their interaction, the pockets and card-slot edges, and the wallet's 3D shape are not modelled.\n  - a fold's amplitude is closed -> flat; wallets are opened part-way in real use, and sit closed most of the time (creep and set, not modelled).\n  - grain-in folds (z-fold) have the grain in compression and the back face in tension; the tension face is what is ranked.\n  - the damage rates are relative and uncalibrated, with no leather-specific exponent; they say which wallet is gentler, not how long anything lasts."
+  }
+ ]
+}

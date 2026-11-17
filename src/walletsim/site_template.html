@@ -149,6 +149,24 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
 .notyet { border: 1px dashed var(--axis); border-radius: 8px; padding: 16px 18px; display: grid; gap: 6px; max-width: 72ch; }
 .empty { border: 1px dashed var(--axis); border-radius: 8px; padding: 22px; color: var(--muted); max-width: 72ch; } code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86em; background: var(--plate); padding: 1px 6px; border-radius: 4px; }
 
+[hidden] { display: none !important; }
+.menu { position: absolute; top: 46px; right: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px; z-index: 40; display: grid; min-width: 180px; }
+.menu a { padding: 9px 12px; border-radius: 6px; } .menu a:hover, .menu a[aria-current="page"] { background: var(--plate); }
+button.gridbtn { background: none; border: 0; padding: 0; }
+/* animals */
+.animalwrap { display: grid; gap: 8px; } canvas.animal { width: 100%; aspect-ratio: 4 / 3; display: block; background: var(--plate); border-radius: 6px; touch-action: pan-y; cursor: grab; }
+.zones { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: .76rem; color: var(--muted); }
+.zones button { background: none; border: 1px solid var(--line); border-radius: 99px; padding: 1px 9px; font-size: .74rem; color: var(--muted); } .zones button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+/* what-if, styles, lab */
+.ctl { display: grid; gap: 5px; max-width: 520px; } .ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; font-weight: 500; } input[type=range] { width: 100%; accent-color: var(--blue); min-height: 28px; }
+.mini { height: 8px; border-radius: 4px; background: var(--plate); position: relative; min-width: 110px; } .mini i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--ink); opacity: .75; }
+.mini b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--accent); } .mini::after { content: ""; position: absolute; top: -3px; bottom: -3px; left: calc(0.2 / 0.67 * 100%); border-left: 1px dashed var(--faint); }
+.labtabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; } .labtabs button { border: 1px solid var(--line); background: none; border-radius: 99px; padding: 5px 13px; font-size: .88rem; color: var(--muted); } .labtabs button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.labtabs .sep { width: 1px; background: var(--line); margin: 0 4px; }
+pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font: .8rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg); }
+.field { display: grid; gap: 4px; font-size: .86rem; } .field input, .field textarea { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); width: 100%; } .field textarea { min-height: 130px; font-family: ui-monospace, Menlo, monospace; font-size: .82rem; }
+.fields { display: flex; flex-wrap: wrap; gap: 14px; } .fields .field { width: 160px; }
+.fields + .result, .field + .result, .fields + .fields { margin-top: 16px; } .result { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 14px 16px; display: grid; gap: 4px; max-width: 72ch; } .result .big { font-size: 1.6rem; font-weight: 300; font-variant-numeric: tabular-nums; }
 @media (max-width: 860px) {
   .two, .sources { grid-template-columns: minmax(0, 1fr); gap: 26px; }
   .process { grid-template-columns: minmax(0, 1fr); gap: 18px; } .process::before { left: 17px; right: auto; top: 0; bottom: 0; width: 1px; height: auto; }
@@ -178,13 +196,16 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
   <div class="tools">
     <label class="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="Search" autocomplete="off" aria-label="Search the archive"></label>
-    <a class="gridbtn" href="#all" data-nav="all" aria-label="All wallets"><svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="15" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="15" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/><circle cx="15" cy="15" r="1.5"/></svg></a>
+    <button class="gridbtn" id="gridbtn" aria-label="Menu: all wallets, simulator lab" aria-haspopup="true" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="15" cy="3" r="1.5"/><circle cx="3" cy="9" r="1.5"/><circle cx="9" cy="9" r="1.5"/><circle cx="15" cy="9" r="1.5"/><circle cx="3" cy="15" r="1.5"/><circle cx="9" cy="15" r="1.5"/><circle cx="15" cy="15" r="1.5"/></svg></button>
+    <div class="menu" id="menu" hidden><a href="#all" data-nav="all">All wallets</a><a href="#lab" data-nav="lab">Simulator lab</a></div>
     <div class="results" id="results" hidden></div>
   </div>
 </div></header>
 <main id="app"></main>
 <div class="foot" id="foot"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 {{GEOMETRY_JS}}
 </script>
@@ -350,7 +371,7 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
     var comps = w.components.map(function (c) {
       var sp = c.species.value, reg = c.region.value;
       return '<div class="comp"><div class="tilecap who"><b style="font-weight:500">' + esc(cap(c.role)) + '</b><span>' + esc(c.thickness.value != null ? c.thickness.value + " mm" : "thickness not recorded") + " " + chip(c.thickness.source, c.thickness.ref) + "</span></div>" +
-        '<div class="link"></div><div><div class="hide">' + hide(reg) + '</div><div class="tilecap" style="margin-top:8px"><span><b style="font-weight:500">' + (sp ? esc(cap(String(sp))) : '<span class="unk">Species not recorded</span>') + "</b> " + chip(c.species.source, c.species.ref) + "</span>" +
+        '<div class="link"></div><div>' + animalBox(c) + '<div class="tilecap" style="margin-top:8px"><span><b style="font-weight:500">' + (sp ? esc(cap(String(sp))) : '<span class="unk">Species not recorded</span>') + "</b> " + chip(c.species.source, c.species.ref) + "</span>" +
         '<span class="reg' + (reg ? " known" : "") + '">' + (reg ? "Region: " + esc(reg) + " " + chip(c.region.source, c.region.ref) : "Region not recorded: no cut zone is drawn") + "</span></div></div></div>";
     }).join("");
     var others = W.filter(function (x) { return x.id !== w.id; }).sort(function (a, b) { return (b.designer === w.designer) - (a.designer === w.designer); });
@@ -380,6 +401,7 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
     out += '<div class="sect" style="margin-top:8px"><h3>Strain at each fold</h3><p>' + esc(b.finding) + '</p><div class="chartwrap">' + b.chart +
       '<div class="legend"><span class="l1">closed form, recorded stack</span><span class="l2">across the stack range</span><span class="l3">simulation, taut</span><span class="l4">simulation, bridging</span></div></div>' +
       '<p class="small muted">The dot is the strain if the leather follows its stack exactly. The bar spans the stack range allowed in the record. The diamond is the finite-element result at the recorded stack; hollow means the simulated leather bridges the stack instead of turning round it. 20 % is a screening line, not a failure limit.</p></div>';
+    out += stylesHTML(w) + swapHTML(w);
     if (w.viewer) out += '<div class="sect"><h3>How it folds</h3><p class="muted small">A structural sketch drawn from the record: one strip of leather folded the way the record says, coloured by the strain at each fold. It is not a scan or a leather simulation.</p>' +
       '<iframe class="frame" id="vframe" title="3D sketch of how ' + esc(short(w.name)) + ' folds" sandbox="allow-scripts"></iframe></div>';
     out += '<div class="sect"><h3>Failure modes</h3><p class="muted small">All fourteen, in the order of the failure-mode catalogue. Anything the model does not compute is marked, not hidden.</p><div class="scroll"><table class="fm"><thead><tr><th>#</th><th>Mode</th><th>Status</th><th>For this wallet</th></tr></thead><tbody>' +
@@ -398,6 +420,7 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
       '<div><span class="chip ' + (w.status === "measured" ? "measured" : "reported") + '" style="margin-right:6px">' + esc(w.status_label) + "</span>" + (w.usage && w.usage.used ? '<span class="small muted">Used. ' + esc(w.usage.condition || "") + "</span>" : "") + "</div></div>" +
       '<nav class="wtabs" aria-label="Wallet views">' + T.map(function (t) { return '<a href="#w-' + esc(id) + (t[0] === "overview" ? "" : "--" + t[0]) + '"' + (t[0] === tab ? ' aria-current="page"' : "") + ">" + esc(t[1]) + "</a>"; }).join("") + "</nav>" + body;
     if (tab === "behaviour" && w.viewer) mountFrame(w);
+    if (tab === "materials") mountAnimals();
   }
   function mountFrame(w) {                                              // the 3D sketch runs in its own frame; it reports its height so the frame fits it
     var f = document.getElementById("vframe"); if (!f) return;
@@ -413,12 +436,166 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
     if (f && f.contentWindow === e.source) f.style.height = Math.max(700, Math.ceil(d.walletViewerHeight) + 6) + "px";
   });
 
+
+  // ---- stylised animals with cut zones (monochrome; built from ellipsoids, so no licensed asset is needed) ---------------------------------------------------------------
+  var SPECIES = { ovine: /ovin|sheep|lamb|merino/i, bovine: /bovin|cow|calf|cattle|\box\b/i, caprine: /capr|goat|\bkid\b/i, porcine: /porc|\bpig\b|swine|\bhog\b/i, equine: /equin|horse|pony/i };
+  function speciesKey(s) { s = String(s || ""); for (var k in SPECIES) if (SPECIES[k].test(s)) return k; return null; }
+  function dark() { var th = document.documentElement.getAttribute("data-theme"); return th ? th === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
+  // The cow, pig, horse and sheep are the CC0 Quaternius farm-animal models (data.animals); the goat has no free model yet and stays a stylised build.
+  function meshAnimal(sp, colour) {
+    var a = DATA.animals && DATA.animals.models[sp]; if (!a) return null;
+    var bin = atob(a.positions), u8 = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    var geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(u8.buffer), 3)); geo.computeVertexNormals();
+    var g = new THREE.Group(); g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: new THREE.Color(colour), roughness: 0.95, metalness: 0, flatShading: true })));
+    var b = a.bbox; return { group: g, geo: geo, bbox: b, mesh: true, look: [0, b[3] * 0.46, 0], dist: 3.6 + b[3] * 0.15 };
+  }
+  function inZone(z, xn, yn, ny) {                                  // zones as fractions of the body: tail 0 to head 1, feet 0 to top 1; reference positions only
+    if (z === "butt") return xn < .30 && yn > .38;
+    if (z === "back") return xn >= .30 && xn < .58 && yn > .62;
+    if (z === "shoulder") return xn >= .58 && xn < .78 && yn > .38;
+    if (z === "belly") return xn >= .30 && xn < .66 && yn > .24 && yn < .58 && ny < -.15;
+    if (z === "neck") return xn >= .74 && xn < .9 && yn > .55;
+    return false;
+  }
+  function zoneGeometry(an, z) {
+    var p = an.geo.attributes.position.array, b = an.bbox, W = b[1] - b[0], H = b[3] - b[2], out = [], k = 0.012;
+    for (var i = 0; i < p.length; i += 9) {
+      var cx = (p[i] + p[i + 3] + p[i + 6]) / 3, cy = (p[i + 1] + p[i + 4] + p[i + 7]) / 3, ux = p[i + 3] - p[i], uy = p[i + 4] - p[i + 1], uz = p[i + 5] - p[i + 2], vx = p[i + 6] - p[i], vy = p[i + 7] - p[i + 1], vz = p[i + 8] - p[i + 2];
+      var nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      if (inZone(z, (cx - b[0]) / W, (cy - b[2]) / H, ny)) for (var j = 0; j < 9; j += 3) out.push(p[i + j] + nx * k, p[i + j + 1] + ny * k, p[i + j + 2] + nz * k);
+    }
+    var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(out, 3)); return g;
+  }
+  function buildAnimal(sp, colour) { return meshAnimal(sp, colour); }
+  function mountAnimal(cv) {
+    var sp = cv.dataset.species, rec = (cv.dataset.region || "").toLowerCase(), key = ["neck", "shoulder", "back", "belly", "butt"].filter(function (k) { return rec.indexOf(k) >= 0; })[0] || null;
+    var renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    var scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(32, 4 / 3, .1, 50), an = buildAnimal(sp, dark() ? "#8e8e8a" : "#c9c9c4");
+    scene.add(an.group); scene.add(new THREE.HemisphereLight(0xffffff, 0x555555, .7)); var sun = new THREE.DirectionalLight(0xffffff, .95); sun.position.set(2, 3, 2); scene.add(sun);
+    var ctl = new THREE.OrbitControls(cam, cv); ctl.enableZoom = false; ctl.enablePan = false; ctl.target.set(an.look[0], an.look[1], an.look[2]); ctl.autoRotate = !matchMedia("(prefers-reduced-motion: reduce)").matches; ctl.autoRotateSpeed = 1.1;
+    cam.position.set(an.look[0] + an.dist * .72, an.look[1] + an.dist * .28, an.look[2] + an.dist * .62); ctl.update();
+    var overlay = null, blue = new THREE.Color(dark() ? "#7fb0ea" : "#1d5ba1");
+    function setZone(z) {
+      if (overlay) { an.group.remove(overlay); overlay.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); overlay = null; }
+      if (!z) return;
+      overlay = new THREE.Group();
+      if (an.mesh) {
+        var zg = zoneGeometry(an, z);
+        [new THREE.MeshBasicMaterial({ color: blue, wireframe: true, transparent: true, opacity: .95 }), new THREE.MeshBasicMaterial({ color: blue, transparent: true, opacity: .28, side: THREE.DoubleSide, depthWrite: false })].forEach(function (mm) { overlay.add(new THREE.Mesh(zg, mm)); });
+        an.group.add(overlay); return;
+      }
+      an.group.add(overlay);
+    }
+    setZone(key);
+    function size() { var w = cv.clientWidth, h = cv.clientHeight; if (w > 10) { renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); } }
+    size(); new ResizeObserver(size).observe(cv);
+    var live = true; ctl.addEventListener("start", function () { ctl.autoRotate = false; });
+    (function loop() { if (!cv.isConnected) { renderer.dispose(); return; } ctl.update(); renderer.render(scene, cam); requestAnimationFrame(loop); })();
+    cv._setZone = setZone;
+  }
+  function mountAnimals() {
+    if (typeof THREE === "undefined" || !THREE.OrbitControls) return;
+    Array.prototype.forEach.call(document.querySelectorAll("canvas.animal"), function (cv) { try { mountAnimal(cv); } catch (e) { cv.replaceWith(document.createTextNode("The 3D animal could not start in this browser.")); } });
+  }
+  function animalBox(c, idx) {
+    var key = speciesKey(c.species.value), reg = c.region.value;
+    if (!key || typeof THREE === "undefined" || !(DATA.animals && DATA.animals.models[key])) return '<div class="hide">' + hide(reg) + '</div><p class="small muted" style="margin:6px 0 0">' + (key ? "No free 3D model of this animal has been found yet, so a flat schematic hide is shown." : "The species is not recorded, so no animal is drawn.") + "</p>";
+    var zones = ["neck", "shoulder", "back", "belly", "butt"], known = zones.filter(function (z) { return String(reg || "").toLowerCase().indexOf(z) >= 0; })[0];
+    return '<div class="animalwrap"><canvas class="animal" data-species="' + key + '" data-region="' + esc(reg || "") + '" role="img" aria-label="Stylised ' + key + ' animal; ' + (known ? known + " zone marked" : "no cut zone marked: the record names no region") + '"></canvas>' +
+      '<div class="zones"><span>Where the zones sit (reference, not this wallet’s piece):</span>' + zones.map(function (z) { return '<button type="button" data-zone="' + z + '" aria-pressed="' + (z === known) + '">' + z + "</button>"; }).join("") + "</div></div>";
+  }
+
+  // ---- what-if: the sheet thickness, recomputed live with the closed form ---------------------------------------------------------------------------------------------
+  function stackAt(M, i, t) {
+    var f = M.folds[i], r = { stack: null, low: null, high: null };
+    if (f.kind === "fixed") { r.stack = f.stack; r.low = f.low == null ? f.stack : f.low; r.high = f.high == null ? f.stack : f.high; }
+    else if (f.kind === "closed") { r.stack = f.depth - f.shells * t; r.high = r.stack; r.low = f.low == null ? r.stack : Math.min(f.low, r.stack); }
+    else { var g = M.folds.map(function (x) { return x.name; }).indexOf(f.gap_from), gs = stackAt(M, g, t), n = f.leaves; r.stack = n * t + (n + 1) * gs.stack; r.low = n * t + (n + 1) * gs.low; r.high = n * t + (n + 1) * gs.high; }
+    return r;
+  }
+  function swapRows(M, t) {
+    return M.folds.map(function (f, i) {
+      var s = stackAt(M, i, t), s0 = stackAt(M, i, M.t), eps = function (st) { return t / (Math.max(st, 0.01) + t); }, e0 = M.t / (Math.max(s0.stack, 0.01) + M.t);
+      var lo = eps(s.high), hi = eps(s.low), now = eps(s.stack);
+      return "<tr><td>" + esc(short(f.name)) + "</td><td>" + s.stack.toFixed(1) + " mm</td><td>" + (s.stack / 2).toFixed(2) + " mm (R/t " + (s.stack / 2 / t).toFixed(1) + ")</td><td><b style=\"font-weight:600\">" + pct(now) + "</b></td>" +
+        "<td>" + pct(e0) + "</td><td>" + pct(lo) + " to " + pct(hi) + '</td><td><div class="mini"><i style="width:' + Math.min(100, now / 0.67 * 100) + '%"></i></div></td></tr>';
+    }).join("");
+  }
+  function swapHTML(w) {
+    if (!w.swap) return "";
+    var t0 = w.swap.t, m = DATA.materials[0];
+    return '<div class="sect"><h3>What if the leather were thicker or thinner?</h3><p class="muted small">The closed form, t / (2R + t), recomputed as you move the slider. A fold’s stack changes with the sheet where the record derives it from the closed depth or from the loops. The stored simulation above stays at the recorded thickness.</p>' +
+      '<div class="ctl"><label for="swapt">Sheet thickness <span id="swaptv" class="tnum">' + t0.toFixed(2) + ' mm</span></label><input id="swapt" type="range" min="0.5" max="2.2" step="0.05" value="' + t0 + '" data-swap="' + esc(w.id) + '"></div>' +
+      '<div class="scroll"><table><thead><tr><th>Fold</th><th>Stack</th><th>Inside radius</th><th>Strain now</th><th>At recorded t</th><th>Across the stack range</th><th></th></tr></thead><tbody id="swapbody">' + swapRows(w.swap, t0) + "</tbody></table></div>" +
+      '<div class="ctl"><label for="mat">Leather card</label><select id="mat" disabled style="width:100%;max-width:100%;font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg)"><option>' + esc(m.name) + " · E " + m.E + " MPa · " + esc(m.source) + "</option></select></div>" +
+      '<p class="small muted" style="max-width:72ch">This is the only material card there is, and every record here uses it as a placeholder for its own leather. Another leather changes the closing moment, not the strain, and needs a card made from measured data.</p></div>';
+  }
+  function stylesHTML(w) {
+    var s = w.styles; if (!s) return "";
+    var max = Math.max.apply(null, s.rows.map(function (r) { return Math.max(r.wrap_taut, r.wrap_loose, r.limit); }));
+    return '<div class="sect"><h3>The same fold in other constructions</h3><p class="muted small">The first fold in the record, <b style="font-weight:500">' + esc(short(s.fold)) + "</b> (inside radius " + s.inside_radius_mm.toFixed(1) + " mm, sheet " + s.t_mm + " mm, E " + s.E_mpa + ' MPa placeholder), run in CalculiX as each construction. Stored result, walletsim ' + esc(s.walletsim) + ". " +
+      "The stack is " + esc(s.source) + ", so read the ranking, not the percentages.</p>" +
+      '<div class="scroll"><table><thead><tr><th>Construction</th><th>Wrapped, loose</th><th>Wrapped, taut</th><th>Closed form</th><th>Free fold</th><th>Taut vs plain</th><th></th></tr></thead><tbody>' +
+      s.rows.map(function (r) { return "<tr><td>" + esc(r.style) + "</td><td>" + pct(r.wrap_loose) + "</td><td>" + pct(r.wrap_taut) + "</td><td>" + pct(r.limit) + "</td><td>" + pct(r.free_tension) + "</td><td>" + (r.vs_plain_taut == null ? "" : r.vs_plain_taut.toFixed(2) + "x") +
+        '</td><td><div class="mini"><i style="width:' + Math.min(100, r.wrap_taut / 0.67 * 100) + '%"></i></div></td></tr>'; }).join("") + "</tbody></table></div>" +
+      '<p class="small muted">Tension-face strain. Turned and bound edges describe where the fold crosses an edge, so they are not a choice for the whole spine. Not modelled: set, creep, finish cracking, glue-line shear, stitching.</p></div>';
+  }
+
+  // ---- the lab: the simulator's tools, stored and live ----------------------------------------------------------------------------------------------------------------
+  var LIVE = [["screen", "Strain screen"], ["rank", "Where it wears first"], ["fit", "Fit a damage law"]];
+  function labTools() { return (DATA.lab ? DATA.lab.results : []).filter(function (r) { return r.id !== "screen"; }); }
+  function lab() {
+    var sel = S.lab || "screen", stored = labTools(), body = "";
+    var tabs = '<div class="labtabs">' + LIVE.map(function (t) { return '<button data-lab="' + t[0] + '" aria-pressed="' + (sel === t[0]) + '">' + esc(t[1]) + "</button>"; }).join("") + '<span class="sep"></span>' +
+      stored.map(function (r) { return '<button data-lab="' + r.id + '" aria-pressed="' + (sel === r.id) + '">' + esc(r.title) + "</button>"; }).join("") + "</div>";
+    if (sel === "screen") body = '<h3>Strain screen</h3><p class="muted small" style="max-width:70ch">The level-0 closed form for the outer fibre of a bent sheet, with the screening flags of the simulator. Live in this page; no solver. It compares designs and rejects obviously bad geometry, and it is not a failure limit.</p>' +
+      '<div class="fields"><div class="field"><label for="st">Sheet thickness, mm</label><input id="st" type="number" step="0.05" min="0.1" value="1.0" data-live="screen"></div><div class="field"><label for="sr">Inside radius, mm</label><input id="sr" type="number" step="0.1" min="0" value="2.0" data-live="screen"></div></div><div class="result" id="labout"></div>';
+    else if (sel === "rank") body = '<h3>Where it wears first</h3><p class="muted small" style="max-width:70ch">Rank locations by cycles per use times strain to the power m, across a range of m, because no leather-specific exponent is known. One row per location: <code>name, strain %, cycles per use</code>. The rows below are an example of the format, not a wallet.</p>' +
+      '<div class="field" style="max-width:520px"><label for="rk">Locations</label><textarea id="rk" data-live="rank">spine, 12, 1\nloop, 21, 1\ncard slot edge, 6, 4</textarea></div><div class="result" id="labout"></div>';
+    else if (sel === "fit") body = '<h3>Fit a damage law to your own flex data</h3><p class="muted small" style="max-width:70ch">Least squares on ln N = ln A − m ln ε, from your own flex-to-crack tests: one row per specimen, <code>strain, cycles</code>. It needs at least 3 points that span a factor of 1.5 in strain, and it flags any prediction outside the tested range. There is no example data: none exists for this leather.</p>' +
+      '<div class="field" style="max-width:520px"><label for="ft">Strain (as a fraction) and cycles to crack</label><textarea id="ft" data-live="fit" placeholder="0.10, 80000\n0.15, 21000\n0.25, 3500"></textarea></div><div class="fields"><div class="field"><label for="fa">Predict at strain</label><input id="fa" type="number" step="0.01" value="0.12" data-live="fit"></div></div><div class="result" id="labout"></div>';
+    else { var r = stored.filter(function (x) { return x.id === sel; })[0]; if (r) body = "<h3>" + esc(r.title) + '</h3><p class="muted small" style="max-width:70ch">' + esc(r.what) + '</p><p class="small muted">Stored output of <code>' + esc(r.command) + "</code>, run in " + r.seconds + " s with walletsim " + esc(DATA.lab.walletsim) + ' (CalculiX). Verbatim; rerun with <code>walletsim lab-run</code>.</p><pre class="out">' + esc(r.output) + "</pre>"; }
+    app.innerHTML = '<div class="page-h"><p class="eyebrow">Simulator lab</p><h2>The tools behind the numbers</h2></div>' + (DATA.lab ? "" : '<div class="banner">No stored results. Run <code>walletsim lab-run</code> and rebuild the site to add the solver-based tools.</div>') + tabs + body;
+    liveLab();
+  }
+  function liveLab() {
+    var out = document.getElementById("labout"); if (!out) return; var sel = S.lab || "screen";
+    if (sel === "screen") {
+      var t = +document.getElementById("st").value, R = +document.getElementById("sr").value;
+      if (!(t > 0) || !(R >= 0)) { out.innerHTML = '<span class="unk">Enter a thickness above 0 and a radius of 0 or more.</span>'; return; }
+      var e = t / (2 * R + t), ratio = R / t, flags = [];
+      if (ratio < 1) flags.push("inside radius below 1 × t: the grain relies on the finish to hold, expect cracking (R/t = " + ratio.toFixed(2) + ")"); else if (ratio < 2) flags.push("inside radius below the 2–3 × t rule of thumb (R/t = " + ratio.toFixed(2) + ")");
+      if (e >= 0.2) flags.push("outer-fibre strain ≥ 20 % (screening threshold, not a validated failure criterion)");
+      out.innerHTML = '<span class="big">' + (100 * e).toFixed(1) + " %</span><span>t = " + t + " mm, R<sub>in</sub> = " + R + " mm (R/t = " + ratio.toFixed(2) + ")</span>" + (flags.length ? "<ul class=\"plain\">" + flags.map(function (f) { return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>" : "<span>Within the screening rules.</span>");
+    } else if (sel === "rank") {
+      var rows = document.getElementById("rk").value.split(/\n/).map(function (l) { var p = l.split(","); return { name: (p[0] || "").trim(), eps: parseFloat(p[1]) / 100, n: parseFloat(p[2]) }; }).filter(function (r) { return r.name && r.eps > 0 && r.n > 0; });
+      if (rows.length < 2) { out.innerHTML = '<span class="unk">Enter at least two locations.</span>'; return; }
+      var ms = [3, 5, 8, 12], rk = ms.map(function (m) { return rows.slice().sort(function (a, b) { return b.n * Math.pow(b.eps, m) - a.n * Math.pow(a.eps, m); }).map(function (r) { return r.name; }); });
+      var stable = rk.every(function (r) { return r.join("|") === rk[0].join("|"); });
+      out.innerHTML = '<table><thead><tr><th>m</th><th>Order, most damage first</th></tr></thead><tbody>' + ms.map(function (m, i) { return "<tr><td>" + m + "</td><td>" + rk[i].map(esc).join(" › ") + "</td></tr>"; }).join("") + "</tbody></table><span>" +
+        (stable ? "The order is the same for every m, so “" + esc(rk[0][0]) + " wears first” holds although m is unknown." : "The order depends on m: the data cannot say which wears first until an exponent is measured.") + "</span>";
+    } else if (sel === "fit") {
+      var pts = document.getElementById("ft").value.split(/\n/).map(function (l) { var p = l.split(","); return [parseFloat(p[0]), parseFloat(p[1])]; }).filter(function (p) { return p[0] > 0 && p[1] > 0; });
+      if (pts.length < 3) { out.innerHTML = '<span class="unk">Enter at least 3 specimens (strain, cycles).</span>'; return; }
+      var xs = pts.map(function (p) { return Math.log(p[0]); }), ys = pts.map(function (p) { return Math.log(p[1]); }), n = pts.length, mx = xs.reduce(function (a, b) { return a + b; }) / n, my = ys.reduce(function (a, b) { return a + b; }) / n;
+      var smin = Math.min.apply(null, pts.map(function (p) { return p[0]; })), smax = Math.max.apply(null, pts.map(function (p) { return p[0]; }));
+      if (smax / smin < 1.5) { out.innerHTML = '<span class="unk">The strain range is too narrow to fit an exponent (need max/min of at least 1.5).</span>'; return; }
+      var sxx = 0, sxy = 0; xs.forEach(function (x, i) { sxx += (x - mx) * (x - mx); sxy += (x - mx) * (ys[i] - my); });
+      var sl = sxy / sxx, ic = my - sl * mx, sse = 0, sst = 0; xs.forEach(function (x, i) { sse += Math.pow(ys[i] - (ic + sl * x), 2); sst += Math.pow(ys[i] - my, 2); }); var r2 = sst > 0 ? 1 - sse / sst : 1;
+      var at = +document.getElementById("fa").value, N = Math.exp(ic) * Math.pow(at, sl), ext = !(smin * 0.8 <= at && at <= smax * 1.25);
+      out.innerHTML = '<span class="big">m = ' + (-sl).toFixed(2) + "</span><span>N<sub>crack</sub> = " + Math.exp(ic).toPrecision(4) + " × strain<sup>−" + (-sl).toFixed(2) + "</sup>, R² = " + r2.toFixed(3) + " (" + n + " points, strain " + smin + " to " + smax + ")</span>" +
+        (at > 0 ? "<span>At strain " + at + ": " + N.toPrecision(3) + " cycles. " + (ext ? "<b style=\"font-weight:600;color:var(--amber)\">Outside the tested strain range: do not rely on this number.</b>" : "Within the tested range; applies only to the tested leather lot and conditioning.") + "</span>" : "");
+    }
+  }
+
   // ---- routing ------------------------------------------------------------------------------------------------------------------------------------------------
   function route() {
     var h = (location.hash || "").replace(/^#/, ""), view = "discover", m;
     document.getElementById("results").hidden = true;
     if ((m = /^w-(.+?)(?:--(materials|behaviour))?$/.exec(h))) { view = "wallet"; wallet(m[1], m[2] || "overview"); }
-    else if (h === "artists") { view = "artists"; artists(); } else if (h === "years") { view = "years"; years(); } else if (h === "all") { view = "all"; all(); } else { discover(); }
+    else if (h === "artists") { view = "artists"; artists(); } else if (h === "years") { view = "years"; years(); } else if (h === "all") { view = "all"; all(); } else if (h === "lab") { view = "lab"; lab(); } else { discover(); }
+    document.getElementById("menu").hidden = true; document.getElementById("gridbtn").setAttribute("aria-expanded", "false");
+    document.getElementById("gridbtn").style.color = (view === "all" || view === "lab") ? "var(--fg)" : ""; 
     Array.prototype.forEach.call(document.querySelectorAll("[data-nav]"), function (a) { if (a.dataset.nav === (view === "wallet" ? "discover" : view)) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
     if (view === "wallet") window.scrollTo(0, 0);
     document.title = view === "wallet" && byId[m[1]] ? short(byId[m[1]].name) + " · Wallet Archive" : "Wallet Archive";
@@ -434,6 +611,27 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
     }
     if (!e.target.closest(".tools")) document.getElementById("results").hidden = true;
   });
+  document.getElementById("gridbtn").addEventListener("click", function (e) { e.stopPropagation(); var m = document.getElementById("menu"); m.hidden = !m.hidden; this.setAttribute("aria-expanded", String(!m.hidden)); });
+  document.addEventListener("click", function (e) {
+    var z = e.target.closest("[data-zone]"), lb = e.target.closest("[data-lab]");
+    if (z) { var wrap = z.closest(".animalwrap"), cv = wrap.querySelector("canvas"), on = z.getAttribute("aria-pressed") !== "true";
+      Array.prototype.forEach.call(wrap.querySelectorAll("[data-zone]"), function (b) { b.setAttribute("aria-pressed", "false"); }); z.setAttribute("aria-pressed", String(on)); if (cv && cv._setZone) cv._setZone(on ? z.dataset.zone : null); }
+    if (lb) { S.lab = lb.dataset.lab; lab(); }
+    if (!e.target.closest(".tools")) document.getElementById("menu").hidden = true;
+  });
+  document.addEventListener("input", function (e) {
+    var sw = e.target.closest("[data-swap]"), lv = e.target.closest("[data-live]");
+    if (sw) { var w = byId[sw.dataset.swap], t = +sw.value; document.getElementById("swaptv").textContent = t.toFixed(2) + " mm"; document.getElementById("swapbody").innerHTML = swapRows(w.swap, t); }
+    if (lv) liveLab();
+  });
+  var wheelAcc = 0, wheelAt = 0;                                      // focused scrolling: the wheel over the timeline moves the active year, one step at a time
+  document.addEventListener("wheel", function (e) {
+    if (!e.target.closest || !e.target.closest(".timeline") || (location.hash && location.hash !== "#discover")) return;
+    var gs = groups(); if (gs.length < 2) return; var now = Date.now(); if (now - wheelAt < 500) { e.preventDefault(); return; }
+    wheelAcc += e.deltaY; if (Math.abs(wheelAcc) < 50) return;
+    var i = gs.map(function (g) { return g.key; }).indexOf(S.active), j = Math.max(0, Math.min(gs.length - 1, i + (wheelAcc > 0 ? 1 : -1))); wheelAcc = 0;
+    if (j !== i) { e.preventDefault(); wheelAt = now; S.active = gs[j].key; S.bio = null; discover(); }
+  }, { passive: false });
   document.addEventListener("change", function (e) { var s = e.target.closest("[data-compare]"); if (s) { S.compare[s.dataset.compare] = s.value; route(); } });
   document.addEventListener("keydown", function (e) {
     if (!/^(ArrowUp|ArrowDown)$/.test(e.key) || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || document.querySelector(".row") == null) return;
@@ -459,8 +657,8 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
   res.addEventListener("click", function () { q.value = ""; res.hidden = true; });
 
   var hd = DATA.hidden_designs && DATA.hidden_designs.length ? " " + DATA.hidden_designs.length + " generated test design" + (DATA.hidden_designs.length === 1 ? " is" : "s are") + " not shown." : "";
-  document.getElementById("foot").innerHTML = "<span>" + W.length + " wallet record" + (W.length === 1 ? "" : "s") + ", built by walletsim " + esc(DATA.version) + "." + esc(hd) + "</span><span>Every figure shows where it came from: measured, reported, inferred, design, literature or assumed. Nothing is shown that a record does not state.</span>";
-  window.__archive = { data: DATA, route: route, state: S, groups: groups, setData: function (d) { W = d.wallets; byId = {}; W.forEach(function (w) { byId[w.id] = w; }); DATA = d; S.active = null; route(); } };
+  document.getElementById("foot").innerHTML = "<span>" + W.length + " wallet record" + (W.length === 1 ? "" : "s") + ", built by walletsim " + esc(DATA.version) + "." + esc(hd) + "</span><span>Every figure shows where it came from: measured, reported, inferred, design, literature or assumed. Nothing is shown that a record does not state.</span><span>Animal models: " + esc(DATA.animals.title) + " by " + esc(DATA.animals.author) + ", " + esc(DATA.animals.license) + " (cow, pig, horse, sheep). No free goat model has been found, so goats show the flat schematic.</span>";
+  window.__archive = { mountAnimal: mountAnimal, data: DATA, route: route, state: S, groups: groups, setData: function (d) { W = d.wallets; byId = {}; W.forEach(function (w) { byId[w.id] = w; }); DATA = d; S.active = null; route(); } };
   route();
 })();
 </script>

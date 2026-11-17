@@ -21,7 +21,7 @@ walletsim = "walletsim.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-walletsim = ["viewer_template.html", "site_template.html", "geometry.js"]
+walletsim = ["viewer_template.html", "site_template.html", "geometry.js", "assets/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

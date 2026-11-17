@@ -1,24 +1,30 @@
 # UI outline (rough draft, not final)
 
-## Status: first build (`walletsim build-site`)
-The first version is built and runs on the real records in `wallets/` (not mock data). `walletsim build-site` reads every `wallets/<id>/wallet.yaml`, its latest stored report run and its 3D sketch, and writes
-`site/index.html`: one file, no server. What it has, against the outline below:
+## Status: feature audit against this outline and the README feature list
+`walletsim build-site` reads every `wallets/<id>/wallet.yaml`, its stored report run, its 3D sketch and the stored simulator results, and writes `site/index.html`: one file, no server.
+This table is the audit: every feature in the outline below and in the README's feature list, and where it stands. "Stored" means a solver result computed here and embedded; "live" means it runs in the page.
 
-| Outline | Built | How it handles what the records do not say |
+| Feature | State | Notes |
 |---|---|---|
-| Discover: central timeline, focused scrolling, carousel either side of the axis, arrows, Read bio | yes: click a node or press the up and down keys; series alternate left and right; arrows page when a side has more than two | a record with no year sits at the end of the axis as **Undated**; no year is invented. Bio says that none is recorded |
-| Artists, Years, search, app-grid (all wallets) | yes | Years says plainly when no record has a year |
-| Wallet detail: Overview | yes: facts with a provenance chip on each, what the record is built from, photographs referenced | missing facts read "not recorded" in amber |
-| Materials & Source: treatment pipeline, hide with cut zone, component to hide mapping, compare two wallets | yes, with a **schematic hide** in place of the 3D animal models | the pipeline is the four windows; steps the record lacks are marked. A zone is shaded only if the record names the region |
-| Behaviour: strain per fold with its range, the 3D fold sketch, all 14 failure modes, what to measure first | yes, from the stored report run and the viewer | "Not in the app yet" lists the leather swap, the spine comparison and hot spots against wear photos |
-| Product photographs as the hero | only if a record names a `hero_image`; the corpus images are research documentation, so none is shown | the cross-section drawn from the record's fold structure takes its place |
-
-Not built: the 3D animal models with cut zones (no licensed templates yet, and no record has a region), the Overview | Wallet | Desktop frame of sketch 4, the fold-style comparison and leather swap in Behaviour, and real timeline data
-(every record is undated). The app checks itself on phone width and in dark mode; the nested 3D sketch loads Three.js from a CDN.
-
-
-Source: the user's sketches (`docs/ui/`) and written description. This is the outline to build toward, not a spec. Names in the
-sketches (designers, wallets, dates) are placeholders.
+| Top bar: wordmark, Discover / Artists / Years, search, app-grid icon | **built** | the grid icon opens a menu: all wallets, simulator lab |
+| Central timeline by year and designer; focused scrolling; carousel either side; series labels; arrows | **built** | click, up and down keys, or the wheel; series alternate left and right. A record with no year sits at the end as *Undated*; no year is invented |
+| Read bio | **built, empty** | the panel says no biography is recorded; biographies and portraits need the designer's permission |
+| Product photograph as each wallet's hero | **only if a record names a cleared `hero_image`** | none does (the corpus images are research documentation), so the wallet's cross-section is drawn from its fold structure instead |
+| 3D animal models with cut zones | **built** | the cow, pig, horse and sheep are CC0 models (Quaternius, Farm Animals Pack); zones are shaded only if the record names a region, and a reference selector shows where each zone sits. **No free goat model was found**, so goats show a flat schematic hide |
+| Multi-part mapping lines (component to animal) | **partly** | a dotted link joins each leather component to its animal; every record so far has one leather, so the several-animals case is untested |
+| Treatment pipeline | **built** | the record's steps, or the four windows with what the record states; gaps marked *not recorded* |
+| Compare two wallets | **built as a table** | not a side-by-side 3D view |
+| Alternative layout of sketch 4 (Overview / Wallet / Desktop frame) | **not built** | a presentation frame, not a function |
+| Behaviour: animated open and close with strain colouring | **built** | all four wallets; the WHALET's is a **functional twin** (cards and banknotes fill the pockets and the depth, radius and strain follow); the others are kinematic sketches without pockets |
+| Behaviour: failure-mode list | **built** | all 14, marked computed, flagged, unknown or not modelled |
+| Behaviour: fold-style comparison | **built, stored** | the wallet's main fold run as seven constructions in CalculiX |
+| Behaviour: another thickness, with ranges | **built, live** | closed form recomputed as a slider moves; the stack follows the sheet where the record derives it |
+| Behaviour: another leather | **not possible yet** | one material card exists (calfskin, literature) and every record uses it as a placeholder; a swap needs cards made from measured data |
+| Behaviour: predicted hot spots next to real wear photos | **not built** | there is no wear model and no wear photographs; the record for the used origami notes its wear photo as not analysed |
+| Lab: strain screen, damage ranking, damage-law fit | **built, live** | the same arithmetic as `walletsim screen`, `walletsim.damage.rank_locations` and `fit-law`; the fit takes your own flex data and refuses a narrow strain range |
+| Lab: FEM backend check, thickness sweep, fold styles, gussets, box spine, turned edge, wallet types | **built, stored** | verbatim output of the command, how long it took, the walletsim version; refresh with `walletsim lab-run` |
+| Functional twin of every wallet | **one of four** | only the WHALET has `assembly.yaml`; the One Piece wallets and the origami need their interiors read from photographs |
+| glTF assets from a build step | **not built** | the animals are embedded as compact triangle data instead |
 
 ## The idea
 A minimalist digital **Wallet Archive** styled after a modern museum or gallery exhibition (MoMA aesthetic): chronological catalogue
