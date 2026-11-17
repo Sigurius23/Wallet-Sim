@@ -82,7 +82,7 @@ def test_the_failure_mode_names_match_docs_failure_modes_md():
     from types import SimpleNamespace
     rec = load_wallet(FIRST)
     # a stub report is enough: only the names and the record-driven statuses matter here
-    out = SimpleNamespace(error="", fold=SimpleNamespace(name="spine"), taut=None, loose=None, closed_form=None, radius_mm=5.4,
+    out = SimpleNamespace(error="", note="", bridges=False, fold=SimpleNamespace(name="spine"), taut=None, loose=None, closed_form=None, radius_mm=5.4,
                           tension=lambda w="taut": None, grain=lambda w="taut": None)
     base = SimpleNamespace(outcomes=[out], worst=None)
     modes = failure_modes(SimpleNamespace(rec=rec, base=base))
@@ -112,3 +112,59 @@ def test_report_on_the_first_wallet_matches_the_closed_form_and_writes_what_it_s
     md = (out / "report.md").read_text()
     assert "This record is a design, not a measured wallet" in md and "What to measure first" in md
     assert yaml.safe_load((out / "inputs.yaml").read_text())["id"] == rec.id    # the exact input is stored with the result
+
+
+# ---- the M.A+ One Piece record (a custom wallet listing its own folds) -----------------------------------------------
+
+MA = ROOT / "wallets" / "ma-one-piece-wallet"
+
+
+def test_ma_record_is_photos_only_with_nothing_measured_and_lists_its_folds():
+    rec = load_wallet(MA)
+    assert rec.status == "photos-only" and rec.wallet_type == "custom"
+    assert rec.provenance_counts()["measured"] == 0
+    assert [f.name.split(" ")[0] + " " + f.sense for f in rec.custom_folds] == ["spine out", "loop out", "loop in"]
+    plan = rec.plan()
+    assert [f.sense for f in plan.folds] == ["out", "out", "in"] and plan.closed_thickness_mm != plan.closed_thickness_mm   # NaN: not recorded
+    assert rec.stack_at_spine_mm == pytest.approx(3.0)                       # the 'spine' fold's stack
+    assert rec.custom_folds[0].low_mm == pytest.approx(3.0) and rec.custom_folds[0].high_mm == pytest.approx(9.1)
+
+
+def test_a_custom_record_must_list_its_folds_with_valid_senses_and_ranges(tmp_path):
+    def none(d):
+        d["construction"].pop("folds_modelled")
+    with pytest.raises(RecordError) as e:
+        load_wallet(_copy_ma(tmp_path / "a", none))
+    assert "folds_modelled" in str(e.value)
+
+    def bad(d):
+        d["construction"]["folds_modelled"][0]["sense"] = "sideways"
+        d["construction"]["folds_modelled"][1]["stack_mm"]["low"] = 5.0         # low above the value
+    with pytest.raises(RecordError) as e:
+        load_wallet(_copy_ma(tmp_path / "b", bad))
+    assert "sense must be out or in" in str(e.value) and "low <= value <= high" in str(e.value)
+
+
+def _copy_ma(dest, mutate):
+    d = yaml.safe_load((MA / "wallet.yaml").read_text())
+    mutate(d)
+    dest.mkdir(parents=True)
+    (dest / "wallet.yaml").write_text(yaml.safe_dump(d))
+    return dest
+
+
+@pytest.mark.fem
+@needs_ccx
+def test_ma_report_ranks_the_tight_loops_by_the_closed_form_because_the_elastic_model_bridges_them(tmp_path):
+    rep = build_report(load_wallet(MA), sensitivity=False)
+    spine, loop1, loop2 = rep.base.outcomes
+    assert spine.tension("taut") is not None and not spine.bridges
+    assert loop1.bridges and loop2.bridges                                    # R/t = 0.5: the leather stands off the stack by more than the radius
+    assert loop1.screen_strain == pytest.approx(loop1.closed_form) == pytest.approx(0.5, abs=1e-6)
+    assert rep.base.worst.fold.name.startswith("loop")                          # the loops, not the spine, are the worst folds
+    status = {m["id"]: m["status"] for m in rep.modes}
+    assert status[4] == "flagged" and status[5] == "unknown" and status[2] == "not modelled"
+    out = write_report(rep, tmp_path / "r")
+    md = (out / "report.md").read_text()
+    assert "retailer's text and product photographs" in md and "bridges" in md and "no pockets recorded" in md
+    assert all((out / f"fold{k}_shape.png").exists() for k in (1, 2, 3))

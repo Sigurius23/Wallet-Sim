@@ -121,6 +121,21 @@ class FoldOutcome:
     taut: FoldResult | None
     closed_form: float | None
     error: str = ""
+    note: str = ""                      # e.g. "closed form only": the fold was not run (R/t below 0.5: the elastic model would show the leather bridging the stack)
+
+    @property
+    def bridges(self) -> bool:
+        """The elastic leather does not follow the stack: with no pull it stands further off the stack than the stack's radius (loose case)."""
+        return self.loose is not None and self.closed_form is not None and self.loose.standoff_mm > self.radius_mm
+
+    @property
+    def screen_strain(self) -> float | None:
+        """The strain used to rank and flag this fold: the taut FEM value; the closed form when the fold was not run or when the model's leather
+        bridges the stack (then the FEM understates the strain of a leather that something pulls onto the stack, such as a thread tie)."""
+        t = self.tension("taut")
+        if t is None or self.bridges:
+            return self.closed_form if self.closed_form is not None else t
+        return t
 
     def tension(self, which: str = "taut") -> float | None:
         r = self.taut if which == "taut" else self.loose
@@ -146,9 +161,12 @@ class WalletResult:
         a grain-in fold); 'grain': tension on the grain face only, so a grain-in fold, whose grain is compressed, counts as zero."""
         out = {}
         for o in self.outcomes:
-            if o.tension("taut") is None:
+            if o.screen_strain is None:
                 continue
-            e = o.tension("taut") if basis == "tension" else max(0.0, o.grain("taut") or 0.0)
+            if o.tension("taut") is None:                       # closed form only: the tension face of a grain-out fold is the grain
+                e = o.screen_strain if (basis == "tension" or o.fold.sense == "out") else 0.0
+            else:
+                e = o.tension("taut") if basis == "tension" else max(0.0, o.grain("taut") or 0.0)
             out[o.fold.name] = Exposure(e, o.fold.cycles_per_use)
         return out
 
@@ -168,8 +186,8 @@ class WalletResult:
 
     @property
     def worst(self) -> FoldOutcome | None:
-        ok = [o for o in self.outcomes if o.tension("taut") is not None]
-        return max(ok, key=lambda o: o.tension("taut")) if ok else None
+        ok = [o for o in self.outcomes if o.screen_strain is not None]
+        return max(ok, key=lambda o: o.screen_strain) if ok else None
 
     @property
     def total_closing_moment(self) -> float | None:
@@ -196,7 +214,7 @@ def _job(layers, fold: Fold, spine: str, corner_mm: float | None, tension: float
 
 def evaluate_wallet(plan: WalletPlan, params: StyleParams | None = None, layup: str = "plain", spine: str = "round",
                     corner_mm: float | None = None, taut_n_per_mm: float = 0.1, workers: int = 4,
-                    cycles: dict[str, float] | None = None) -> WalletResult:
+                    cycles: dict[str, float] | None = None, min_r_over_t: float = 0.5) -> WalletResult:
     if layup not in STYLES:
         raise KeyError(f"unknown layup {layup!r}; known: {sorted(STYLES)}")
     if spine not in ("round", "box"):
@@ -209,9 +227,17 @@ def evaluate_wallet(plan: WalletPlan, params: StyleParams | None = None, layup: 
             raise KeyError(f"no such fold(s) {sorted(unknown)}; folds of this wallet: {[f.name for f in plan.folds]}")
         plan = WalletPlan(plan.type_name, plan.panels, tuple(Fold(f.name, f.stack_mm, f.sense, cycles.get(f.name, f.cycles_per_use)) for f in plan.folds),
                           plan.closed_thickness_mm, plan.description)
+    from .fold_screen import outer_fibre_strain
+    t_layup = sum(l.thickness(0.0) for l in layers)
     specs: dict[tuple, FoldJob] = {}
     plan_rows = []
+    skipped: dict[str, FoldOutcome] = {}
     for f in plan.folds:
+        if spine == "round" and f.half_mm < min_r_over_t * t_layup:
+            # R/t below 0.5: the elastic model shows the leather bridging the stack (tried at R/t 0.13-0.25 in the edge-turn trial), so only the closed form is given
+            skipped[f.name] = FoldOutcome(f, f.half_mm, 0.0, None, None, outer_fibre_strain(t_layup, f.half_mm),
+                                          note=f"R/t = {f.half_mm / t_layup:.2f} < {min_r_over_t:g}: closed form only; the elastic model cannot say whether the leather survives")
+            continue
         row = {}
         for label, tension in (("loose", 0.0), ("taut", taut_n_per_mm)):
             job, rc, wall = _job(layers, f, spine, corner_mm, tension)
@@ -229,7 +255,12 @@ def evaluate_wallet(plan: WalletPlan, params: StyleParams | None = None, layup: 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         done = dict(zip(specs, pool.map(safe, specs.values())))
     outcomes = []
-    for f, rc, wall, row in plan_rows:
+    by_name = {f.name: (f, rc, wall, row) for f, rc, wall, row in plan_rows}
+    for f in plan.folds:
+        if f.name in skipped:
+            outcomes.append(skipped[f.name])
+            continue
+        f, rc, wall, row = by_name[f.name]
         loose, e1 = done[row["loose"]]
         taut, e2 = done[row["taut"]]
         cf = None
@@ -265,10 +296,15 @@ def format_wallet_report(results: list[WalletResult], contents: Contents, params
               f"  {'fold':22s} {'grain':>5s} {'stack':>7s} {'radius':>7s} {'R/t':>5s} | {'tension face':^22s} | {'grain face':>10s} {'moment':>7s}",
               f"  {'':22s} {'':>5s} {'[mm]':>7s} {'[mm]':>7s} {'':>5s} | {'loose':>7s} {'taut':>7s} {'limit':>7s} | {'(taut)':>10s} {'taut':>7s}"]
         for o in r.outcomes:
+            if o.note and o.taut is None:
+                L.append(f"  {o.fold.name:22s} {o.fold.sense:>5s} {o.fold.stack_mm:7.2f} {o.radius_mm:7.2f} {o.radius_mm / params.t:5.2f} | closed form only: {_pct(o.closed_form)} (R/t < 0.5, not run)")
+                continue
             if o.error and o.taut is None:
                 L.append(f"  {o.fold.name:22s} {o.fold.sense:>5s} {o.fold.stack_mm:7.2f} {o.radius_mm:7.2f} {o.radius_mm / params.t:5.2f} | not run: {o.error[:70]}")
                 continue
             mom = f"{o.taut.moment_n_mm:7.2f}" if r.spine == "round" else "    n/a"
+            if o.bridges:
+                mom += "  (bridges: the elastic leather stands off the stack by more than its radius; the closed form is used to rank)"
             L.append(f"  {o.fold.name:22s} {o.fold.sense:>5s} {o.fold.stack_mm:7.2f} {o.radius_mm:7.2f} {o.radius_mm / params.t:5.2f} | "
                      f"{_pct(o.tension('loose')):>7s} {_pct(o.tension('taut')):>7s} {_pct(o.closed_form):>7s} | {_pct(o.grain('taut')):>10s} {mom}")
         if len(r.outcomes) > 1:

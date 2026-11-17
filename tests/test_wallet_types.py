@@ -75,7 +75,7 @@ def test_grain_in_folds_are_run_reversed_with_the_inner_face_flat_and_box_spines
 
 
 def _stub(strain_taut, strain_loose=None, grain=None):
-    r = SimpleNamespace(peak_outer=strain_taut, peak_inner=-0.5 * strain_taut if grain is None else grain, moment_n_mm=1.0)
+    r = SimpleNamespace(peak_outer=strain_taut, peak_inner=-0.5 * strain_taut if grain is None else grain, moment_n_mm=1.0, standoff_mm=0.0)
     return r
 
 
@@ -135,3 +135,23 @@ def test_trifold_outer_fold_is_gentler_than_the_inner_one_and_zfold_folds_mirror
     assert f1.grain("taut") > 0 > f2.grain("taut")                          # grain in tension in fold 1, in compression in fold 2
     assert zf.wears_first("grain")["first"] == [f1.fold.name]               # only the grain-out fold can crack the grain
     assert zf.wears_first("tension")["tied"]
+
+
+def test_folds_with_r_over_t_below_half_are_not_run_and_are_ranked_by_the_closed_form():
+    from walletsim.fold_screen import outer_fibre_strain
+    from walletsim.wallet_types import WalletPlan
+    plan = WalletPlan("x", 3, (Fold("tight", 0.6, "out"), Fold("also tight", 0.4, "in")), 5.0, "")
+    res = evaluate_wallet(plan, StyleParams(t=1.2))                             # radii 0.3 and 0.2 mm: R/t 0.25 and 0.17, no solver involved
+    for o in res.outcomes:
+        assert o.taut is None and o.loose is None and "closed form only" in o.note
+        assert o.screen_strain == pytest.approx(outer_fibre_strain(1.2, o.radius_mm))
+    assert res.worst.fold.name == "also tight"                                  # the smaller radius has the higher strain
+    assert res.wears_first("tension")["first"] == ["also tight"]
+
+
+def test_a_fold_whose_loose_leather_stands_off_by_more_than_its_radius_is_ranked_by_the_closed_form():
+    ok = FoldOutcome(Fold("a", 3, "out"), 1.5, 0.0, _stub(0.15), _stub(0.17), 0.25)
+    bridging = FoldOutcome(Fold("b", 1, "out"), 0.5, 0.0, SimpleNamespace(peak_outer=0.19, peak_inner=-0.1, moment_n_mm=1.0, standoff_mm=0.75),
+                           _stub(0.206), 0.5)
+    assert not ok.bridges and ok.screen_strain == pytest.approx(0.17)
+    assert bridging.bridges and bridging.screen_strain == pytest.approx(0.5)

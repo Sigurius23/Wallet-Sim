@@ -13,6 +13,7 @@ certain number, all 14 failure modes (computed, flagged, not triggered, not mode
 ## What is here
 | Wallet | What it is | Status |
 |---|---|---|
+| `ma-one-piece-wallet` | the **M.A+ One Piece Wallet** from the Wallet-corpus- archive: one 1 mm calf sheet folded with an outer spine and two tight loops | **photos-only**: text and product photographs, nothing measured; radii and stacks are inferences with ranges |
 | `slim-6card-design` | a **generated design** (the leather-patterns kernel's `slim_6card` bifold), not a photographed wallet and not an MA+ wallet | design only: nothing measured; used to test the pipeline |
 
-Replace or add records as real wallets are photographed and measured (`docs/CAPTURE.md`). The measurement that matters most: the closed wallet's thickness at the spine.
+Corpus images are research documentation only, so records reference them by path and do not copy them. Replace or add records as real wallets are photographed and measured (`docs/CAPTURE.md`). The measurement that matters most: the closed wallet's thickness at the spine.

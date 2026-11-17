@@ -1,0 +1,79 @@
+# M.A+ ONE PIECE WALLET: record built from the Wallet-corpus- research archive (item map01_one_piece_wallet).
+# EVIDENCE: the retailer's text and 7 product photographs only. NOTHING HAS BEEN MEASURED on a physical wallet.
+# Corpus: https://github.com/Sigurius23/Wallet-corpus-  commit bda0572  carpe_diem_research/wallet/designers/ma_plus/items/map01_one_piece_wallet/
+# Rights: the corpus images are research documentation only; they are referenced here by path and not copied into this repository.
+id: ma-one-piece-wallet
+name: M.A+ One Piece Wallet (W7 / W8 / W10)
+maker: Maurizio Amadei (m.a+)
+status: photos-only          # design | photos-only | measured
+photos:
+  edge_on_closed_black: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map01_one_piece_wallet/images/005_is_ma01_01.jpg"
+  open_black: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map01_one_piece_wallet/images/006_is_ma01_02.jpg"
+  closed_black: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map01_one_piece_wallet/images/007_is_ma01_03.jpg"
+  edge_on_closed_red: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map01_one_piece_wallet/images/008_is_ma01_04.jpg"
+  interior_red: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map01_one_piece_wallet/images/009_is_ma01_05.jpg"
+archive:
+  designer: Maurizio Amadei (m.a+)
+  year: null                  # undated: the earliest retailer record is 2022-01-06 and is not a design date
+  series: One Piece
+  bio_ref: null
+  hero_image: null
+  rights: {photos: "research documentation only (corpus README); not cleared for reuse", bio: unknown}
+leather:
+  - id: shell
+    role: the single sheet the whole wallet is folded from
+    thickness_mm: {value: 1.0, source: design, ref: "retailer (Lucentement, corpus MAP03): 'one piece of 1 mm thick calf leather'"}
+    species: {value: bovine (calf), source: design, ref: "composition: calf leather 100 %"}
+    hide_region: {value: unknown, source: assumed}
+    windows: {beamhouse: unknown, tanning: unknown, post_tanning: unknown, finishing: unknown}
+    edge: {value: unknown, source: assumed}
+    material:
+      youngs_modulus_mpa: {value: 72, source: assumed, cv: 0.29, ref: "placeholder: the tensile value measured for 1.2 mm calfskin (Mihai et al., Materials 2022, 15(15):5107); this leather has not been tested"}
+      poisson: {value: 0.3, source: assumed}
+components: []
+process_steps: []
+contents:
+  cards: {value: 0, source: assumed, note: "photographed empty"}
+  card_mm: {value: 0.76, source: literature, ref: ISO/IEC 7810 ID-1 nominal thickness}
+  extra_mm: {value: 0.0, source: assumed}
+construction:
+  type: custom
+  grain: out                  # assumed: which face of the sheet is the grain is not visible in the photographs
+  layup: plain
+  # What the photographs show (edge-on closed wallet, corpus image 005 and 008, enlarged), with my confidence:
+  #   - the outer sheet wraps one end ("the spine") and continues as the bottom panel                       moderate
+  #   - three thin inner leaves lie inside the wrap, each with a thread tie near the spine end               moderate
+  #   - at the opposite end, two tight hairpin folds ("loops"), one over the other, each pinned by a thread tie  moderate
+  #   - NO scale in any photograph: every radius and thickness below is an inference or an assumption          -
+  folds_modelled:
+    - name: spine
+      stack_mm: {value: 3.0, low: 3.0, high: 9.1, source: inferred, ref: "3 inner leaves seen x 1 mm of leather = 3.0 mm when empty; the upper bound adds 8 cards (assumed)"}
+      sense: out
+    - name: loop 1 (end opposite the spine)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "the void inside the loop looks about one leather thickness across in the enlarged photograph; the upper bound is a pocket holding about 5 cards"}
+      sense: out
+    - name: loop 2 (end opposite the spine)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "as loop 1; the second loop turns the other way, so the grain is on the inside"}
+      sense: in
+panels:
+  - {id: sheet, leather: shell, outline: null, grain_direction_deg: {value: 0, source: assumed}}
+folds:
+  - id: spine
+    panel: sheet
+    rest_angle_deg: 180
+    skived: {value: unknown, source: assumed}
+  - id: loops
+    panel: sheet
+    rest_angle_deg: 180
+    skived: {value: unknown, source: assumed}
+seams:
+  - id: thread ties
+    note: "thread ties through the two loops and through the ends of the three inner leaves near the spine (corpus images 005, 008)"
+    crosses_fold: [loop 1 (end opposite the spine), loop 2 (end opposite the spine)]
+    holes: {value: 0, source: assumed, note: "number of holes not visible"}
+pockets: []
+sizes:
+  S: {closed_footprint_cm: [11.5, 7.5], source: design}
+  M: {closed_footprint_cm: [13, 9], source: design}
+  L: {closed_footprint_cm: [15, 10], source: design}
+usage: {used: false}

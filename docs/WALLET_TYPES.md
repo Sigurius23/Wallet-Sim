@@ -88,6 +88,7 @@ the report then says so instead of picking one. Two bases are printed: the tensi
   edges) is not modelled. The trifold nesting is a hand-derived rule, not a simulated assembly.
 - **The stack is contents plus panels as stated.** Real pockets, cards at an angle, and a spine that is not a half-round change it; use `--slot-leather` and `--spine box` to see how much.
 - All the limits of the fold model apply (isotropic neo-Hookean leather, no permanent set or finish cracking, frictionless rigid stack, perfectly bonded layers, E a number you supply).
+- **Tight folds are screened, not simulated.** A fold whose inside radius is below half the leather thickness is not run: the elastic model shows the leather bridging the gap, so only the closed form is given. A fold whose leather, with no pull on it, stands off the stack by more than the stack's radius is marked *bridges* and ranked by the closed form. The M.A+ One Piece record (`wallets/ma-one-piece-wallet`) is the first wallet where this matters.
 - Not covered: zip-around and gusseted wallets as a whole (the gusset is in `FOLD_STYLES.md` section 4), money clips, and anything with hardware.
 
 ## 5. Next steps

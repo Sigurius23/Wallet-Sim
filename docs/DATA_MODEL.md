@@ -79,7 +79,21 @@ specifies; the physical object may differ), `literature` (a cited publication or
 
 Rules:
 - `assumed` values are allowed, but any result that depends on one is labelled with it.
-- `status: design` means the record comes from a design file, not from a wallet in your hands; reports say so at the top.
+- `status` is `design` (the record comes from a design file), `photos-only` (from product photographs and text, nothing measured) or `measured`; reports say so at the top.
+- A wallet whose folds do not fit bifold, trifold or z-fold (origami and other one-sheet constructions) sets `construction.type: custom` and lists its folds one by one;
+  each fold's stack may carry a range that the report sweeps. Seams list the folds they cross or pin in `crosses_fold`:
+
+  ```yaml
+  construction:
+    type: custom
+    folds_modelled:
+      - name: spine
+        stack_mm: {value: 3.0, low: 3.0, high: 9.1, source: inferred, ref: "3 inner leaves seen x 1 mm; upper bound adds 8 cards"}
+        sense: out                       # out: grain on the outside of the fold; in: grain inside
+      - {name: loop 1, stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed}, sense: in}
+  ```
+- A fold whose inside radius is below half the leather thickness is not run through the solver (the elastic model shows the leather bridging the gap); it gets the closed form and is
+  marked *closed form only*. A fold whose leather, with no pull on it, stands off the stack by more than the stack's radius is marked *bridges* and is ranked by the closed form.
 - Photos are never overwritten; rectified or derived images go in `measured/`.
 - A simulation result stores a copy of the record version it ran on, so results stay reproducible.
 
