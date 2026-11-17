@@ -91,7 +91,9 @@ def _chain(rec: WalletRecord) -> dict:
                        "drv": "book" if k == 0 else "pockets", "tag": _tags(k, f.sense)})
     model = {"id": "chain", "kind": "chain", "label": "Wallet",
              "controls": [{"id": "book", "label": "Open the wallet"}, {"id": "pockets", "label": "Open the pockets"}],
-             "params": [{"id": "rIn", "label": "Hairpin radius, inside", "min": lo / 2, "max": hi / 2, "step": 0.05, "value": loop.stack_mm / 2, "unit": "mm", "dec": 2}],
+             "params": [{"id": "rIn", "label": "Hairpin radius, inside, when empty", "min": lo / 2, "max": hi / 2, "step": 0.05, "value": loop.stack_mm / 2, "unit": "mm", "dec": 2}]
+                       + [{"id": f"n_p{k}", "label": ("Cards in the pocket by the spine" if k == 0 else f"Cards in pocket {k} (closed by {_short(folds[k].name).lower()})"),
+                           "min": 0, "max": 8, "step": 1, "value": 0, "unit": "cards", "dec": 0} for k in range(0, n + 1)],
              "hinges": hinges}
     sizes = _sizes(rec)
     cfg = {"T": float(rec.shell_t), "leaves": n, "models": [model], "sizes": sizes, "size": next(iter(sizes)),
@@ -184,31 +186,35 @@ def _twin(rec: WalletRecord, asm: dict) -> dict:
     if len(pockets) != len(asm["walls"]):
         raise ViewerError(f"assembly.yaml: {len(asm['walls'])} walls need {len(asm['walls'])} pockets, got {len(pockets)}")
     walls = [{"id": w["id"], "top": float(w["top_mm"]), "left": float(w["left_inset_mm"]), "right": float(w["right_inset_mm"]),
-              "radii": [float(r) for r in w["end_radii_mm"]], "notch": ({"d": float(w["notch"]["depth_mm"]), "h": float(w["notch"]["half_width_mm"])} if w.get("notch") else None)}
+              "radii": [float(r) for r in w["end_radii_mm"]], "notch": ({"d": float(w["notch"]["depth_mm"]), "h": float(w["notch"]["half_width_mm"])} if w.get("notch") else None),
+              "gusset": float(w["gusset_mm"]) if w.get("gusset_mm") else None}
              for w in asm["walls"]]
     cl = ((rec.raw.get("construction") or {}).get("closed_thickness_mm") or {})
-    st = asm["stud"]
+    st = asm.get("stud")
     A = {"L": L, "W": W, "walls": walls, "pockets": pockets, "bills_pocket": asm.get("bills_pocket"),
          "flapLen": float(_v(asm["flap"]["length_mm"])), "flapR": float(_v(asm["flap"]["corner_radius_mm"])), "flapGap": float(_v(asm["flap"]["clearance_mm"])),
          "card": {"l": float(card["length_mm"]), "w": float(card["width_mm"]), "t": float(card["thickness_mm"])}, "note_t": float(note["thickness_mm"]),
          "gapEmpty": float(_v(asm["gap_empty_mm"])), "slack": float(_v(asm["slack_mm"])), "closedDepth": float(_v(cl["value"])) if cl.get("value") else None,
-         "stud": {"x": float(_v(st["x_from_free_end_mm"])), "z": float(_v(st["z_from_left_mm"])), "d": float(_v(st["diameter_mm"])), "h": float(_v(st["height_mm"]))}}
+         "stud": ({"x": float(_v(st["x_from_free_end_mm"])), "z": float(_v(st["z_from_left_mm"])), "d": float(_v(st["diameter_mm"])), "h": float(_v(st["height_mm"]))} if st else None),
+         "slits": [{"u": float(s["u_mm"]), "z": float(s["z_mm"]), "len": float(s["len_mm"])} for s in asm.get("slits") or []],
+         "petals": bool((asm.get("flap") or {}).get("petals")), "incomplete": bool(asm.get("incomplete"))}
     lo, hi = (float(x) for x in asm.get("thickness_range_mm", [rec.shell_t, rec.shell_t]))
     params = [{"id": "t", "label": "Sheet thickness", "min": lo, "max": hi, "step": 0.05, "value": float(rec.shell_t), "unit": "mm", "dec": 2}]
     for pk in pockets:
         cap = pk["cap"]
         params.append({"id": "n_" + pk["key"], "label": f"Cards in the {pk['id']}", "min": 0, "max": 8, "step": 1, "value": 0, "unit": "cards", "dec": 0})
     params.append({"id": "notes", "label": f"Folded banknotes in the {asm.get('bills_pocket', 'bills pocket')}", "min": 0, "max": 20, "step": 1, "value": 0, "unit": "notes", "dec": 0})
-    model = {"id": "twin", "kind": "twin", "label": "Wallet", "controls": [{"id": "flap", "label": "Open the flap"}], "params": params,
-             "hinges": [{"id": "hinge", "name": "Flap hinge", "closed": 180, "open": 15, "drv": "flap", "tag": "translate(10px, -130%)"}]}
+    controls = [{"id": "flap", "label": "Open the flap"}] + ([{"id": "pocket", "label": "Pull the bill pocket open"}] if any(w.get("gusset") for w in walls) else [])
+    model = {"id": "twin", "kind": "twin", "label": "Wallet", "controls": controls, "params": params,
+             "hinges": [{"id": "hinge", "name": _short(rec.custom_folds[0].name) if rec.custom_folds else "Flap hinge", "closed": 180, "open": 15, "drv": "flap", "tag": "translate(10px, -130%)"}]}
     size = {"L": round(L), "W": round(W), "txt": f"{W:g} x {L:g} mm"}
     cfg = {"T": float(rec.shell_t), "leaves": 0, "models": [model], "sizes": {"closed": size}, "size": "closed", "edgeLabel": "Side view", "words": WORDS, "twin": A}
     depth = f"{A['closedDepth']:g} mm" if A["closedDepth"] else "not recorded"
     text = {
         "eyebrow": f"{E(str(rec.raw.get('maker', '')))} &middot; functional twin",
-        "banner": (f"<strong>A reconstruction at the maker's stated size ({W:g} x {L:g} mm, closed depth {depth}), not a scan and not a flat pattern.</strong> The back panel, flap and four layered pockets are drawn at real size from "
-                   "a product photograph; how the layers join, and the sheet thickness, are not known and are marked as assumed. Contents change the stack and so the hinge radius. "
-                   "Panels are rigid between the folds, the leather is not simulated, and the strain is the closed form scaled with the fold angle."),
+        "banner": (f"<strong>A reconstruction at the stated size ({W:g} x {L:g} mm, closed depth {depth}), not a scan and not a flat pattern.</strong> "
+                   + E(str(asm.get("drawn", "The panels are drawn at real size from product photographs; how the layers join, and the sheet thickness, are not known and are marked as assumed.")))
+                   + " Contents change the stack and so the hinge radius. Panels are rigid between the folds, the leather is not simulated, and the strain is the closed form scaled with the fold angle."),
         "shows": ["Open the flap, and fill the pockets with ISO cards or folded banknotes: the layers move apart, the closed depth changes and the flap hinge's radius and strain follow.",
                   "Compare the closed depth with the maker's figure: the page states which sheet thickness would reproduce it with the contents you chose.",
                   "Each layer's size comes from the open-wallet photograph, scaled so the body width is the maker's 85 mm (about 3 mm of reading error)."],

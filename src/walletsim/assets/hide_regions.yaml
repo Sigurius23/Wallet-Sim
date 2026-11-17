@@ -1,0 +1,40 @@
+# What each part of a hide is known to do, quoted from the anatomy library (prior-research/reference/anatomy/), with the library's own marks:
+#   ✓  the library backs it with a source it checked      ~  the library marks it as less certain      (none)  the library states it without a mark
+# These are statements, not numbers for the simulator: no region here has a measured stiffness or crack strain, so choosing a zone changes no result.
+general:
+  - {text: "Strength varies 4 to 7 times within one hide (2,147 specimens, sheepskin), so a region name does not tell you a strength.", mark: "", file: properties.md}
+  - {text: "No region is consistently strongest across animals; what the butt reliably gives is uniformity, thickness and low stretch.", mark: "", file: properties.md}
+  - {text: "Direction matters more than region for long parts, but its maximum and minimum are measured at one point and rotate over the hide.", mark: "", file: properties.md}
+  - {text: "Splitting and shaving set the delivered thickness: a split leather can be near-uniform in millimetres and still non-uniform in behaviour.", mark: "✓", file: properties.md}
+groups:
+  bovine:
+    butt: ["thickest ✓", "densest, finest weave ✓", "lowest and most uniform stretch ✓", "most uniform over its area ✓: what a flat pattern needs", "highest peak load before tearing: contested, depends on the animal"]
+    back: ["the backbone is the thickest band of the fresh hide (about 4.5 mm and more, unsplit; a forum figure, illustrative only) ~", "bison: tight pebbling at the backbone, loose at the belly ✓"]
+    shoulder: ["about 3 to 4.5 mm fresh and unsplit (forum figure, illustrative only) ~", "bull: thick, rough head, neck and shoulders ✓"]
+    belly: ["thinnest, most stretchy, and the most defect-prone area: holes, creases, irregular thickness ~", "fresh hide thins from about 3 to 0.8 mm toward the belly (forum figure, unsplit) ~", "the belly line is one of the only normative boundaries a grader uses"]
+    neck: ["fibre thickness higher in back and neck (up to 194.2 um) than in the abdomen (about 150.3 um) ✓", "bull: thick, rough neck ✓"]
+  porcine:
+    back: ["back and side: the densest, most even part; the working area for panels and small goods"]
+    shoulder: ["intermediate"]
+    belly: ["thinner and looser: used for linings"]
+    neck: ["jowl and head: a very distinct, deep-grooved grain, small area"]
+    butt: ["no separate statement: treated with the back and side (densest, most even)"]
+    all: ["the follicles run in threes through the whole thickness: the pore pattern cannot be sanded or skived away and will telegraph through a thin flexible part", "trade literature on pig regions is much thinner than on cowhide: distrust bovine-style precision"]
+  equine:
+    neck: ["part of the front (the forepart, about two-thirds of the hide area ✓): thin"]
+    shoulder: ["part of the front: thin, the usual garment and small-goods horsehide"]
+    back: ["the strip, just in front of the shells: thick, coarse ✓"]
+    butt: ["thick: 1.6 to 4 mm for the strip ✓", "holds the shell cordovan: a dense hyaline membrane, one oval each side of the rump ✓; no grain, so no grain-crack failure; very low stretch; it rolls rather than crazes in a hinge"]
+    belly: ["no separate statement in the library"]
+    all: ["horsehide grain is coarser and more pronounced than cow"]
+  ovine:
+    shoulder: ["the strength region: sheep shoulder showed higher breaking force than hip or rib ✓"]
+    butt: ["the hip is the weakest region in sheep"]
+    belly: ["rib: lower breaking force than the shoulder ✓"]
+    all: ["the 'butt is best' rule does not hold for small ruminants: look to the shoulder"]
+  caprine:
+    shoulder: ["the strength region, with the back ✓"]
+    back: ["strong with the shoulder; grain layer 26 to 54 % of the thickness ✓", "more elastin than sheep, concentrated in neck and backbone ✓"]
+    belly: ["the weakest, with the kidney area; grain layer 27 to 45 % ✓"]
+    neck: ["grain layer 32 to 54 % of the thickness ✓", "elastin concentrated here ✓"]
+    butt: ["grain layer 24 to 40 % ✓", "a low weave angle even in the butt ✓"]

@@ -159,7 +159,8 @@ button.gridbtn { background: none; border: 0; padding: 0; }
 /* animals */
 .animalwrap { display: grid; gap: 8px; } canvas.animal { width: 100%; aspect-ratio: 4 / 3; display: block; background: var(--plate); border-radius: 6px; touch-action: pan-y; cursor: grab; }
 .zones { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: .76rem; color: var(--muted); }
-.zones button { background: none; border: 1px solid var(--line); border-radius: 99px; padding: 1px 9px; font-size: .74rem; color: var(--muted); } .zones button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+.zones button { background: none; border: 1px solid var(--line); border-radius: 99px; padding: 1px 9px; font-size: .74rem; color: var(--muted); } .zonefacts { border-left: 2px solid var(--blue); padding: 4px 0 4px 12px; display: grid; gap: 2px; max-width: 72ch; } .zonefacts ul { margin: 4px 0; }
+.zones button[aria-pressed="true"] { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
 /* what-if, styles, lab */
 .ctl { display: grid; gap: 5px; max-width: 520px; } .ctl label { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; font-weight: 500; } input[type=range] { width: 100%; accent-color: var(--blue); min-height: 28px; }
 .mini { height: 8px; border-radius: 4px; background: var(--plate); position: relative; min-width: 110px; } .mini i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--ink); opacity: .75; }
@@ -519,7 +520,15 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
     if (!key || typeof THREE === "undefined" || !(DATA.animals && DATA.animals.models[key])) return '<div class="hide">' + hide(reg) + '</div><p class="small muted" style="margin:6px 0 0">' + (key ? "No free 3D model of this animal has been found yet, so a flat schematic hide is shown." : "The species is not recorded, so no animal is drawn.") + "</p>";
     var zones = ["neck", "shoulder", "back", "belly", "butt"], known = zones.filter(function (z) { return String(reg || "").toLowerCase().indexOf(z) >= 0; })[0];
     return '<div class="animalwrap"><canvas class="animal" data-species="' + key + '" data-region="' + esc(reg || "") + '" role="img" aria-label="Stylised ' + key + ' animal; ' + (known ? known + " zone marked" : "no cut zone marked: the record names no region") + '"></canvas>' +
-      '<div class="zones"><span>Where the zones sit (reference, not this wallet’s piece):</span>' + zones.map(function (z) { return '<button type="button" data-zone="' + z + '" aria-pressed="' + (z === known) + '">' + z + "</button>"; }).join("") + "</div></div>";
+      '<div class="zones" data-group="' + key + '"><span>Parts of the hide (reference, not this wallet’s piece):</span>' + zones.map(function (z) { return '<button type="button" data-zone="' + z + '" aria-pressed="' + (z === known) + '">' + z + "</button>"; }).join("") + '</div><div class="zonefacts small" hidden></div></div>';
+  }
+  function zoneFacts(group, z) {                                     // what the anatomy library says about this part of the hide, with its own marks
+    var R = DATA.regions || {}, G = (R.groups || {})[group] || {}, own = G[z] || [], all = G.all || [];
+    var li = function (s) { return "<li>" + esc(s) + "</li>"; };
+    return '<b style="font-weight:500">' + esc(cap(z)) + "</b>" + (own.length ? '<ul class="plain">' + own.map(li).join("") + "</ul>" : '<p class="muted" style="margin:4px 0">The library has no statement for this part of this animal.</p>') +
+      (all.length ? '<ul class="plain muted">' + all.map(li).join("") + "</ul>" : "") +
+      '<p class="muted" style="margin:6px 0 0">' + (R.general || []).map(function (g) { return esc(g.text) + (g.mark ? " " + g.mark : ""); }).join(" ") + "</p>" +
+      '<p class="muted" style="margin:6px 0 0">From the anatomy library (\u2713 a source it checked, ~ less certain). No region has a measured stiffness or crack strain, so choosing one changes no number here.</p>';
   }
 
   // ---- what-if: the sheet thickness, recomputed live with the closed form ---------------------------------------------------------------------------------------------
@@ -671,7 +680,8 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
   document.addEventListener("click", function (e) {
     var z = e.target.closest("[data-zone]"), lb = e.target.closest("[data-lab]");
     if (z) { var wrap = z.closest(".animalwrap"), cv = wrap.querySelector("canvas"), on = z.getAttribute("aria-pressed") !== "true";
-      Array.prototype.forEach.call(wrap.querySelectorAll("[data-zone]"), function (b) { b.setAttribute("aria-pressed", "false"); }); z.setAttribute("aria-pressed", String(on)); if (cv && cv._setZone) cv._setZone(on ? z.dataset.zone : null); }
+      Array.prototype.forEach.call(wrap.querySelectorAll("[data-zone]"), function (b) { b.setAttribute("aria-pressed", "false"); }); z.setAttribute("aria-pressed", String(on)); if (cv && cv._setZone) cv._setZone(on ? z.dataset.zone : null);
+      var zf = wrap.querySelector(".zonefacts"), zs = wrap.querySelector(".zones"); if (zf) { zf.hidden = !on; zf.innerHTML = on ? zoneFacts(zs && zs.dataset.group, z.dataset.zone) : ""; } }
     if (lb) { S.lab = lb.dataset.lab; lab(); }
     if (!e.target.closest(".tools")) document.getElementById("menu").hidden = true;
   });

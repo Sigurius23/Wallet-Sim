@@ -1,0 +1,35 @@
+# M.A+ MAV.R origami: the functional reconstruction (the "twin"), drawn at the seller's stated size (14.5 x 9.5 x 1.8 cm).
+# A RECONSTRUCTION from photographs 01 and 03 (opened by hand), scaled so that the body is the seller's 145 mm across. No flat pattern exists here, and the
+# photographs have no scale, so every inferred number carries about 5 mm of reading error. What is drawn: the back panel, the main fold as the flap's hinge,
+# the flap with the two overlapping rounded panels on its inside, the bill pocket's front wall joined to the back by a V gusset at each side, and four card slits.
+# Not drawn: the inner lid over the bill pocket, the four medium pockets (their layout is not readable), cards inside the slits, the diagonal back crease.
+kind: twin
+orientation: "closed, landscape: the main fold runs along the 145 mm side; the back panel's free end (the bottom of the body) is at -x"
+back:
+  length_mm: {value: 95, source: reported, ref: "seller: 14.5 x 9.5 cm laid flat"}
+  width_mm: {value: 145, source: reported, ref: "seller: 14.5 x 9.5 cm laid flat"}
+flap:
+  length_mm: {value: 93, source: inferred, ref: "photograph 02: the closed front shows the flap covering the body almost to its lower edge"}
+  corner_radius_mm: {value: 4, source: inferred, ref: "photographs 01 and 02: nearly square corners"}
+  clearance_mm: {value: 0.5, source: assumed}
+  petals: {source: inferred, ref: "photographs 01 and 03: two overlapping panels with large rounded corners line the inside of the flap"}
+walls:
+  - {id: bill pocket front, top_mm: 82, left_inset_mm: 2, right_inset_mm: 2, end_radii_mm: [3, 3], gusset_mm: 32, source: inferred,
+     ref: "photograph 03: the front wall, opened by hand, joined to the back by a large V pleat at each side; the pleat's depth is read from the photograph"}
+pockets:
+  - {id: bill pocket, role: "the seller's 1 large bill pocket", cards_capacity: null, source: reported}
+bills_pocket: bill pocket
+slits:   # cuts in the back of the bill pocket, read from photograph 03: height above the bottom fold, centre across the width, length
+  - {u_mm: 25, z_mm: -32, len_mm: 56, source: inferred}
+  - {u_mm: 25, z_mm: 32, len_mm: 56, source: inferred}
+  - {u_mm: 68, z_mm: -32, len_mm: 56, source: inferred}
+  - {u_mm: 68, z_mm: 32, len_mm: 56, source: inferred}
+slits_note: "The photograph reads the slits at about 43 mm long; a card slot must be longer than a card's 54 mm width, so they are drawn at 56 mm (inferred). The seller lists 4 vertical card slots."
+stud: null
+card: {length_mm: 85.6, width_mm: 53.98, thickness_mm: 0.76, source: literature, ref: ISO/IEC 7810 ID-1}
+note: {thickness_mm: 0.11, source: assumed, ref: "one banknote, about 0.1 mm; folded once, so two layers"}
+gap_empty_mm: {value: 0.3, source: assumed, ref: "an empty pocket: the walls nearly touch, the gussets folded flat between them"}
+slack_mm: {value: 0.3, source: assumed}
+thickness_range_mm: [0.8, 1.6]
+drawn: "The back panel, the flap with the two curved panels on its inside, the bill pocket with a V gusset at each side, and four card slits are drawn at real size from photographs 01 and 03 (opened by hand). The inner lid over the bill pocket and the four medium pockets are not drawn: their layout is not readable."
+incomplete: true   # the parts drawn do not account for the whole closed depth

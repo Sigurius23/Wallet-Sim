@@ -141,3 +141,12 @@ def test_each_wallet_carries_its_hide_class_reference_cards_and_the_coverage_map
     assert hides["sr-whalet-sr202-2022"]["group"] == "equine" and hides["sr-whalet-sr202-2022"]["cards"] == []      # no horse card exists
     assert all(h["class"] == "sheet" for h in hides.values())
     assert len(d["cards"]) == 3 and d["coverage"]["sheet_cells_total"] == 90 and d["coverage"]["sheet_cells_filled"] == 10
+
+
+def test_the_hide_region_statements_cover_the_species_with_models_and_carry_the_librarys_marks():
+    R = build_data(WALLETS)["regions"]
+    for g in ("bovine", "porcine", "equine", "ovine", "caprine"):
+        assert R["groups"][g], g
+    assert any("4 to 7 times" in s["text"] for s in R["general"])
+    assert any("shell cordovan" in x for x in R["groups"]["equine"]["butt"])
+    assert any("strength region" in x for x in R["groups"]["ovine"]["shoulder"])         # small ruminants: the shoulder, not the rump

@@ -29,7 +29,9 @@ This table is the audit: every feature in the outline below and in the README's 
 | Direction, hide-region and through-the-hide layer effects in the solver | **not built** | needs measured ratios and maps; none exist for any leather |
 | Aged states | **structure only** | no measured aged state exists |
 | Composite model for plated hides (alligator, crocodile, snake, stingray) | **not built** | refused instead; needs plate geometry and an interface-failure model |
-| Functional twin of every wallet | **one of four** | only the WHALET has `assembly.yaml`; the One Piece wallets and the origami need their interiors read from photographs |
+| Functional twin of every wallet | **four of four, at different depths** | WHALET (flap, four layered pockets, stud); One Piece and Double (each pocket between leaves takes cards, its hairpin opens and the spine follows); origami (flap with its two inner panels, bill pocket with V gussets that can be pulled open as in photo 03, four card slits; the inner lid and four medium pockets are not drawn, so its depth falls short of the seller's 18 mm and the page says so) |
+| Each wallet in its own leather (colour, grain, finish, fittings) | **built** | procedural surfaces from `appearance.yaml` (calf, horse, reversed pig nap), colours read from the photographs and marked inferred; the M.A+ silver cross; the One Piece in black or red. Not the photographed texture itself: the photographs are research documentation only |
+| How each part of the hide behaves | **built as statements** | choosing a zone on the animal shows what the anatomy library says about that part, with its marks; no region has measured numbers, so no result changes |
 | glTF assets from a build step | **not built** | the animals are embedded as compact triangle data instead |
 
 ## The idea

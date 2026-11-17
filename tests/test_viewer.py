@@ -45,15 +45,25 @@ def test_the_viewers_spine_formula_is_the_records_derived_stack(wallet):
     assert 2 * (n + 1) * (rin + t / 2) - t == pytest.approx(rec.custom_folds[0].stack_mm)
 
 
-def test_the_flap_viewer_reads_the_closed_depth_and_has_a_gusset_with_the_records_range():
-    rec = load_wallet(ORIGAMI)
-    cfg = _cfg(build_viewer(ORIGAMI))
+def test_the_flap_viewer_reads_the_closed_depth_and_has_a_gusset_with_the_records_range(tmp_path):
+    ori = tmp_path / "o"                                                                    # the record alone: without its assembly.yaml the origami falls back to the flap sketch
+    shutil.copytree(ORIGAMI, ori, ignore=shutil.ignore_patterns("sim", "assembly.yaml", "viewer.html"))
+    cfg = _cfg(build_viewer(ori))
     flap, gus = cfg["models"]
     p = flap["params"][0]
     assert (p["min"], p["value"], p["max"]) == (10.0, 16.0, 16.0)                          # the stack derived from the 18 mm depth, with its assumed lower bound
     assert gus["kind"] == "gusset" and (gus["params"][0]["min"], gus["params"][0]["max"]) == (0.25, 2.0)
     assert cfg["sizes"]["one size"]["L"] == 95 and cfg["sizes"]["one size"]["W"] == 145
-    assert "18 mm" in build_viewer(ORIGAMI) and "drawn guess" in build_viewer(ORIGAMI)    # the page says what is invented
+    assert "18 mm" in build_viewer(ori) and "drawn guess" in build_viewer(ori)              # the page says what is invented
+
+
+def test_the_origami_twin_has_its_gusseted_bill_pocket_slits_and_flap_panels_and_says_it_is_incomplete():
+    cfg = _cfg(build_viewer(ORIGAMI))
+    A = cfg["twin"]
+    assert [m["kind"] for m in cfg["models"]] == ["twin"] and A["closedDepth"] == 18.0 and A["incomplete"] and A["petals"]
+    assert A["walls"][0]["gusset"] == 32.0 and len(A["slits"]) == 4 and A["stud"] is None
+    assert [c["id"] for c in cfg["models"][0]["controls"]] == ["flap", "pocket"]           # the bill pocket can be pulled open, as in photograph 03
+    assert cfg["models"][0]["hinges"][0]["name"] == "Main fold"
 
 
 def test_the_page_has_no_unfilled_placeholders_and_names_its_source():
@@ -142,3 +152,50 @@ def test_the_twin_is_the_default_viewer_when_a_wallet_has_an_assembly_file():
     cfg = _cfg(build_viewer(ROOT / "wallets" / "sr-whalet-sr202-2022"))
     assert [m["kind"] for m in cfg["models"]] == ["twin"] and cfg["twin"]["closedDepth"] == 10.0
     assert [p["id"] for p in cfg["models"][0]["params"]][:2] == ["t", "n_back_pocket"]
+
+
+# ---- the look, the accordion's pockets, the origami's pull
+def test_each_wallet_has_a_look_with_a_sourced_colour_and_a_grain_kind():
+    from walletsim.viewer import appearance
+    looks = {w: appearance(ROOT / "wallets" / w) for w in ("ma-one-piece-wallet", "ma-one-piece-double-wallet", "ma-mavr-origami-wallet", "sr-whalet-sr202-2022")}
+    assert {k: v["kind"] for k, v in looks.items()} == {"ma-one-piece-wallet": "calf", "ma-one-piece-double-wallet": "calf", "ma-mavr-origami-wallet": "nap", "sr-whalet-sr202-2022": "horse"}
+    assert [c["name"] for c in looks["ma-one-piece-wallet"]["colourways"]] == ["black", "red"]
+    assert all(c["source"] for v in looks.values() for c in v["colourways"])
+    assert looks["ma-mavr-origami-wallet"]["details"][0]["panel"] == "flap"                   # 'on:' would be read by YAML as a boolean; the key is 'panel'
+
+
+def test_a_look_without_a_source_or_with_a_bad_colour_is_refused(tmp_path):
+    from walletsim.viewer import appearance
+    (tmp_path / "appearance.yaml").write_text("colourways:\n  - {name: black, colour: black}\n")
+    with pytest.raises(ViewerError):
+        appearance(tmp_path)
+
+
+def _build(wallet, params, v=None):
+    from walletsim.viewer import config
+    _, cfg, _ = config(ROOT / "wallets" / wallet)
+    js = (ROOT / "src" / "walletsim" / "geometry.js").read_text()
+    prog = js + f"""
+    var CFG = {json.dumps(cfg)}, m = CFG.models[0], p = {{}};
+    m.params.forEach(function (q) {{ p[q.id] = q.value; }}); Object.assign(p, {json.dumps(params)});
+    var r = WalletGeometry.build(CFG, m, CFG.size, p, {json.dumps(v or {})});
+    console.log(JSON.stringify({{twin: r.twin, boxes: (r.boxes || []).map(function (b) {{ return b.kind; }}), marks: r.marks, gussets: (r.gussets || []).length, text: r.text}}));
+    """
+    return json.loads(subprocess.run(["node", "-e", prog], capture_output=True, text=True, check=True).stdout)
+
+
+@needs_node
+def test_cards_in_an_accordion_pocket_open_its_hairpin_and_thicken_the_spine():
+    empty, full = _build("ma-one-piece-wallet", {}), _build("ma-one-piece-wallet", {"n_p1": 4})
+    assert full["twin"]["stack"] - empty["twin"]["stack"] == pytest.approx(4 * 0.76 + 0.3 - 2 * 0.5)   # 4 cards plus slack replace the empty 1 mm void
+    assert full["marks"]["h1"]["r"] > empty["marks"]["h1"]["r"] and full["marks"]["h1"]["e"] < empty["marks"]["h1"]["e"]   # the loop opens, its strain falls
+    assert full["boxes"].count("card") == 4 and empty["twin"]["stack"] == pytest.approx(7.0)            # empty: the record's derived spine stack
+
+
+@needs_node
+def test_pulling_the_origamis_pocket_open_shows_the_gussets_without_changing_the_hinge():
+    closed, pulled = _build("ma-mavr-origami-wallet", {}), _build("ma-mavr-origami-wallet", {}, {"flap": 1, "pocket": 1})
+    assert pulled["gussets"] == 2 and closed["gussets"] == 2
+    assert pulled["twin"]["stack"] == pytest.approx(closed["twin"]["stack"])                  # the hinge wraps the contents, not the hand's pull
+    assert "pulled open" in pulled["text"] and "do not make up the stated depth" in closed["text"]
+    assert closed["boxes"].count("slit") == 4

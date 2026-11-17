@@ -234,8 +234,8 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     group.add(m);
   }
   function addBox(b) {
-    var m = new THREE.Mesh(new THREE.BoxGeometry(b.sx, b.sy, b.sz), new THREE.MeshStandardMaterial({ color: new THREE.Color(b.kind === "card" ? "#d9d3c3" : "#a9bda4"), roughness: 0.55 }));
-    m.position.set(b.x, b.y, b.z);
+    var m = new THREE.Mesh(new THREE.BoxGeometry(b.sx, b.sy, b.sz), new THREE.MeshStandardMaterial({ color: new THREE.Color(b.kind === "card" ? "#d9d3c3" : b.kind === "slit" ? "#050505" : "#a9bda4"), roughness: 0.55 }));
+    m.position.set(b.x, b.y, b.z); if (b.rz) m.rotation.z = b.rz;
     m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: new THREE.Color("#3a3a3a"), transparent: true, opacity: 0.45 })));
     group.add(m);
   }
@@ -252,7 +252,8 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
       var s = r.segs[r.panels[d.panel]]; if (!s) return;
       var L = s.len * (d.at == null ? 0.5 : d.at), nx = -Math.sin(s.phi), ny = Math.cos(s.phi), sz = d.size_mm || 9, g = new THREE.Group();
       g.add(new THREE.Mesh(new THREE.BoxGeometry(sz * 0.26, 0.7, sz), silver)); g.add(new THREE.Mesh(new THREE.BoxGeometry(sz * 0.78, 0.7, sz * 0.26), silver));
-      g.position.set(s.x + Math.cos(s.phi) * L + nx * (T / 2 + 0.35), s.y + Math.sin(s.phi) * L + ny * (T / 2 + 0.35), d.offset_mm || 0); g.rotation.z = s.phi; group.add(g);
+      var sd = (r.sides && r.sides[d.panel]) || 1;                     // which face of the panel is the outside
+      g.position.set(s.x + Math.cos(s.phi) * L + sd * nx * (T / 2 + 0.35), s.y + Math.sin(s.phi) * L + sd * ny * (T / 2 + 0.35), d.offset_mm || 0); g.rotation.z = s.phi; group.add(g);
     });
   }
   var current = null;
@@ -262,6 +263,11 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     disposeGroup();
     (current.drawStrips || current.strips).forEach(function (s) { addStrip(s, current.W); });
     (current.plates || []).forEach(addPlate); (current.boxes || []).forEach(addBox); (current.cyl || []).forEach(addCyl); addDetails(current);
+    (current.gussets || []).forEach(function (gs) {                  // the V pleats: two flat quads each, drawn in the wallet's leather
+      var pos = [], uv = []; gs.quads.forEach(function (q) { [0, 1, 2, 0, 2, 3].forEach(function (i) { pos.push(q[i][0], q[i][1], q[i][2]); uv.push(q[i][0], q[i][1] + q[i][2]); }); });
+      var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.computeVertexNormals();
+      group.add(new THREE.Mesh(g, leatherOn() ? lmat() : new THREE.MeshStandardMaterial({ color: new THREE.Color("#7f8b95"), roughness: 0.7, side: THREE.DoubleSide })));
+    });
     current.blocks.forEach(addBlock);
     var lowest = 0; current.strips.forEach(function (s) { s.forEach(function (q) { lowest = Math.min(lowest, q.y); }); });
     gridY = lowest - T / 2 - 0.4; if (grid) grid.position.y = gridY;           // the floor sits under the lowest layer, so it never cuts through the sheet

@@ -254,8 +254,10 @@ def build_data(wallets_root: str | Path = "wallets", include_designs: bool = Fal
     mat = [{"name": card.name, "species": card.species, "tanning": card.tanning, "E": card.states["new"].youngs_modulus_mpa.value if hasattr(card.states["new"], "youngs_modulus_mpa") else 72.0,
             "source": "literature"}]
     animals = json.loads(resources.files("walletsim").joinpath("assets/animals.json").read_text(encoding="utf-8"))
+    import yaml as _yaml
+    regions = _yaml.safe_load(resources.files("walletsim").joinpath("assets/hide_regions.yaml").read_text(encoding="utf-8"))
     return {"version": _version, "wallets": entries, "hidden_designs": skipped, "lab": lab, "materials": mat, "animals": animals,
-            "cards": [card_view(c) for c in cards], "coverage": coverage(cards)}
+            "cards": [card_view(c) for c in cards], "coverage": coverage(cards), "regions": regions}
 
 
 def build_site(wallets_root: str | Path = "wallets", include_designs: bool = False) -> str:
