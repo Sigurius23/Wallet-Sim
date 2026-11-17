@@ -17,7 +17,7 @@ construction you use is missing, say so and it goes here.
 | Round (U) spine | the leather wraps the end of the stack, a half-round | simulated | `fold-styles` (wrap) |
 | Box spine | flat end wall, two corners | simulated | `box-spine` |
 | Empty fold | nothing inside, the strip finds its own shape | simulated | `fold-styles` (free fold) |
-| Unequal stacks (a trifold: each fold has its own stack) | each fold wraps a different thickness | simulated, one fold at a time | run `fold-styles --cards N` for each; the folds are not coupled |
+| Unequal stacks (a trifold: each fold has its own stack) | each fold wraps a different thickness | simulated, one fold at a time | `wallet-types` fixes each fold's stack from the type; the folds are not coupled |
 
 ## 2. The layup at the fold
 | Construction | What it is | Status | How |
@@ -58,16 +58,18 @@ segments. More creases therefore share the same strain, not a lower one; each fl
 | Rolled or corded edge | leather rolled around a cord | not modelled | needs a set model and a 3D edge |
 | Stitched edge | stitch line near the edge | not modelled | needs a 3D model |
 
-## 5. Which entries a wallet type uses
-This is my reading of `construction.md` section 3, not a set of results.
+## 5. Overall wallet fold types
+Simulated fold by fold with `walletsim wallet-types`; results and assumptions in [`WALLET_TYPES.md`](WALLET_TYPES.md).
 
-| Wallet | Folds in it | Entries |
-|---|---|---|
-| Bifold | the spine around the stack; card-slot edges | sections 1 and 2; edges (4) at the top and bottom of the spine |
-| Trifold | two spine folds with different stacks | section 1, one fold at a time |
-| Card holder (one panel, two T-slots folded up) | thin folds around one or two cards | section 1 with a small `--cards` |
-| Gusseted pouch, coin pocket, accordion card case | creases or wraps that open as it fills | section 3 |
-| Turned-edge sleeve (panel + lining) | the lining edge | sections 2 and 4 |
+| Wallet | Folds | Stack each fold wraps | Status |
+|---|---|---|---|
+| Bifold (long wallet, passport cover, one-fold card holder, slim sleeve, book-style bifold) | 1 spine | all the contents | simulated |
+| Trifold (letter fold) | 2, nested | inner: its share of the contents; outer: all the contents plus one folded-in panel | simulated; the nesting is a derived rule, not a simulated assembly |
+| Z-fold / accordion / concertina card case, n panels | n - 1, alternating grain out and in | an equal share of the contents each | simulated |
+| Gusseted pouch, coin pocket, expanding card case | creases or wraps that open as it fills | the gusset kinds of section 3 | simulated per crease; not assembled into a wallet |
+| Turned-edge sleeve (panel + lining) | the lining edge | sections 2 and 4 | hem simulated; the sleeve as a whole is not |
+| Zip-around with a gusset all round | corners in plan view | | not modelled (3D) |
+| Money clip, hardware | | | not modelled |
 
 ## 6. Not covered anywhere yet
 So that nothing is missing silently: zips, snaps and hardware; perforations and punched holes; wet-forming and its shrinkage; card-slot edges tearing on a card pull
@@ -78,5 +80,6 @@ So that nothing is missing silently: zips, snaps and hardware; perforations and 
 walletsim fold-styles [--cards N | --radius R] [--styles ...]   plain, skived, lined, skived+lined, hinged, turned edge, bound edge
 walletsim box-spine   [--style plain] [--corners ...]            flat-walled spine against a round one
 walletsim gusset      [--angles ... | --expansion ...]           V / S / W creases at several openings
+walletsim wallet-types [--cards N] [--types ...]                bifold, trifold, z-fold: each fold's stack, which fold wears first
 walletsim edge-turn                                              the 180 deg turn of a turned edge
 ```

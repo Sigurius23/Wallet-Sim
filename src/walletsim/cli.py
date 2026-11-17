@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | edge-turn | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -64,7 +64,7 @@ def _sweep(a: argparse.Namespace) -> int:
 
 def _fold_styles(a: argparse.Namespace) -> int:
     from .fem.fold import FemUnavailable as _NoFem
-    from .fold_styles import STYLES, StyleParams, compare_styles, format_report, stack_inside_radius
+    from .fold_styles import StyleParams, compare_styles, format_report, stack_inside_radius
     radius = a.radius if a.radius is not None else stack_inside_radius(a.cards)
     p = StyleParams(t=a.t, E=a.E, nu=a.poisson, skive_ratio=a.skive_ratio, lining_t=a.lining_t,
                     lining_e_ratio=a.lining_e_ratio, hinge_e_ratio=a.hinge_e_ratio, hinge_t_ratio=a.hinge_t_ratio)
@@ -117,6 +117,52 @@ def _box_spine(a: argparse.Namespace) -> int:
         print(f"error: {str(exc).strip().splitlines()[0]}", file=sys.stderr)
         return 1
     print(format_box_report(res, p, a.style, half))
+    return 0
+
+
+def _parse_type(token: str) -> tuple[str, dict]:
+    """'bifold', 'trifold', 'trifold:0.3' (share of the contents in the inner fold), 'z-fold', 'z-fold:5' (panels)."""
+    name, _, arg = token.partition(":")
+    if name == "z-fold" and arg:
+        return name, {"panels": int(arg)}
+    if name == "trifold" and arg:
+        return name, {"split": float(arg)}
+    if arg:
+        raise ValueError(f"{name!r} takes no argument")
+    return name, {}
+
+
+def _wallet_types(a: argparse.Namespace) -> int:
+    from .fem.fold import FemUnavailable as _NoFem
+    from .wallet_types import ALIASES, WALLET_TYPES, Contents, evaluate_wallet, format_wallet_report, panel_thickness, plan_for
+    if a.list:
+        print("wallet fold types:", ", ".join(WALLET_TYPES))
+        print("  bifold                 two panels, one spine around all the contents")
+        print("  trifold[:share]        letter fold; share = part of the contents in the inner fold (default 0.5)")
+        print("  z-fold[:panels]        accordion of n panels (default 3), folds alternate grain out / in")
+        print("the same fold, different panels or contents:")
+        for k, v in ALIASES.items():
+            print(f"  {k:28s} -> {v}")
+        return 0
+    p = _style_params(a)
+    c = Contents(cards=a.cards, extra_mm=a.extra_mm, slot_leather_mm=a.slot_leather)
+    try:
+        types = [_parse_type(t) for t in a.types]
+        cycles = dict(kv.split("=") for kv in a.cycles) if a.cycles else None
+        cyc = {k: float(v) for k, v in cycles.items()} if cycles else None
+        t_panel = panel_thickness(p, a.layup)
+        res = []
+        for name, kw in types:
+            plan = plan_for(name, c, t_panel, **kw)
+            sub = {k: v for k, v in (cyc or {}).items() if k in {f.name for f in plan.folds}}
+            res.append(evaluate_wallet(plan, p, a.layup, a.spine, a.corner, a.taut, cycles=sub or None))
+    except (FemUnavailable, _NoFem) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except (ValueError, KeyError, RuntimeError) as exc:
+        print(f"error: {str(exc).strip().splitlines()[0]}", file=sys.stderr)
+        return 1
+    print(format_wallet_report(res, c, p))
     return 0
 
 
@@ -203,6 +249,26 @@ def main(argv: list[str] | None = None) -> int:
     bs.add_argument("--groove-width", type=float, default=2.0)
     bs.add_argument("--groove-taper", type=float, default=1.5)
     bs.set_defaults(fn=_box_spine)
+    wt = sub.add_parser("wallet-types", help="overall wallet fold types (bifold, trifold, z-fold): the stack each fold wraps, which fold wears first")
+    wt.add_argument("--list", action="store_true", help="list the types and what is the same fold")
+    wt.add_argument("--types", nargs="+", default=["bifold", "trifold", "z-fold:3", "z-fold:4"], help="bifold trifold[:share] z-fold[:panels]")
+    wt.add_argument("--cards", type=float, default=8.0)
+    wt.add_argument("--extra-mm", type=float, default=0.0, help="other contents (notes, receipts, a passport), total thickness in mm")
+    wt.add_argument("--slot-leather", type=float, default=0.0, help="mm of pocket leather per card (an assumption; 0 ignores it)")
+    wt.add_argument("--layup", default="plain", help="plain skived lined skived+lined hinged 'turned edge' 'bound edge'")
+    wt.add_argument("--spine", choices=["round", "box"], default="round")
+    wt.add_argument("--corner", type=float, default=None, help="box spine: corner radius, mm (default 1.0)")
+    wt.add_argument("--taut", type=float, default=0.1)
+    wt.add_argument("--cycles", nargs="*", default=None, help="cycles per use for a fold, e.g. 'spine=2' (default 1 each)")
+    wt.add_argument("--t", type=float, default=1.2)
+    wt.add_argument("--E", type=float, default=72.0)
+    wt.add_argument("--poisson", type=float, default=0.3)
+    wt.add_argument("--skive-ratio", type=float, default=0.5)
+    wt.add_argument("--lining-t", type=float, default=0.5)
+    wt.add_argument("--lining-e-ratio", type=float, default=1.0)
+    wt.add_argument("--groove-width", type=float, default=2.0)
+    wt.add_argument("--groove-taper", type=float, default=1.5)
+    wt.set_defaults(fn=_wallet_types)
     et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
     et.add_argument("--t", type=float, default=1.2)
     et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])

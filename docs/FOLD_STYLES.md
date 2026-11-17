@@ -271,7 +271,7 @@ Tests: `tests/test_fold.py` (30), including the closed forms without a solver.
 2. **Measured leather cards** (offcut strips: thickness, a bend test for stiffness, along/across the backbone); lining stiffness first,
    since it moves the result most.
 3. **More styles:** a stitched hinge with a seam, grain-in wraps around a stack (the solver supports them, `flat_face="inner"`; they are not in the comparison table yet),
-   the width of the hem lip and of the binding, and rolled or corded edges. The catalogue of what exists and what does not is `CONSTRUCTIONS.md`.
+   the width of the hem lip and of the binding, and rolled or corded edges. The catalogue of what exists and what does not is `CONSTRUCTIONS.md`; whole wallet types (bifold, trifold, z-fold) are in `WALLET_TYPES.md`.
 4. **Permanent set and wear:** needs flex data from your leathers; this is what turns the relative damage rate into cycles, and it is what
    a pressed pleat crease and a turned-edge turn depend on.
 5. **A full-wallet model** that uses these fold results per spine, then card pulls and drops (phases 3 to 5 of the roadmap).
