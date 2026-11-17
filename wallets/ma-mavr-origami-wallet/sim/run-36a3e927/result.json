@@ -1,0 +1,249 @@
+{
+ "id": "ma-mavr-origami-wallet",
+ "status": "photos-only",
+ "meta": {
+  "walletsim": "0.1.0",
+  "ccx": "CalculiX ccx 2.21",
+  "taut_n_per_mm": 0.1,
+  "hash": "36a3e927"
+ },
+ "inputs": [
+  {
+   "name": "shell thickness",
+   "value": 1.0,
+   "unit": "mm",
+   "source": "reported",
+   "ref": "DRIEW listing (corpus MAP08): 'vegetable-tanned full-grain pig leather, 1mm thickness'"
+  },
+  {
+   "name": "shell stiffness E",
+   "value": 72,
+   "unit": "MPa",
+   "source": "assumed",
+   "ref": "placeholder: the tensile value measured for 1.2 mm CALFskin (Mihai et al., Materials 2022, 15(15):5107); this is pig leather and has not been tested"
+  },
+  {
+   "name": "Poisson's ratio",
+   "value": 0.3,
+   "unit": "-",
+   "source": "assumed",
+   "ref": ""
+  },
+  {
+   "name": "cards",
+   "value": 0,
+   "unit": "",
+   "source": "assumed",
+   "ref": "contents not stated; the depth was measured flat"
+  },
+  {
+   "name": "card thickness",
+   "value": 0.76,
+   "unit": "mm",
+   "source": "literature",
+   "ref": "ISO/IEC 7810 ID-1 nominal thickness"
+  },
+  {
+   "name": "other contents",
+   "value": 0.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": ""
+  },
+  {
+   "name": "closed thickness at the spine",
+   "value": 18.0,
+   "unit": "mm",
+   "source": "reported",
+   "ref": "DRIEW listing: Measurements (Flat) Depth 1.8 cm, 'measured by hand, laid flat'; length 14.5 cm, width 9.5 cm"
+  },
+  {
+   "name": "bill-pocket gusset crease (one of two): stack it wraps",
+   "value": 1.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": "the V pleat at each side of the bill pocket, collapsed flat when the pocket is empty; the void is assumed to look like the One Piece loops (about one leather thickness). Two such creases, identical here"
+  },
+  {
+   "name": "main fold: stack it wraps (derived from the closed thickness)",
+   "value": 16.0,
+   "unit": "mm",
+   "source": "inferred",
+   "ref": "derived: closed thickness 18 mm - 2 x 1 mm of shell; the lower bound 10 mm is assumed (the pack compresses). the wallet folds once; this fold wraps everything but the outer shell"
+  },
+  {
+   "name": "closed thickness",
+   "value": 18.0,
+   "unit": "mm",
+   "source": "reported",
+   "ref": "DRIEW listing: Measurements (Flat) Depth 1.8 cm, 'measured by hand, laid flat'; length 14.5 cm, width 9.5 cm"
+  }
+ ],
+ "stack_at_spine_mm": 16.0,
+ "folds": [
+  {
+   "fold": "main fold",
+   "sense": "in",
+   "stack_mm": 16.0,
+   "inside_radius_mm": 8.0,
+   "tension_loose": 0.061232175627068175,
+   "tension_taut": 0.06229022294570252,
+   "closed_form": 0.05882352941176472,
+   "grain_taut": -0.05728530274545207,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 0.7567497,
+   "standoff_loose_mm": 0.2622711496421193,
+   "error": ""
+  },
+  {
+   "fold": "bill-pocket gusset crease (one of two)",
+   "sense": "out",
+   "stack_mm": 1.0,
+   "inside_radius_mm": 0.5,
+   "tension_loose": 0.18886872540888427,
+   "tension_taut": 0.20589448559780388,
+   "closed_form": 0.5,
+   "grain_taut": 0.20589448559780388,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 2.539531,
+   "standoff_loose_mm": 0.7481520744500834,
+   "error": ""
+  }
+ ],
+ "scenarios": [],
+ "sweeps": [
+  {
+   "fold": "main fold",
+   "sense": "in",
+   "stack_mm": 10.0,
+   "inside_radius_mm": 5.0,
+   "tension_loose": 0.09177290075294242,
+   "tension_taut": 0.09668446726923641,
+   "closed_form": 0.09090909090909083,
+   "grain_taut": -0.08818666166197842,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 1.161308,
+   "standoff_loose_mm": 0.5438985929567792,
+   "error": "",
+   "end": "low"
+  },
+  {
+   "fold": "bill-pocket gusset crease (one of two)",
+   "sense": "out",
+   "stack_mm": 0.5,
+   "inside_radius_mm": 0.25,
+   "tension_loose": null,
+   "tension_taut": null,
+   "closed_form": 0.6666666666666666,
+   "grain_taut": null,
+   "note": "R/t = 0.25 < 0.5: closed form only; the elastic model cannot say whether the leather survives",
+   "moment_taut_n_mm_per_mm": null,
+   "standoff_loose_mm": null,
+   "error": "",
+   "end": "low"
+  },
+  {
+   "fold": "bill-pocket gusset crease (one of two)",
+   "sense": "out",
+   "stack_mm": 4.0,
+   "inside_radius_mm": 2.0,
+   "tension_loose": 0.14003369999633064,
+   "tension_taut": 0.15342388386679162,
+   "closed_form": 0.19999999999999996,
+   "grain_taut": 0.15342388386679162,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 2.009731,
+   "standoff_loose_mm": 0.874137474090761,
+   "error": "",
+   "end": "high"
+  }
+ ],
+ "elasticity_stack": -0.9410867331895392,
+ "elasticity_thickness": 0.9412253534412209,
+ "failure_modes": [
+  {
+   "id": 1,
+   "name": "Grain crack at the hinge",
+   "status": "computed",
+   "text": "bill-pocket gusset crease (one of two): tension-face strain 18.9 % loose to 20.6 % taut (closed-form limit 50.0 %), inside radius 0.50 mm, R/t = 0.5; the model's leather bridges this stack, so the closed form is the number to read; inside radius below 1 x t: the grain relies on the finish to hold, expect cracking (R/t=0.50); outer-fibre strain >= 20 % (screening threshold, not a validated failure criterion). Cycles to crack need flex-test data."
+  },
+  {
+   "id": 2,
+   "name": "Permanent set",
+   "status": "not modelled",
+   "text": "needs a cyclic viscoplastic model and fold-and-measure data; it is the usual first visible sign of a worn hinge"
+  },
+  {
+   "id": 3,
+   "name": "Finish crazing or delamination",
+   "status": "not modelled",
+   "text": "a film-on-substrate model quoted in prior-research/reference/durability.md section 2b has a stiff finish buckling at 2-12 % compressive strain; at bill-pocket gusset crease (one of two) the compression face is -17.7 % and the grain is in tension, not compression"
+  },
+  {
+   "id": 4,
+   "name": "Stress at stitch holes",
+   "status": "unknown",
+   "text": "the wallet is stitched, but whether the stitching crosses or pins a fold is not recorded"
+  },
+  {
+   "id": 5,
+   "name": "Skive-line or thickness step",
+   "status": "unknown",
+   "text": "whether the folds are skived is not recorded; a skive line is a stiffness step where cracks start"
+  },
+  {
+   "id": 6,
+   "name": "Edge paint chipping",
+   "status": "unknown",
+   "text": "the edge treatment is not recorded; record it (painted edges chip where they flex)"
+  },
+  {
+   "id": 7,
+   "name": "Pocket-mouth and corner abrasion",
+   "status": "not modelled",
+   "text": "3 pocket(s) recorded; needs the card-pull scenario (roadmap phase 4) and wear photos to calibrate"
+  },
+  {
+   "id": 8,
+   "name": "Perforation tear line",
+   "status": "unknown",
+   "text": "no recorded row of holes crosses a fold"
+  },
+  {
+   "id": 9,
+   "name": "Layer delamination",
+   "status": "not modelled",
+   "text": "layers are treated as perfectly bonded; the record does not say what is glued"
+  },
+  {
+   "id": 10,
+   "name": "Cold embrittlement",
+   "status": "not modelled",
+   "text": "needs a cold flex test; no built-in factor"
+  },
+  {
+   "id": 11,
+   "name": "Wet and salt flex",
+   "status": "not modelled",
+   "text": "needs a wet flex test"
+  },
+  {
+   "id": 12,
+   "name": "Over-drying",
+   "status": "not modelled",
+   "text": "needs a measured material state (stiffness and strain to crack at a stated humidity)"
+  },
+  {
+   "id": 13,
+   "name": "Long-term chemical ageing",
+   "status": "not modelled",
+   "text": "ageing enters only through measured aged states; none recorded"
+  },
+  {
+   "id": 14,
+   "name": "Colour, patina, water spotting",
+   "status": "not modelled",
+   "text": "appearance only"
+  }
+ ]
+}

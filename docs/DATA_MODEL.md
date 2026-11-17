@@ -74,8 +74,9 @@ pockets:
 usage: {used: false}
 ```
 
-Provenance (`source`) is one of `measured` (you measured it on the object), `inferred` (read from photos or drawings), `design` (what a design file or pattern
-specifies; the physical object may differ), `literature` (a cited publication or standard) or `assumed` (a stand-in). `walletsim.record` rejects a number without one.
+Provenance (`source`) is one of `measured` (you measured it on the object), `reported` (stated by a seller, maker or retailer and not checked: a listed thickness, a stated size),
+`inferred` (read from photos or drawings, or derived from other numbers), `design` (what a design file or pattern specifies; the physical object may differ), `literature` (a cited
+publication or standard) or `assumed` (a stand-in). `walletsim.record` rejects a number without one. `reported` is not `measured`: reports count it as not measured.
 
 Rules:
 - `assumed` values are allowed, but any result that depends on one is labelled with it.
@@ -92,6 +93,11 @@ Rules:
         sense: out                       # out: grain on the outside of the fold; in: grain inside
       - {name: loop 1, stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed}, sense: in}
   ```
+  A fold's stack may also be **derived**, so that it moves when the number it comes from moves:
+  `stack_from_loops: {leaves: {value: 4, source: inferred}, gap_from: <loop fold>}` (a one-sheet accordion: `leaves x t + (leaves + 1) x gap`, with the gap taken from the named loop) and
+  `stack_from_closed_thickness: {shells: 2, low: 10.0}` (a fold that wraps the whole pack: `closed_thickness_mm - shells x t`, with the stated lower bound; tagged `inferred`).
+  `seams.crosses_fold: unknown` says the seam exists but nobody has recorded where; the stitch-hole and perforation modes then read *unknown*, not *not triggered*.
+  `usage: {used: true, condition: "..."}` marks a wallet that has been carried; the report prints the condition under its title, and no ageing is inferred from it.
 - A fold whose inside radius is below half the leather thickness is not run through the solver (the elastic model shows the leather bridging the gap); it gets the closed form and is
   marked *closed form only*. A fold whose leather, with no pull on it, stands off the stack by more than the stack's radius is marked *bridges* and is ranked by the closed form.
 - Photos are never overwritten; rectified or derived images go in `measured/`.

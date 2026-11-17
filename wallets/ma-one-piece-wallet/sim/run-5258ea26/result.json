@@ -5,14 +5,14 @@
   "walletsim": "0.1.0",
   "ccx": "CalculiX ccx 2.21",
   "taut_n_per_mm": 0.1,
-  "hash": "48d621da"
+  "hash": "5258ea26"
  },
  "inputs": [
   {
    "name": "shell thickness",
    "value": 1.0,
    "unit": "mm",
-   "source": "design",
+   "source": "reported",
    "ref": "retailer (Lucentement, corpus MAP03): 'one piece of 1 mm thick calf leather'"
   },
   {
@@ -58,11 +58,18 @@
    "ref": "the void inside the loop looks about one leather thickness across in the enlarged photograph; the upper bound is a pocket holding about 5 cards"
   },
   {
+   "name": "left fold (spine end): stack it wraps",
+   "value": 1.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": "the hairpin between leaf A and leaf B, at the spine end; assumed to have the same void as the loops, since the layers lie one gap apart. It turns the other way from the loops, so the grain is on the inside"
+  },
+  {
    "name": "loop 2 (end opposite the spine): stack it wraps",
    "value": 1.0,
    "unit": "mm",
    "source": "assumed",
-   "ref": "as loop 1; the second loop turns the other way, so the grain is on the inside"
+   "ref": "as loop 1; it turns the same way as loop 1 (both are on the same side of the chain), so the grain is on the outside"
   },
   {
    "name": "inner leaves",
@@ -110,7 +117,7 @@
    "error": ""
   },
   {
-   "fold": "loop 2 (end opposite the spine)",
+   "fold": "left fold (spine end)",
    "sense": "in",
    "stack_mm": 1.0,
    "inside_radius_mm": 0.5,
@@ -118,6 +125,20 @@
    "tension_taut": 0.20589448559780388,
    "closed_form": 0.5,
    "grain_taut": -0.17674486026472402,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 2.539531,
+   "standoff_loose_mm": 0.7481520744500834,
+   "error": ""
+  },
+  {
+   "fold": "loop 2 (end opposite the spine)",
+   "sense": "out",
+   "stack_mm": 1.0,
+   "inside_radius_mm": 0.5,
+   "tension_loose": 0.18886872540888427,
+   "tension_taut": 0.20589448559780388,
+   "closed_form": 0.5,
+   "grain_taut": 0.20589448559780388,
    "note": "",
    "moment_taut_n_mm_per_mm": 2.539531,
    "standoff_loose_mm": 0.7481520744500834,
@@ -187,7 +208,7 @@
    "end": "high"
   },
   {
-   "fold": "loop 2 (end opposite the spine)",
+   "fold": "left fold (spine end)",
    "sense": "in",
    "stack_mm": 0.5,
    "inside_radius_mm": 0.25,
@@ -202,7 +223,7 @@
    "end": "low"
   },
   {
-   "fold": "loop 2 (end opposite the spine)",
+   "fold": "left fold (spine end)",
    "sense": "in",
    "stack_mm": 4.0,
    "inside_radius_mm": 2.0,
@@ -210,6 +231,36 @@
    "tension_taut": 0.15342388386679162,
    "closed_form": 0.19999999999999996,
    "grain_taut": -0.1357122598363153,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 2.009731,
+   "standoff_loose_mm": 0.874137474090761,
+   "error": "",
+   "end": "high"
+  },
+  {
+   "fold": "loop 2 (end opposite the spine)",
+   "sense": "out",
+   "stack_mm": 0.5,
+   "inside_radius_mm": 0.25,
+   "tension_loose": null,
+   "tension_taut": null,
+   "closed_form": 0.6666666666666666,
+   "grain_taut": null,
+   "note": "R/t = 0.25 < 0.5: closed form only; the elastic model cannot say whether the leather survives",
+   "moment_taut_n_mm_per_mm": null,
+   "standoff_loose_mm": null,
+   "error": "",
+   "end": "low"
+  },
+  {
+   "fold": "loop 2 (end opposite the spine)",
+   "sense": "out",
+   "stack_mm": 4.0,
+   "inside_radius_mm": 2.0,
+   "tension_loose": 0.14003369999633064,
+   "tension_taut": 0.15342388386679162,
+   "closed_form": 0.19999999999999996,
+   "grain_taut": 0.15342388386679162,
    "note": "",
    "moment_taut_n_mm_per_mm": 2.009731,
    "standoff_loose_mm": 0.874137474090761,
@@ -242,7 +293,7 @@
    "id": 4,
    "name": "Stress at stitch holes",
    "status": "flagged",
-   "text": "stitching (thread ties) crosses or pins the fold(s): loop 1 (end opposite the spine), loop 2 (end opposite the spine). Holes in a bend remove part of the section there. No local model yet"
+   "text": "stitching (thread ties) crosses or pins the fold(s): loop 1 (end opposite the spine), left fold (spine end), loop 2 (end opposite the spine). Holes in a bend remove part of the section there. No local model yet"
   },
   {
    "id": 5,

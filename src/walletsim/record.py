@@ -3,6 +3,7 @@
 The record format is described in ``docs/DATA_MODEL.md``. Provenance values (the ``source`` of every number that feeds a simulation):
 
 ``measured``   you measured it on the object
+``reported``   stated by a seller, maker or retailer about the object; not checked by anyone here
 ``inferred``   read from photos or drawings, not measured
 ``design``     what a design file or pattern specifies; the physical object may differ
 ``literature`` from a cited publication or standard
@@ -22,7 +23,7 @@ from .wallet_types import WALLET_TYPES, Contents, Fold, WalletPlan, plan_for
 
 CUSTOM = "custom"        # a wallet whose folds are listed one by one in construction.folds_modelled (origami and other one-sheet constructions)
 
-PROVENANCE = ("measured", "inferred", "design", "literature", "assumed")
+PROVENANCE = ("measured", "reported", "inferred", "design", "literature", "assumed")
 
 
 class RecordError(ValueError):
@@ -200,11 +201,12 @@ def load_wallet(path: str | Path) -> WalletRecord:
         specs = cons.get("folds_modelled") or []
         if not specs:
             errors.append("construction.type custom needs construction.folds_modelled: a list of {name, stack_mm, sense}")
+        cl = _leaf(cons, "closed_thickness_mm", [], optional=True)
         derived: list[tuple[int, str, dict]] = []                       # folds whose stack follows from another fold's (resolved after the explicit ones)
         slots: list[CustomFold | None] = []
         for k, fs in enumerate(specs):
             nm = fs.get("name", f"fold {k + 1}")
-            if "stack_from_loops" in fs:
+            if "stack_from_loops" in fs or "stack_from_closed_thickness" in fs:
                 slots.append(None)
                 derived.append((len(slots) - 1, nm, fs))
                 continue
@@ -223,6 +225,26 @@ def load_wallet(path: str | Path) -> WalletRecord:
             slots.append(fold)
             inputs.append(Input(f"{nm}: stack it wraps", got[0], "mm", got[1], got[2], "the inside radius of this fold"))
         for idx, nm, fs in derived:
+            if "stack_from_closed_thickness" in fs:
+                # A fold that wraps everything but the shell: stack = closed thickness - shells x t. The upper bound is that value (the pack cannot be
+                # thicker than the closed wallet); the lower bound is given in the record, because leather and air in the pack compress.
+                spec = fs["stack_from_closed_thickness"]
+                if cl is None:
+                    errors.append(f"{nm}: stack_from_closed_thickness needs construction.closed_thickness_mm")
+                    continue
+                t0 = float(shell_t)
+                stack = float(cl[0]) - float(spec.get("shells", 2)) * t0
+                lo = spec.get("low")
+                ref = (f"derived: closed thickness {float(cl[0]):g} mm - {float(spec.get('shells', 2)):g} x {t0:g} mm of shell"
+                       + (f"; the lower bound {lo:g} mm is assumed (the pack compresses)" if lo is not None else "") + f". {spec.get('ref', '')}").strip()
+                sense = fs.get("sense", "out")
+                if sense not in ("out", "in"):
+                    errors.append(f"{nm}: sense must be out or in")
+                # The number is derived from a stated thickness by a formula that assumes one fold wraps the whole pack, so it is inferred, never "reported" or "measured".
+                src = "inferred" if cl[1] in ("measured", "reported", "inferred") else cl[1]
+                slots[idx] = CustomFold(nm, stack, lo, stack if lo is not None else None, src, sense, float(fs.get("cycles_per_use", 1.0)), ref)
+                inputs.append(Input(f"{nm}: stack it wraps (derived from the closed thickness)", round(stack, 4), "mm", src, ref, "the inside radius of this fold"))
+                continue
             # One-sheet accordion: the layers lie one gap apart, and the gap is the void inside a loop. A spine that wraps `leaves` leaves therefore
             # wraps  leaves x t + (leaves + 1) x gap  (the +1 counts the gap above the bottom panel). The gap is taken from the named loop fold.
             spec = fs["stack_from_loops"]
@@ -248,7 +270,6 @@ def load_wallet(path: str | Path) -> WalletRecord:
             inputs.append(Input("inner leaves", leaves[0], "", leaves[1], leaves[2], "the spine's stack (derived)"))
             inputs.append(Input(f"{nm}: stack it wraps (derived from the loops)", round(stack, 4), "mm", src, ref, "the inside radius of this fold"))
         custom.extend(f for f in slots if f is not None)
-        cl = _leaf(cons, "closed_thickness_mm", [], optional=True)
         if cl is not None:
             closed_known = float(cl[0])
             inputs.append(Input("closed thickness", cl[0], "mm", cl[1], cl[2], "report only"))
@@ -286,6 +307,27 @@ MEASURE_FIRST = [
     ("edge treatment and stitching", "Record the edge finish (painted, burnished, turned, bound) and whether stitching crosses the spine."),
     ("wear history", "If it has been used: photographs of the spine and the pocket mouths, and roughly how long and how it was carried."),
 ]
+
+
+MEASURE_FIRST_POCKETED = [
+    ("closed thickness, and how much of it the main fold wraps", "Calipers across the closed wallet at the spine, edge-on photographs with a ruler, and a count of the layers. The depth now on record is the seller's hand "
+                                                              "measurement; the pockets, the cards and the bills all add to it, and nothing says how much of that depth the main fold turns round."),
+    ("the gusset creases", "Photograph one side pleat of the bill pocket edge-on against a ruler, empty and with a few bills in it. Their radius is only assumed here, and it decides the tightest fold in the model."),
+    ("sheet thickness", "Calipers at 3 or more points along the sheet, away from the edges and folds; the listing says 1 mm."),
+    ("where the stitching goes", "Record which seams cross or pin a fold; the listing says only that the wallet has hand-stitched details."),
+    ("stiffness and ageing", "No tensile or bend test of this leather exists. Any test on an offcut or a worn sample gives the closing moment; the calf value in use is a placeholder, and pig leather differs."),
+    ("wear history", "The seller's photograph of the flap shows light abrasion. Photograph the wear at the folds and pocket mouths with a ruler, and note how long and how it was carried."),
+]
+
+
+def measure_first(rec: "WalletRecord") -> list[tuple[str, str]]:
+    """The measurement list that fits this record: the standard wallets, the loop-and-leaf origami, or an origami known by its closed thickness."""
+    if rec.wallet_type != CUSTOM:
+        return MEASURE_FIRST
+    specs = (rec.raw.get("construction") or {}).get("folds_modelled") or []
+    if any("stack_from_loops" in s for s in specs):
+        return MEASURE_FIRST_CUSTOM
+    return MEASURE_FIRST_POCKETED if any("stack_from_closed_thickness" in s for s in specs) else MEASURE_FIRST_CUSTOM
 
 
 MEASURE_FIRST_CUSTOM = [

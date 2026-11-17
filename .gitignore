@@ -7,3 +7,6 @@ work/
 *.dat
 *.sta
 *.cvg
+
+# generated one-page summaries: rebuild with `walletsim wallet-page wallets/<slug>`
+wallets/*/sim/run-*/page.html

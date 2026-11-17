@@ -22,8 +22,8 @@ archive:
 leather:
   - id: shell
     role: the single sheet the whole wallet is folded from
-    thickness_mm: {value: 1.0, source: design, ref: "retailer (Lucentement, corpus MAP03): 'one piece of 1 mm thick calf leather'"}
-    species: {value: bovine (calf), source: design, ref: "composition: calf leather 100 %"}
+    thickness_mm: {value: 1.0, source: reported, ref: "retailer (Lucentement, corpus MAP03): 'one piece of 1 mm thick calf leather'"}
+    species: {value: bovine (calf), source: reported, ref: "composition: calf leather 100 %"}
     hide_region: {value: unknown, source: assumed}
     windows: {beamhouse: unknown, tanning: unknown, post_tanning: unknown, finishing: unknown}
     edge: {value: unknown, source: assumed}
@@ -44,6 +44,8 @@ construction:
   #   - the outer sheet wraps one end ("the spine") and continues as the bottom panel                       moderate
   #   - three thin inner leaves lie inside the wrap, each with a thread tie near the spine end               moderate
   #   - at the opposite end, two tight hairpin folds ("loops"), one over the other, each pinned by a thread tie  moderate
+  #   - the leaves are joined into one accordion (Z-chain): top -> loop 1 -> leaf A -> left fold -> leaf B -> loop 2 -> leaf C (free end).
+  #     Both loops turn the same way (grain outside); the left fold turns the other way (grain inside)             inferred layout
   #   - NO scale in any photograph: every radius and thickness below is an inference or an assumption          -
   folds_modelled:
     - name: spine
@@ -55,13 +57,20 @@ construction:
     - name: loop 1 (end opposite the spine)
       stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "the void inside the loop looks about one leather thickness across in the enlarged photograph; the upper bound is a pocket holding about 5 cards"}
       sense: out
-    - name: loop 2 (end opposite the spine)
-      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "as loop 1; the second loop turns the other way, so the grain is on the inside"}
+    - name: left fold (spine end)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "the hairpin between leaf A and leaf B, at the spine end; assumed to have the same void as the loops, since the layers lie one gap apart. It turns the other way from the loops, so the grain is on the inside"}
       sense: in
+    - name: loop 2 (end opposite the spine)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "as loop 1; it turns the same way as loop 1 (both are on the same side of the chain), so the grain is on the outside"}
+      sense: out
 panels:
   - {id: sheet, leather: shell, outline: null, grain_direction_deg: {value: 0, source: assumed}}
 folds:
   - id: spine
+    panel: sheet
+    rest_angle_deg: 180
+    skived: {value: unknown, source: assumed}
+  - id: left fold
     panel: sheet
     rest_angle_deg: 180
     skived: {value: unknown, source: assumed}
@@ -72,11 +81,12 @@ folds:
 seams:
   - id: thread ties
     note: "thread ties through the two loops and through the ends of the three inner leaves near the spine (corpus images 005, 008)"
-    crosses_fold: [loop 1 (end opposite the spine), loop 2 (end opposite the spine)]
+    crosses_fold: [loop 1 (end opposite the spine), left fold (spine end), loop 2 (end opposite the spine)]
     holes: {value: 0, source: assumed, note: "number of holes not visible"}
 pockets: []
 sizes:
-  S: {closed_footprint_cm: [11.5, 7.5], source: design}
-  M: {closed_footprint_cm: [13, 9], source: design}
-  L: {closed_footprint_cm: [15, 10], source: design}
+  S: {closed_footprint_cm: [11.5, 7.5], source: reported}
+  M: {closed_footprint_cm: [13, 9], source: reported}
+  L: {closed_footprint_cm: [15, 10], source: reported}
+rights_note: "Source photographs are in the Wallet-corpus- archive (commit bda0572). They are research documentation only, so they are not shown here."
 usage: {used: false}

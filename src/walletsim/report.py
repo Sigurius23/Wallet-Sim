@@ -18,7 +18,7 @@ import numpy as np
 
 from . import __version__
 from .fold_screen import STRAIN_SCREEN, outer_fibre_strain, screen
-from .record import MEASURE_FIRST, MEASURE_FIRST_CUSTOM, WalletRecord
+from .record import WalletRecord, measure_first
 from .wallet_types import Contents, Fold, FoldOutcome, WalletPlan, WalletResult, evaluate_wallet
 
 
@@ -113,7 +113,8 @@ def failure_modes(rep: Report) -> list[dict]:
     """The 14 failure modes of docs/FAILURE_MODES.md, as they stand for this wallet."""
     rec, base = rep.rec, rep.base
     spine = base.outcomes[0]
-    crossing = [s for s in rec.seams if s.get("crosses_fold")]
+    crossing = [s for s in rec.seams if s.get("crosses_fold") and s.get("crosses_fold") != "unknown"]
+    seams_unknown = any(s.get("crosses_fold") == "unknown" for s in rec.seams)
     skiv = [f.get("skived", {}).get("value") if isinstance(f.get("skived"), dict) else None for f in rec.folds]
     skived = any(v is True for v in skiv)
     skive_unknown = (not skived) and (not skiv or any(v in (None, "unknown") for v in skiv))
@@ -149,6 +150,8 @@ def failure_modes(rep: Report) -> list[dict]:
     if crossing:
         add(4, "Stress at stitch holes", "flagged", f"stitching ({', '.join(s['id'] for s in crossing)}) crosses or pins the fold(s): {', '.join(crossing[0]['crosses_fold'])}. "
             "Holes in a bend remove part of the section there. No local model yet")
+    elif seams_unknown:
+        add(4, "Stress at stitch holes", "unknown", "the wallet is stitched, but whether the stitching crosses or pins a fold is not recorded")
     else:
         add(4, "Stress at stitch holes", "not triggered", "no recorded stitch line crosses a fold")
     if skived:
@@ -167,7 +170,7 @@ def failure_modes(rep: Report) -> list[dict]:
     add(7, "Pocket-mouth and corner abrasion", "not modelled",
         (f"{len(pockets)} pocket(s) recorded" if pockets else "no pockets recorded (the photographs show some; they are not described yet)")
         + "; needs the card-pull scenario (roadmap phase 4) and wear photos to calibrate")
-    add(8, "Perforation tear line", "flagged" if crossing else "not triggered",
+    add(8, "Perforation tear line", "flagged" if crossing else ("unknown" if seams_unknown else "not triggered"),
         ((f"{sum(int(s.get('holes', {}).get('value', 0)) for s in crossing)} stitch holes in a line that crosses the fold" if sum(int(s.get('holes', {}).get('value', 0)) for s in crossing)
           else "holes through the fold(s) (their number is not recorded)") if crossing else "no recorded row of holes crosses a fold"))
     add(9, "Layer delamination", "not modelled", "layers are treated as perfectly bonded; the record does not say what is glued")
@@ -295,6 +298,7 @@ def format_markdown(rep: Report, figures: dict[str, list[str]] | None = None) ->
         L += [BANNERS[rec.status], ""]
     what = (f"custom, {len(rec.custom_folds)} folds listed in the record, {rec.layup} layup" if custom else f"{rec.wallet_type}, {rec.spine} spine, {rec.layup} layup, {rec.cards:g} cards")
     L += [f"- wallet: `{rec.id}` ({what}); status: {rec.status}",
+          *([f"- usage: used. {rec.raw['usage'].get('condition', '')}"] if isinstance(rec.raw.get("usage"), dict) and rec.raw["usage"].get("used") else []),
           "- inputs by source: " + ", ".join(f"{n} {k}" for k, n in counts.items() if n) + f" (of {len(rec.inputs)})",
           f"- model: walletsim {rep.meta['walletsim']}, {rep.meta['ccx']}, plane-strain neo-Hookean fold, pull for 'taut' {rep.meta['taut_n_per_mm']} N per mm; run `{rep.meta['hash']}`", ""]
     L += ["## Inputs and where each came from", "", "| input | value | source | what it changes | note |", "|---|---|---|---|---|"]
@@ -370,7 +374,7 @@ def format_markdown(rep: Report, figures: dict[str, list[str]] | None = None) ->
     for m in rep.modes:
         L.append(f"| {m['id']} | {m['name']} | **{m['status']}** | {m['text']} |")
     L += ["", "## What to measure first", ""]
-    for n, (name, how) in enumerate(MEASURE_FIRST_CUSTOM if custom else MEASURE_FIRST, 1):
+    for n, (name, how) in enumerate(measure_first(rec), 1):
         L.append(f"{n}. **{name}**: {how}")
     L += ["", "## Reproduce", "", f"`walletsim wallet-report wallets/{rec.id}` with walletsim {rep.meta['walletsim']}. The exact `wallet.yaml` used is stored next to this report as `inputs.yaml`; "
           "every number above comes from `result.json`.", ""]

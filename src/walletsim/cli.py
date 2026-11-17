@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | edge-turn | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | wallet-page | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -188,6 +188,17 @@ def _wallet_report(a: argparse.Namespace) -> int:
     return 0
 
 
+def _wallet_page(a: argparse.Namespace) -> int:
+    from .page import write_page
+    try:
+        out = write_page(a.run, a.wallet, a.out)
+    except (FileNotFoundError, ValueError, KeyError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"page written to {out} ({out.stat().st_size / 1e6:.2f} MB)")
+    return 0
+
+
 def _edge_turn(a: argparse.Namespace) -> int:
     from .fold_styles import edge_turn_table, format_edge_turn_report
     print(format_edge_turn_report(edge_turn_table(a.t, tuple(a.skive_ratios), tuple(a.cores)), a.t))
@@ -298,6 +309,11 @@ def main(argv: list[str] | None = None) -> int:
     wr.add_argument("--no-sensitivity", action="store_true", help="skip the stack-size scenarios (faster)")
     wr.add_argument("--no-figures", action="store_true")
     wr.set_defaults(fn=_wallet_report)
+    wp = sub.add_parser("wallet-page", help="build a self-contained HTML page from a wallet's latest report run")
+    wp.add_argument("wallet", nargs="?", default=None, help="a wallets/<id> folder (uses its latest run)")
+    wp.add_argument("--run", default=None, help="a specific sim/run-<hash> folder")
+    wp.add_argument("--out", default=None)
+    wp.set_defaults(fn=_wallet_page)
     et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
     et.add_argument("--t", type=float, default=1.2)
     et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])

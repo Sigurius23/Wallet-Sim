@@ -6,7 +6,7 @@
 
 **Rights:** the corpus says its images are research documentation only and that no licence is granted, so they are referenced by path and are not copied into this repository.
 
-## What the sources state (tagged `design` in the record)
+## What the sources state (tagged `reported` in the record: stated by the seller, not checked)
 | fact | source |
 |---|---|
 | one piece of 1 mm thick calf leather, red or black | retailer page, corpus source `MAP03` (Lucentement) |
@@ -23,7 +23,7 @@ Edge-on photographs of the closed wallet (corpus images 005 black and 008 red), 
 |---|---|
 | the outer sheet wraps one end, the spine, and continues as the bottom panel | moderate |
 | three thin inner leaves lie inside the wrap, each with a thread tie near the spine end | moderate |
-| at the opposite end, two tight hairpin folds, one over the other, each pinned by a thread tie | moderate |
+| at the opposite end, two tight hairpin folds, one over the other, each pinned by a thread tie; with the left fold between leaves A and B that makes **three** tight hairpins in the record | moderate |
 | the void inside each loop looks about one leather thickness across | low |
 | which face of the sheet is the grain; whether the folds are skived; the edge finish | not visible |
 | any scale: none of the photographs has a ruler, so no radius or thickness can be measured from them | n/a |
@@ -32,7 +32,9 @@ The interior photographs (006, 009, 010, 011) show a flap with a silver cross, a
 described the pockets in the record yet.
 
 ## What the report concludes (run `walletsim wallet-report wallets/ma-one-piece-wallet`)
-See `sim/run-*/report.md`. In short: with the empty wallet's stacks the two loops are the folds that matter, not the spine, and the model can only screen them.
+See `sim/run-*/report.md` (and `page.html`, the same results as one page). In short: with the empty wallet's stacks the **three tight hairpins** (two loops and the left fold) are the folds that matter, not the spine, and the model can only screen them: 19 to 21 % in the simulation, which bridges the stack, against 50 % in the closed form (range 20 to 67 %). The spine is 11 to 13 % (closed form 12.5 %, range 5 to 17 %).
+
+**Correction, 2026-11:** the first version of this record listed only the two right-end loops, left out the left fold between leaves A and B, and gave loop 2 the wrong grain direction (in; both right-end loops turn grain out, the left fold turns grain in). The record, tests and report were redone; the earlier run was discarded.
 
 ## To turn this into a real record
 Measure a physical One Piece Wallet: closed thickness and layer count at the spine; each loop's inside radius or gap, edge-on next to a ruler; the sheet thickness at several points;

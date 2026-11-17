@@ -123,9 +123,9 @@ def test_ma_record_is_photos_only_with_nothing_measured_and_lists_its_folds():
     rec = load_wallet(MA)
     assert rec.status == "photos-only" and rec.wallet_type == "custom"
     assert rec.provenance_counts()["measured"] == 0
-    assert [f.name.split(" ")[0] + " " + f.sense for f in rec.custom_folds] == ["spine out", "loop out", "loop in"]
+    assert [f.name.split(" ")[0] + " " + f.sense for f in rec.custom_folds] == ["spine out", "loop out", "left in", "loop out"]
     plan = rec.plan()
-    assert [f.sense for f in plan.folds] == ["out", "out", "in"] and plan.closed_thickness_mm != plan.closed_thickness_mm   # NaN: not recorded
+    assert [f.sense for f in plan.folds] == ["out", "out", "in", "out"] and plan.closed_thickness_mm != plan.closed_thickness_mm   # NaN: not recorded
     assert rec.stack_at_spine_mm == pytest.approx(7.0)                       # the 'spine' fold's stack, derived from the loops
     assert rec.custom_folds[0].low_mm == pytest.approx(5.0) and rec.custom_folds[0].high_mm == pytest.approx(19.0)
 
@@ -157,17 +157,17 @@ def _copy_ma(dest, mutate):
 @needs_ccx
 def test_ma_report_ranks_the_tight_loops_by_the_closed_form_because_the_elastic_model_bridges_them(tmp_path):
     rep = build_report(load_wallet(MA), sensitivity=False)
-    spine, loop1, loop2 = rep.base.outcomes
+    spine, loop1, left, loop2 = rep.base.outcomes
     assert spine.tension("taut") is not None and not spine.bridges
-    assert loop1.bridges and loop2.bridges                                    # R/t = 0.5: the leather stands off the stack by more than the radius
+    assert loop1.bridges and left.bridges and loop2.bridges                   # R/t = 0.5: the leather stands off the stack by more than the radius
     assert loop1.screen_strain == pytest.approx(loop1.closed_form) == pytest.approx(0.5, abs=1e-6)
-    assert rep.base.worst.fold.name.startswith("loop")                          # the loops, not the spine, are the worst folds
+    assert rep.base.worst.fold.name != "spine"                                  # a tight hairpin, not the spine, is the worst fold
     status = {m["id"]: m["status"] for m in rep.modes}
     assert status[4] == "flagged" and status[5] == "unknown" and status[2] == "not modelled"
     out = write_report(rep, tmp_path / "r")
     md = (out / "report.md").read_text()
     assert "retailer's text and product photographs" in md and "bridges" in md and "no pockets recorded" in md
-    assert all((out / f"fold{k}_shape.png").exists() for k in (1, 2, 3))
+    assert all((out / f"fold{k}_shape.png").exists() for k in (1, 2, 3, 4))
 
 
 def test_json_sweep_rows_keep_the_name_of_the_fold_they_belong_to():
@@ -185,7 +185,7 @@ def test_json_sweep_rows_keep_the_name_of_the_fold_they_belong_to():
 
 def test_the_spine_stack_is_derived_from_the_loop_gap_and_follows_its_range(tmp_path):
     rec = load_wallet(MA)
-    spine, loop1, _ = rec.custom_folds
+    spine, loop1 = rec.custom_folds[0], rec.custom_folds[1]
     n, t = 3, rec.shell_t
     assert spine.stack_mm == pytest.approx(n * t + (n + 1) * loop1.stack_mm)          # 3 x 1.0 + 4 x 1.0
     assert spine.low_mm == pytest.approx(n * t + (n + 1) * loop1.low_mm)              # 5.0
@@ -206,3 +206,83 @@ def test_a_derived_spine_must_name_a_loop_that_exists(tmp_path):
     with pytest.raises(RecordError) as e:
         load_wallet(_copy_ma(tmp_path / "x", broken))
     assert "gap_from" in str(e.value)
+
+
+# ---- the one-piece double wallet (map02) and the origami known by its closed thickness (map04)
+MA2 = ROOT / "wallets" / "ma-one-piece-double-wallet"
+ORIGAMI = ROOT / "wallets" / "ma-mavr-origami-wallet"
+
+
+def _copy_from(src, dest, mutate):
+    d = yaml.safe_load((src / "wallet.yaml").read_text())
+    mutate(d)
+    dest.mkdir(parents=True)
+    (dest / "wallet.yaml").write_text(yaml.safe_dump(d))
+    return dest
+
+
+def test_the_double_wallet_has_four_leaves_five_folds_and_alternating_grain():
+    rec = load_wallet(MA2)
+    assert rec.status == "photos-only" and rec.provenance_counts()["measured"] == 0
+    assert [f.sense for f in rec.custom_folds] == ["out", "out", "in", "out", "in"]
+    spine, loop1 = rec.custom_folds[0], rec.custom_folds[1]
+    assert spine.stack_mm == pytest.approx(4 * rec.shell_t + 5 * loop1.stack_mm)      # 4 x 1.0 + 5 x 1.0
+    assert spine.low_mm == pytest.approx(6.5) and spine.high_mm == pytest.approx(24.0)
+    assert load_wallet(MA).stack_at_spine_mm < rec.stack_at_spine_mm                  # one more leaf, more stack at the spine
+
+
+def test_a_stack_derived_from_the_closed_thickness_is_inferred_and_subtracts_the_shells():
+    rec = load_wallet(ORIGAMI)
+    main = rec.custom_folds[0]
+    assert main.stack_mm == pytest.approx(18.0 - 2 * 1.0)
+    assert main.low_mm == pytest.approx(10.0) and main.high_mm == pytest.approx(16.0)  # the upper bound is the closed pack itself
+    assert main.source == "inferred" and "derived" in main.ref                          # derived from a reported number, never itself 'reported'
+    assert any(i.source == "reported" and "closed thickness" in i.name for i in rec.inputs)
+
+
+def test_a_closed_thickness_derivation_needs_a_closed_thickness(tmp_path):
+    def drop(d):
+        d["construction"].pop("closed_thickness_mm")
+    with pytest.raises(RecordError) as e:
+        load_wallet(_copy_from(ORIGAMI, tmp_path / "w", drop))
+    assert "closed_thickness_mm" in str(e.value)
+
+
+def test_reported_is_a_provenance_and_is_not_counted_as_measured():
+    assert "reported" in PROVENANCE
+    assert load_wallet(ORIGAMI).provenance_counts()["reported"] >= 3
+    assert load_wallet(ORIGAMI).provenance_counts()["measured"] == 0
+
+
+def test_unknown_seams_make_the_stitch_modes_unknown_not_not_triggered():
+    from types import SimpleNamespace
+    rec = load_wallet(ORIGAMI)
+    assert rec.seams[0]["crosses_fold"] == "unknown"
+    out = SimpleNamespace(error="", note="", bridges=False, fold=SimpleNamespace(name="main fold"), taut=None, loose=None, closed_form=None, radius_mm=8.0,
+                          tension=lambda w="taut": None, grain=lambda w="taut": None)
+    modes = {m["id"]: m for m in failure_modes(SimpleNamespace(rec=rec, base=SimpleNamespace(outcomes=[out], worst=None)))}
+    assert modes[4]["status"] == "unknown" and "not recorded" in modes[4]["text"]
+    assert modes[8]["status"] == "unknown"
+
+
+def test_each_kind_of_record_gets_its_own_measurement_list():
+    from walletsim.record import MEASURE_FIRST, MEASURE_FIRST_CUSTOM, MEASURE_FIRST_POCKETED, measure_first
+    assert measure_first(load_wallet(FIRST)) is MEASURE_FIRST
+    assert measure_first(load_wallet(MA)) is MEASURE_FIRST_CUSTOM and measure_first(load_wallet(MA2)) is MEASURE_FIRST_CUSTOM
+    pocketed = measure_first(load_wallet(ORIGAMI))
+    assert pocketed is MEASURE_FIRST_POCKETED and not any("loop" in a.lower() for a, _ in pocketed)   # no loops in this wallet
+
+
+@pytest.mark.fem
+@needs_ccx
+def test_a_wallet_page_is_one_self_contained_file_with_every_fold_and_its_banner(tmp_path):
+    from walletsim.page import build_page, write_page
+    wdir = tmp_path / "wallet"
+    shutil.copytree(ORIGAMI, wdir, ignore=shutil.ignore_patterns("sim"))              # the page reads the record two folders above the run
+    run = write_report(build_report(load_wallet(wdir), sensitivity=False), wdir / "sim" / "run-test")
+    html = build_page(run)
+    assert html.count("<script src") == 0 and "http://" not in html.replace("http://www.w3.org", "")   # nothing is fetched except the web font
+    assert "Main fold" in html and "Bill-pocket" in html and "Nothing is measured here" in html
+    assert "It has been used." in html and "..</p>" not in html                                      # the usage sentence ends once
+    out = write_page(run_dir=run)
+    assert Path(out).read_text() == html

@@ -1,0 +1,87 @@
+# M.A+ ONE PIECE DOUBLE WALLET: record built from the Wallet-corpus- research archive (item map02_one_piece_double_wallet).
+# EVIDENCE: the retailer's text and 10 product photographs only. NOTHING HAS BEEN MEASURED on a physical wallet.
+# Corpus: https://github.com/Sigurius23/Wallet-corpus-  commit bda0572  carpe_diem_research/wallet/designers/ma_plus/items/map02_one_piece_double_wallet/
+# Rights: the corpus images are research documentation only; they are referenced by path and not copied into this repository.
+id: ma-one-piece-double-wallet
+name: M.A+ One Piece Double Wallet (W7D / W9D / W10D)
+maker: Maurizio Amadei (m.a+)
+status: photos-only
+photos:
+  edge_on_closed: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map02_one_piece_double_wallet/images/017_is_ma02_06.jpg"
+  edge_on_two_sizes: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map02_one_piece_double_wallet/images/012_is_ma02_01.jpg"
+  opened_fan: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map02_one_piece_double_wallet/images/013_is_ma02_02.jpg"
+  opened_fan_oblique: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map02_one_piece_double_wallet/images/014_is_ma02_03.jpg"
+  open_flat: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map02_one_piece_double_wallet/images/016_is_ma02_05.jpg"
+  closed_top: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map02_one_piece_double_wallet/images/015_is_ma02_04.jpg"
+archive:
+  designer: Maurizio Amadei (m.a+)
+  year: null
+  series: One Piece
+  bio_ref: null
+  hero_image: null
+  rights: {photos: "research documentation only (corpus README); not cleared for reuse", bio: unknown}
+leather:
+  - id: shell
+    role: the single sheet the whole wallet is folded from
+    thickness_mm: {value: 1.0, source: reported, ref: "retailer (Lucentement, corpus MAP04): 'one piece of 1 mm thick calf leather'"}
+    species: {value: bovine (calf), source: reported, ref: "composition: calf leather 100 %"}
+    hide_region: {value: unknown, source: assumed}
+    windows: {beamhouse: unknown, tanning: unknown, post_tanning: unknown, finishing: unknown}
+    edge: {value: unknown, source: assumed}
+    material:
+      youngs_modulus_mpa: {value: 72, source: assumed, cv: 0.29, ref: "placeholder: the tensile value measured for 1.2 mm calfskin (Mihai et al., Materials 2022, 15(15):5107); this leather has not been tested"}
+      poisson: {value: 0.3, source: assumed}
+components: []
+process_steps: []
+contents:
+  cards: {value: 0, source: assumed, note: "photographed empty"}
+  card_mm: {value: 0.76, source: literature, ref: ISO/IEC 7810 ID-1 nominal thickness}
+  extra_mm: {value: 0.0, source: assumed}
+construction:
+  type: custom
+  grain: out
+  layup: plain
+  # What the edge-on photographs show (corpus images 017 and 012, enlarged), with my confidence:
+  #   - the outer sheet wraps one end (the spine) and continues as the bottom panel                                     moderate
+  #   - FOUR thin inner leaves, each with a thread tie near the spine end (four ties at that end)                        moderate
+  #   - two tied rounded loops at the opposite end, one over the other (two ties at that end)                            moderate
+  #   - the same one-sheet accordion (Z-chain) as the One Piece Wallet, with four leaves instead of three: top -> loop 1 ->
+  #     leaf A -> left fold 1 -> leaf B -> loop 2 -> leaf C -> left fold 2 -> leaf D (free end). Loops turn the same way
+  #     (grain outside); the left folds turn the other way (grain inside)                                               inferred layout
+  #   - opened (images 013, 014) it shows a row of fan-shaped pockets, which a cross-section cannot represent; not modelled
+  #   - NO scale in any photograph: every radius and thickness below is an inference or an assumption
+  folds_modelled:
+    - name: spine
+      # DERIVED from the loops, as for the One Piece Wallet: leaves x t + (leaves + 1) x gap = 4 x 1.0 + 5 x 1.0 = 9.0 mm at the recorded loop void.
+      stack_from_loops: {leaves: {value: 4, source: inferred, ref: "four inner leaves, each with a thread tie, in the edge-on photographs"}, gap_from: "loop 1 (end opposite the spine)"}
+      sense: out
+    - name: loop 1 (end opposite the spine)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "the void inside the loop looks about one leather thickness across in the enlarged photograph (the same reading as the One Piece Wallet); the upper bound is a pocket holding about 5 cards"}
+      sense: out
+    - name: left fold 1 (spine end)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "the hairpin between leaf A and leaf B at the spine end; assumed to have the same void as the loops because the layers lie one gap apart. It turns the other way, so the grain is inside"}
+      sense: in
+    - name: loop 2 (end opposite the spine)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "as loop 1; the same direction as loop 1, so the grain is outside"}
+      sense: out
+    - name: left fold 2 (spine end)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "as left fold 1: the hairpin between leaf C and leaf D"}
+      sense: in
+panels:
+  - {id: sheet, leather: shell, outline: null, grain_direction_deg: {value: 0, source: assumed}}
+folds:
+  - {id: spine, panel: sheet, rest_angle_deg: 180, skived: {value: unknown, source: assumed}}
+  - {id: loops, panel: sheet, rest_angle_deg: 180, skived: {value: unknown, source: assumed}}
+  - {id: left folds, panel: sheet, rest_angle_deg: 180, skived: {value: unknown, source: assumed}}
+seams:
+  - id: thread ties
+    note: "thread ties through the loops and through the leaf ends near the spine (corpus images 017, 012)"
+    crosses_fold: [loop 1 (end opposite the spine), left fold 1 (spine end), loop 2 (end opposite the spine), left fold 2 (spine end)]
+    holes: {value: 0, source: assumed, note: "number of holes not visible"}
+pockets: []
+sizes:
+  S: {closed_footprint_cm: [11, 7], source: reported}
+  L: {closed_footprint_cm: [14.5, 9], source: reported}
+  XL: {closed_footprint_cm: [17.5, 11], source: reported, note: "sold as a clutch"}
+rights_note: "Source photographs are in the Wallet-corpus- archive (commit bda0572). They are research documentation only, so they are not shown here."
+usage: {used: false}

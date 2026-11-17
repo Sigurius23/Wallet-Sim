@@ -1,0 +1,80 @@
+# M.A+ MAV.R 1.0 ONE-PIECE ORIGAMI WALLET (W-9): record built from the Wallet-corpus- research archive (item map04_origami_mavr).
+# EVIDENCE: a reseller's text, a reseller's flat measurements and 5 photographs of a USED wallet (condition 9/10). Nothing here was measured by us.
+# Corpus: https://github.com/Sigurius23/Wallet-corpus-  commit bda0572  carpe_diem_research/wallet/designers/ma_plus/items/map04_origami_mavr/
+# Rights: the corpus images are research documentation only; they are referenced by path and not copied into this repository.
+id: ma-mavr-origami-wallet
+name: M.A+ MAV.R 1.0 Origami Wallet (W-9)
+maker: Maurizio Amadei (m.a+)
+status: photos-only
+photos:
+  open_flap_and_pockets: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map04_origami_mavr/images/01.jpg"
+  closed_front: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map04_origami_mavr/images/02.jpg"
+  open_interior_gussets: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map04_origami_mavr/images/03.jpg"
+  flap_with_cross_and_wear: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map04_origami_mavr/images/04.jpg"
+  closed_back_diagonal_crease: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/ma_plus/items/map04_origami_mavr/images/05.jpg"
+archive:
+  designer: Maurizio Amadei (m.a+)
+  year: null
+  series: MAV.R
+  bio_ref: null
+  hero_image: null
+  rights: {photos: "research documentation only (corpus README); not cleared for reuse", bio: unknown}
+leather:
+  - id: shell
+    role: the single sheet the whole wallet is folded from
+    thickness_mm: {value: 1.0, source: reported, ref: "DRIEW listing (corpus MAP08): 'vegetable-tanned full-grain pig leather, 1mm thickness'"}
+    species: {value: porcine (pig), source: reported, ref: "DRIEW: reversed GUIDI pig leather"}
+    hide_region: {value: unknown, source: assumed}
+    windows:
+      beamhouse: unknown
+      tanning: {value: vegetable, source: reported, ref: "DRIEW: vegetable-tanned; tannery GUIDI"}
+      post_tanning: unknown
+      finishing: {value: "reversed (reverse side out)", source: reported, ref: "DRIEW: 'reversed'; my reading is that the reverse side faces out, so the grain is on the inside"}
+    edge: {value: unknown, source: assumed}
+    material:
+      youngs_modulus_mpa: {value: 72, source: assumed, cv: 0.29, ref: "placeholder: the tensile value measured for 1.2 mm CALFskin (Mihai et al., Materials 2022, 15(15):5107); this is pig leather and has not been tested"}
+      poisson: {value: 0.3, source: assumed}
+components: []
+process_steps: []
+contents:
+  cards: {value: 0, source: assumed, note: "contents not stated; the depth was measured flat"}
+  card_mm: {value: 0.76, source: literature, ref: ISO/IEC 7810 ID-1 nominal thickness}
+  extra_mm: {value: 0.0, source: assumed}
+construction:
+  type: custom
+  grain: in                   # reversed leather: reverse side out, grain inside (assumed from the word 'reversed')
+  layup: plain
+  closed_thickness_mm: {value: 18.0, source: reported, ref: "DRIEW listing: Measurements (Flat) Depth 1.8 cm, 'measured by hand, laid flat'; length 14.5 cm, width 9.5 cm"}
+  # What the photographs show (corpus images 01 to 05), with my confidence:
+  #   - a closed wallet 14.5 x 9.5 cm folded once, with a flap over the front                                            moderate
+  #   - a large bill pocket with a V-shaped pleat (gusset) at each side, opened by hand in image 03                      moderate
+  #   - card slits and pockets on the inner panels; an origami triangle crease on the back (image 05)                     moderate
+  #   - light abrasion on the flap (image 04) on a wallet the seller rates 9/10                                           moderate
+  #   - NO edge-on photograph and no scale: the closed depth is the seller's measurement, everything else is an inference
+  # Folds NOT modelled: the flap hinge, the bottoms of the four medium pockets, the card slits, the diagonal back crease.
+  folds_modelled:
+    - name: main fold
+      # DERIVED from the seller's closed depth: 18 mm minus the shell on each side = 16 mm wrapped. The pack may compress, so the lower bound is assumed.
+      stack_from_closed_thickness: {shells: 2, low: 10.0, ref: "the wallet folds once; this fold wraps everything but the outer shell"}
+      sense: in
+    - name: bill-pocket gusset crease (one of two)
+      stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "the V pleat at each side of the bill pocket, collapsed flat when the pocket is empty; the void is assumed to look like the One Piece loops (about one leather thickness). Two such creases, identical here"}
+      sense: out
+panels:
+  - {id: sheet, leather: shell, outline: null, grain_direction_deg: {value: 0, source: assumed}}
+folds:
+  - {id: main fold, panel: sheet, rest_angle_deg: 180, skived: {value: unknown, source: assumed}}
+  - {id: gusset creases, panel: sheet, rest_angle_deg: 180, skived: {value: unknown, source: assumed}}
+seams:
+  - id: hand stitching
+    note: "the listing says 'hand stitched details'; where they are, and whether they cross a fold, is not recorded"
+    crosses_fold: unknown
+    holes: {value: 0, source: assumed, note: "not visible"}
+pockets:
+  - {id: bill pocket, card_capacity: 0, note: "1 large bill pocket (listing)"}
+  - {id: medium pockets, card_capacity: 0, note: "4 medium pockets (listing)"}
+  - {id: card slits, card_capacity: 4, note: "4 vertical card slots (listing)"}
+sizes:
+  one size: {closed_footprint_cm: [14.5, 9.5], depth_cm: 1.8, source: reported}
+rights_note: "Source photographs are in the Wallet-corpus- archive (commit bda0572). They are research documentation only, so they are not shown here."
+usage: {used: true, condition: "The seller rates it 9/10 ('flawless'). Photograph 04 shows light abrasion on the flap; it has not been analysed."}
