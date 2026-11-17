@@ -1,0 +1,10 @@
+# How the wallet looks in the 3D views: colour, grain, finish and fittings. Read from the record and the photographs; it changes no number in any result.
+# Colours are the mean colour of the leather in a studio photograph, darkened so that the 3D lighting reproduces it: they are inferred, not measured on the leather.
+colourways:
+  - {name: black, colour: "#1d1c21", source: inferred, ref: "corpus image 005 (black): leather mean (30, 27, 33) under the studio light"}
+  - {name: red, colour: "#5a0a10", source: inferred, ref: "corpus image 009 (red): leather mean (88, 8, 14) under the studio light"}
+grain: {kind: calf, source: inferred, ref: "retailer: 'one piece of 1 mm thick calf leather'; the photographs show a fine, even grain with a soft sheen"}
+roughness: 0.6
+edge: {colour: "#2a2424", source: assumed, ref: "raw cut edge; not visible in detail in the photographs"}
+details:
+  - {kind: cross, panel: top panel, at: 0.5, offset_mm: 0, size_mm: 9, source: inferred, ref: "the silver cross the retailer lists; its exact place on this model is not known"}

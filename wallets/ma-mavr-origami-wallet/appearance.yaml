@@ -1,0 +1,8 @@
+# How the wallet looks in the 3D views. Read from the record and the photographs; it changes no number in any result.
+colourways:
+  - {name: black (reversed), colour: "#2c2c2e", source: inferred, ref: "corpus image 02: leather mean (64, 64, 65) with a large spread (32): a matt, napped surface with lighter wear"}
+grain: {kind: nap, source: reported, ref: "seller: 'reversed' GUIDI pig leather, read as the flesh side worn outward: a napped, matt surface"}
+roughness: 0.92
+edge: {colour: "#3a3436", source: assumed, ref: "raw cut edge"}
+details:
+  - {kind: cross, panel: flap, at: 0.78, offset_mm: 18, size_mm: 10, source: inferred, ref: "photograph 04 shows the .925 silver cross on the flap, near its free edge"}

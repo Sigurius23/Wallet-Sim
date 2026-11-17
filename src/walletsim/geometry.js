@@ -13,9 +13,10 @@ var WalletGeometry = (function () {
   var ease = function (u) { return u * u * (3 - 2 * u); };
   var lerp = function (a, b, u) { return a + (b - a) * u; };
 
-  function Turtle(T, x, y, phi) { this.T = T; this.x = x; this.y = y; this.phi = phi; this.pts = []; this.marks = {}; this.push(0); }
+  function Turtle(T, x, y, phi) { this.T = T; this.x = x; this.y = y; this.phi = phi; this.pts = []; this.marks = {}; this.segs = []; this.push(0); }
   Turtle.prototype.push = function (e) { this.pts.push({ x: this.x, y: this.y, phi: this.phi, e: e }); };
   Turtle.prototype.straight = function (len, e) {
+    this.segs.push({ x: this.x, y: this.y, phi: this.phi, len: len });           // each straight run is a panel: where it starts, which way it runs, how long it is
     var n = Math.max(2, Math.ceil(len / 10)), dx = Math.cos(this.phi) * len / n, dy = Math.sin(this.phi) * len / n;
     for (var k = 0; k < n; k++) { this.x += dx; this.y += dy; this.push(e); }
   };
@@ -47,7 +48,7 @@ var WalletGeometry = (function () {
       t.straight(Lb, 0); t.fold(hs[0].id, turn(hs[0]), Math.PI * rs, epsFull(rInSpine));
       for (var k = 1; k <= n; k++) { t.straight(k === 1 ? Lt : La, 0); t.fold(hs[k].id, turn(hs[k]), Math.PI * rn, epsFull(rIn)); }
       t.straight(Lc, 0);
-      return { strips: [t.pts], blocks: [], marks: t.marks, W: sz.W,
+      return { strips: [t.pts], blocks: [], marks: t.marks, W: sz.W, segs: t.segs, panels: { "top panel": 1 },
                text: "The layers sit one loop-gap apart, so the spine wraps " + (2 * rs - T).toFixed(1) + " mm here (inside radius " + rInSpine.toFixed(1) + " mm)." };
     }
     if (model.kind === "flap") {
@@ -56,7 +57,7 @@ var WalletGeometry = (function () {
       var Lb2 = L - rs, Lf = Lb2 - 2;
       t = new Turtle(T, Lb2, 0, Math.PI);
       t.straight(Lb2, 0); t.fold(h0.id, turn(h0), Math.PI * rs, epsFull(rIn)); t.straight(Lf, 0);
-      return { strips: [t.pts], blocks: [{ x0: 3, x1: Lb2 - 4, y0: T / 2, y1: T / 2 + stack, z0: -W / 2 + 6, z1: W / 2 - 6, label: "pack the hinge wraps" }], marks: t.marks, W: W,
+      return { segs: t.segs, panels: { "back panel": 0, flap: 1 }, strips: [t.pts], blocks: [{ x0: 3, x1: Lb2 - 4, y0: T / 2, y1: T / 2 + stack, z0: -W / 2 + 6, z1: W / 2 - 6, label: "pack the hinge wraps" }], marks: t.marks, W: W,
                text: "The hinge wraps " + stack.toFixed(1) + " mm here (inside radius " + rIn.toFixed(1) + " mm). The grey block is that pack; it is not modelled." };
     }
     if (model.kind === "gusset") {

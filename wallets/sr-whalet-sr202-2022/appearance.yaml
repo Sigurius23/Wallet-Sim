@@ -1,0 +1,7 @@
+# How the wallet looks in the 3D views. Read from the record and the photographs; it changes no number in any result.
+colourways:
+  - {name: Black Sable, colour: "#202125", source: inferred, ref: "corpus image 037: leather mean (29, 30, 32) under the studio light, with a large spread (27) from creases and highlights"}
+grain: {kind: horse, source: reported, ref: "maker: 'a unique pattern and texture, ranging from a smooth to a wrinkled, and valleyed hide'"}
+roughness: 0.55
+edge: {colour: "#26201e", source: assumed, ref: "laser-cut edge"}
+details: []

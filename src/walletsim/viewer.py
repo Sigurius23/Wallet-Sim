@@ -218,6 +218,21 @@ def _twin(rec: WalletRecord, asm: dict) -> dict:
     return {"cfg": cfg, "text": text, "n": 0}
 
 
+def appearance(wallet_dir: str | Path) -> dict | None:
+    """The wallet's look (colourways, grain kind, finish, fittings) from appearance.yaml, or None. It is a rendering layer: it changes no result."""
+    p = Path(wallet_dir) / "appearance.yaml"
+    if not p.exists():
+        return None
+    a = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    for c in a.get("colourways", []):
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", str(c.get("colour", ""))) or not c.get("source"):
+            raise ViewerError(f"{p}: each colourway needs a #rrggbb colour and a source")
+    g = a.get("grain") or {}
+    return {"kind": g.get("kind", "plain"), "colourways": [{"name": c["name"], "colour": c["colour"], "source": c["source"], "ref": c.get("ref", "")} for c in a.get("colourways", [])],
+            "roughness": float(a.get("roughness", 0.7)), "edge": (a.get("edge") or {}).get("colour", "#2a2626"), "tile_mm": float(a.get("tile_mm", 30)),
+            "grain_ref": g.get("ref", ""), "grain_source": g.get("source", ""), "details": a.get("details") or []}
+
+
 def config(wallet_dir: str | Path) -> tuple[WalletRecord, dict, dict]:
     """The record, the viewer's configuration (what the geometry library draws) and its page text, all read from the record."""
     rec = load_wallet(wallet_dir)
@@ -233,7 +248,7 @@ def config(wallet_dir: str | Path) -> tuple[WalletRecord, dict, dict]:
         built = _flap(rec)
     else:
         raise ViewerError("the record has neither stack_from_loops nor stack_from_closed_thickness, so there is no structure to draw")
-    return rec, {**built["cfg"], "id": rec.id}, built["text"]
+    return rec, {**built["cfg"], "id": rec.id, "look": appearance(wallet_dir)}, built["text"]
 
 
 def build_viewer(wallet_dir: str | Path, embed: bool = False) -> str:
@@ -248,11 +263,12 @@ def build_viewer(wallet_dir: str | Path, embed: bool = False) -> str:
             + ", ".join(f"{k}: {v['txt']}" for k, v in sz.items()) + " are read as the closed footprint. Strain is the closed form t / (2R + t), where t is the sheet thickness and R the inside radius.")
     tpl = resources.files("walletsim").joinpath("viewer_template.html").read_text(encoding="utf-8")
     geometry = resources.files("walletsim").joinpath("geometry.js").read_text(encoding="utf-8")
+    leather = resources.files("walletsim").joinpath("leather.js").read_text(encoding="utf-8")
     cfg_json = json.dumps(cfg, separators=(",", ":")).replace("</", "<\\/")
     li = lambda xs: "".join(f"<li>{x}</li>" for x in xs)
     return (tpl.replace("{{TITLE}}", E(f"{rec.name} 3D")).replace("{{EYEBROW}}", tx["eyebrow"]).replace("{{H1}}", E(f"{rec.name} in 3D"))
                .replace("{{BANNER}}", tx["banner"]).replace("{{SHOWS}}", li(tx["shows"])).replace("{{REAL}}", li(tx["real"])).replace("{{FOOT}}", E(foot))
-               .replace("{{GEOMETRY_JS}}", geometry).replace("__CFG__", cfg_json))
+               .replace("{{GEOMETRY_JS}}", geometry).replace("{{LEATHER_JS}}", leather).replace("__CFG__", cfg_json))
 
 
 def write_viewer(wallet_dir: str | Path, out: str | Path | None = None) -> Path:

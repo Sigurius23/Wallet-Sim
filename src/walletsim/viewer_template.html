@@ -71,11 +71,12 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     </div>
     <div class="panel">
       <div class="ctl" id="modelctl" hidden><div class="lab">Show</div><div class="seg" id="models" role="group" aria-label="Part of the wallet"></div></div>
+      <div class="ctl" id="lookctl" hidden><div class="lab">Colour <span class="hint" id="lookinfo"></span></div><div class="seg" id="looks" role="group" aria-label="Colour"></div></div>
       <div class="ctl" id="sizectl" hidden><div class="lab">Size <span class="hint" id="sizeinfo"></span></div><div class="seg" id="sizes" role="group" aria-label="Size"></div></div>
       <div id="ctls" style="display:grid;gap:16px"></div>
       <div class="row"><button id="play" class="primary">Play</button><button id="reset">Reset</button></div>
       <div id="prms" style="display:grid;gap:16px"></div>
-      <div class="row"><label class="chk"><input id="colour" type="checkbox" checked>Colour by strain</label><label class="chk"><input id="labels" type="checkbox" checked>Fold labels</label></div>
+      <div class="row"><label class="chk"><input id="colour" type="checkbox">Show strain</label><label class="chk"><input id="labels" type="checkbox" checked>Fold labels</label></div>
       <div class="legend"><div class="ramp" id="ramp"></div><div><span>0 %</span><span>20 % screening line</span><span>50 %+</span></div></div>
     </div>
   </div>
@@ -101,13 +102,16 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
 {{GEOMETRY_JS}}
 </script>
 <script>
+{{LEATHER_JS}}
+</script>
+<script>
 (function () {
   "use strict";
   var CFG = __CFG__;
   var T = CFG.T;                                          // sheet thickness, mm
   var MODELS = CFG.models, byId = {};
   MODELS.forEach(function (m) { byId[m.id] = m; });
-  var state = { model: MODELS[0].id, size: CFG.size, p: {}, v: {}, colour: true, labels: true, view: "3d" };
+  var state = { model: MODELS[0].id, size: CFG.size, p: {}, v: {}, colour: !CFG.look, labels: true, view: "3d", look: 0 };
   MODELS.forEach(function (m) { m.params.forEach(function (q) { state.p[m.id + "." + q.id] = q.value; }); m.controls.forEach(function (c) { state.v[c.id] = 0; }); });
   function M() { return byId[state.model]; }
   function P(id) { return state.p[state.model + "." + id]; }
@@ -135,9 +139,14 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
   var camera = new THREE.PerspectiveCamera(32, 4 / 3, 1, 3000);
   var controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = false;
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x555a60, 0.85));
+  var hemi = new THREE.HemisphereLight(0xffffff, 0x555a60, 0.85); scene.add(hemi);
   var sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(0.6, 1, 0.9); scene.add(sun);
   var fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-0.8, 0.3, -0.7); scene.add(fill);
+  var rim = new THREE.DirectionalLight(0xffffff, 0); rim.position.set(-0.4, 0.6, -1); scene.add(rim);
+  function lighting(leather) {                               // a studio set-up for black leather: a strong key, a rim to find the edges, sRGB output for the textures
+    renderer.outputEncoding = leather ? THREE.sRGBEncoding : THREE.LinearEncoding;
+    hemi.intensity = leather ? 0.3 : 0.85; sun.intensity = leather ? 1.05 : 0.75; fill.intensity = leather ? 0.2 : 0.3; rim.intensity = leather ? 0.75 : 0;
+  }
   var group = new THREE.Group(); scene.add(group);
   var grid = null, gridY = -T / 2 - 0.4, dirty = true;
   var tags = {};
@@ -157,8 +166,18 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
 
   function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); c.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); } }
   var base = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.0, side: THREE.DoubleSide });
+  var LM = {};
+  function leatherOn() { return !!(CFG.look && !state.colour && typeof LeatherLook !== "undefined"); }
+  function lmat() {                                          // the wallet's leather: grain recipe and colour from its appearance file
+    var cw = CFG.look.colourways[state.look] || CFG.look.colourways[0] || { colour: "#2a2a2c" }, key = state.look;
+    if (!LM[key]) LM[key] = LeatherLook.material(THREE, { kind: CFG.look.kind, colour: cw.colour, roughness: CFG.look.roughness, tile_mm: CFG.look.tile_mm });
+    return LM[key];
+  }
+  var edgeMat = null;
+  function emat() { return edgeMat || (edgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(CFG.look ? CFG.look.edge : "#3a3a3a"), roughness: 0.9, side: THREE.DoubleSide })); }
   function addStrip(pts, W) {
-    var n = pts.length, up = [], dn = [], col = [];
+    var n = pts.length, up = [], dn = [], col = [], sArc = [0], leather = leatherOn();
+    for (var k = 1; k < n; k++) sArc.push(sArc[k - 1] + Math.hypot(pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y));
     for (var i = 0; i < n; i++) {
       var q = pts[i], nx = -Math.sin(q.phi) * T / 2, ny = Math.cos(q.phi) * T / 2;
       up.push([q.x + nx, q.y + ny]); dn.push([q.x - nx, q.y - ny]);
@@ -169,17 +188,18 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
       for (var i = 0; i < n; i++) { pos.push(pa[i][0], pa[i][1], -W / 2, pa[i][0], pa[i][1], W / 2); c.push(col[i][0], col[i][1], col[i][2], col[i][0], col[i][1], col[i][2]); }
       for (var j = 0; j < n - 1; j++) { var a = 2 * j, b = a + 1, c2 = a + 2, d = a + 3; idx.push(a, b, c2, b, d, c2); }
       var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(c, 3));
-      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, base);
+      var uv = []; for (var u = 0; u < n; u++) uv.push(sArc[u], -W / 2, sArc[u], W / 2); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, leather ? lmat() : base);
     }
     function side(z) {                                      // the edge of the sheet at one end of the width: the profile, with thickness
       var pos = [], c = [], idx = [];
       for (var i = 0; i < n; i++) { pos.push(up[i][0], up[i][1], z, dn[i][0], dn[i][1], z); c.push(col[i][0] * .8, col[i][1] * .8, col[i][2] * .8, col[i][0] * .8, col[i][1] * .8, col[i][2] * .8); }
       for (var j = 0; j < n - 1; j++) { var a = 2 * j; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
       var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(c, 3));
-      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, base);
+      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, leather ? emat() : base);
     }
     group.add(face(up), face(dn), side(-W / 2), side(W / 2));
-    var ln = new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: 0.55 });
+    var ln = new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: leather ? 0.18 : 0.55 });
     [[up, W / 2], [dn, W / 2], [up, -W / 2], [dn, -W / 2]].forEach(function (s) {
       var v = []; s[0].forEach(function (p) { v.push(new THREE.Vector3(p[0], p[1], s[1])); });
       group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(v), ln));
@@ -208,9 +228,9 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
   function addPlate(pl) {
     var g = new THREE.ExtrudeGeometry(plateShape(pl), { depth: pl.t, bevelEnabled: false, curveSegments: 8 });
     g.rotateX(-Math.PI / 2); g.translate(0, -pl.t / 2, 0);
-    var m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(state.colour ? TONES[pl.tone] : "#6a737c"), roughness: 0.7, side: THREE.DoubleSide }));
+    var lea = leatherOn(), m = new THREE.Mesh(g, lea ? [lmat(), emat()] : new THREE.MeshStandardMaterial({ color: new THREE.Color(state.colour ? TONES[pl.tone] : "#6a737c"), roughness: 0.7, side: THREE.DoubleSide }));
     m.rotation.z = pl.phi; m.position.set(pl.x, pl.y, pl.zc);
-    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 25), new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: 0.5 })));
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 25), new THREE.LineBasicMaterial({ color: new THREE.Color(lea ? "#000000" : (cssVar("--fg") || "#17191b")), transparent: true, opacity: lea ? 0.35 : 0.5 })));
     group.add(m);
   }
   function addBox(b) {
@@ -223,12 +243,25 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     var m = new THREE.Mesh(new THREE.CylinderGeometry(c.r, c.r, c.h, 24), new THREE.MeshStandardMaterial({ color: new THREE.Color("#2a2a2a"), roughness: 0.35, metalness: 0.6 }));
     m.position.set(c.x, c.y, c.z); group.add(m);
   }
+  var silver = null;
+  function addDetails(r) {                                   // fittings from the appearance file, placed on a named panel of the model
+    if (!CFG.look || !CFG.look.details || !r.segs) return;
+    silver = silver || new THREE.MeshStandardMaterial({ color: new THREE.Color("#c9cbcf"), roughness: 0.28, metalness: 0.95 });
+    CFG.look.details.forEach(function (d) {
+      if (d.kind !== "cross" || !r.panels || r.panels[d.panel] == null) return;
+      var s = r.segs[r.panels[d.panel]]; if (!s) return;
+      var L = s.len * (d.at == null ? 0.5 : d.at), nx = -Math.sin(s.phi), ny = Math.cos(s.phi), sz = d.size_mm || 9, g = new THREE.Group();
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(sz * 0.26, 0.7, sz), silver)); g.add(new THREE.Mesh(new THREE.BoxGeometry(sz * 0.78, 0.7, sz * 0.26), silver));
+      g.position.set(s.x + Math.cos(s.phi) * L + nx * (T / 2 + 0.35), s.y + Math.sin(s.phi) * L + ny * (T / 2 + 0.35), d.offset_mm || 0); g.rotation.z = s.phi; group.add(g);
+    });
+  }
   var current = null;
   function build() {
+    lighting(leatherOn());
     current = buildModel(M());
     disposeGroup();
     (current.drawStrips || current.strips).forEach(function (s) { addStrip(s, current.W); });
-    (current.plates || []).forEach(addPlate); (current.boxes || []).forEach(addBox); (current.cyl || []).forEach(addCyl);
+    (current.plates || []).forEach(addPlate); (current.boxes || []).forEach(addBox); (current.cyl || []).forEach(addCyl); addDetails(current);
     current.blocks.forEach(addBlock);
     var lowest = 0; current.strips.forEach(function (s) { s.forEach(function (q) { lowest = Math.min(lowest, q.y); }); });
     gridY = lowest - T / 2 - 0.4; if (grid) grid.position.y = gridY;           // the floor sits under the lowest layer, so it never cuts through the sheet
@@ -308,6 +341,7 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
   function tick() { if (dirty) { renderer.render(scene, camera); placeTags(); dirty = false; } requestAnimationFrame(tick); }
 
   // ---- controls ------------------------------------------------------------------------------------------------------------------------------------------
+  function esc(x) { return String(x == null ? "" : x).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function el(tag, attrs, html) { var e = document.createElement(tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (html) e.innerHTML = html; return e; }
   function renderControls() {
     var box = document.getElementById("ctls"); box.innerHTML = "";
@@ -349,6 +383,11 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
   document.getElementById("modelctl").hidden = MODELS.length < 2;
   segment(document.getElementById("models"), MODELS.map(function (m) { return { id: m.id, label: m.label }; }), "model", setModel);
   document.getElementById("colour").addEventListener("change", function (e) { state.colour = e.target.checked; build(); });
+  if (CFG.look && CFG.look.colourways.length) {
+    var looks = CFG.look.colourways, lk = document.getElementById("looks");
+    document.getElementById("lookctl").hidden = looks.length < 2;
+    looks.forEach(function (c, i) { var bt = el("button", { "aria-pressed": String(i === 0) }, esc(c.name)); bt.addEventListener("click", function () { state.look = i; Array.prototype.forEach.call(lk.children, function (x, j) { x.setAttribute("aria-pressed", String(j === i)); }); build(); }); lk.appendChild(bt); });
+  }
   document.getElementById("labels").addEventListener("change", function (e) { state.labels = e.target.checked; dirty = true; });
   function setView(v) {
     state.view = v; document.getElementById("v3d").setAttribute("aria-pressed", String(v === "3d")); document.getElementById("vedge").setAttribute("aria-pressed", String(v === "edge")); frame(v);

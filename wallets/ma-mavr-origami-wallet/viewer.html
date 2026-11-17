@@ -71,11 +71,12 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     </div>
     <div class="panel">
       <div class="ctl" id="modelctl" hidden><div class="lab">Show</div><div class="seg" id="models" role="group" aria-label="Part of the wallet"></div></div>
+      <div class="ctl" id="lookctl" hidden><div class="lab">Colour <span class="hint" id="lookinfo"></span></div><div class="seg" id="looks" role="group" aria-label="Colour"></div></div>
       <div class="ctl" id="sizectl" hidden><div class="lab">Size <span class="hint" id="sizeinfo"></span></div><div class="seg" id="sizes" role="group" aria-label="Size"></div></div>
       <div id="ctls" style="display:grid;gap:16px"></div>
       <div class="row"><button id="play" class="primary">Play</button><button id="reset">Reset</button></div>
       <div id="prms" style="display:grid;gap:16px"></div>
-      <div class="row"><label class="chk"><input id="colour" type="checkbox" checked>Colour by strain</label><label class="chk"><input id="labels" type="checkbox" checked>Fold labels</label></div>
+      <div class="row"><label class="chk"><input id="colour" type="checkbox">Show strain</label><label class="chk"><input id="labels" type="checkbox" checked>Fold labels</label></div>
       <div class="legend"><div class="ramp" id="ramp"></div><div><span>0 %</span><span>20 % screening line</span><span>50 %+</span></div></div>
     </div>
   </div>
@@ -113,9 +114,10 @@ var WalletGeometry = (function () {
   var ease = function (u) { return u * u * (3 - 2 * u); };
   var lerp = function (a, b, u) { return a + (b - a) * u; };
 
-  function Turtle(T, x, y, phi) { this.T = T; this.x = x; this.y = y; this.phi = phi; this.pts = []; this.marks = {}; this.push(0); }
+  function Turtle(T, x, y, phi) { this.T = T; this.x = x; this.y = y; this.phi = phi; this.pts = []; this.marks = {}; this.segs = []; this.push(0); }
   Turtle.prototype.push = function (e) { this.pts.push({ x: this.x, y: this.y, phi: this.phi, e: e }); };
   Turtle.prototype.straight = function (len, e) {
+    this.segs.push({ x: this.x, y: this.y, phi: this.phi, len: len });           // each straight run is a panel: where it starts, which way it runs, how long it is
     var n = Math.max(2, Math.ceil(len / 10)), dx = Math.cos(this.phi) * len / n, dy = Math.sin(this.phi) * len / n;
     for (var k = 0; k < n; k++) { this.x += dx; this.y += dy; this.push(e); }
   };
@@ -147,7 +149,7 @@ var WalletGeometry = (function () {
       t.straight(Lb, 0); t.fold(hs[0].id, turn(hs[0]), Math.PI * rs, epsFull(rInSpine));
       for (var k = 1; k <= n; k++) { t.straight(k === 1 ? Lt : La, 0); t.fold(hs[k].id, turn(hs[k]), Math.PI * rn, epsFull(rIn)); }
       t.straight(Lc, 0);
-      return { strips: [t.pts], blocks: [], marks: t.marks, W: sz.W,
+      return { strips: [t.pts], blocks: [], marks: t.marks, W: sz.W, segs: t.segs, panels: { "top panel": 1 },
                text: "The layers sit one loop-gap apart, so the spine wraps " + (2 * rs - T).toFixed(1) + " mm here (inside radius " + rInSpine.toFixed(1) + " mm)." };
     }
     if (model.kind === "flap") {
@@ -156,7 +158,7 @@ var WalletGeometry = (function () {
       var Lb2 = L - rs, Lf = Lb2 - 2;
       t = new Turtle(T, Lb2, 0, Math.PI);
       t.straight(Lb2, 0); t.fold(h0.id, turn(h0), Math.PI * rs, epsFull(rIn)); t.straight(Lf, 0);
-      return { strips: [t.pts], blocks: [{ x0: 3, x1: Lb2 - 4, y0: T / 2, y1: T / 2 + stack, z0: -W / 2 + 6, z1: W / 2 - 6, label: "pack the hinge wraps" }], marks: t.marks, W: W,
+      return { segs: t.segs, panels: { "back panel": 0, flap: 1 }, strips: [t.pts], blocks: [{ x0: 3, x1: Lb2 - 4, y0: T / 2, y1: T / 2 + stack, z0: -W / 2 + 6, z1: W / 2 - 6, label: "pack the hinge wraps" }], marks: t.marks, W: W,
                text: "The hinge wraps " + stack.toFixed(1) + " mm here (inside radius " + rIn.toFixed(1) + " mm). The grey block is that pack; it is not modelled." };
     }
     if (model.kind === "gusset") {
@@ -173,20 +175,159 @@ var WalletGeometry = (function () {
       return { strips: [t.pts, other], blocks: [], marks: t.marks, W: G.depth,
                text: "The V of the pleat is open " + phi.toFixed(0) + "&deg;; front and back panels are " + gap.toFixed(1) + " mm apart, centre line to centre line." };
     }
+    if (model.kind === "twin") return buildTwin(CFG, model, p, v, turn, epsFull);
     throw new Error("unknown model kind " + model.kind);
+  }
+
+  // ---- the functional twin: real-size layers, pockets that fill with cards, and a flap hinge whose radius follows what is inside ----------------------------------
+  // Closed and landscape: the back panel runs along +x from its free end (x = -L/2); every wall is attached at that free end and reaches toward the hinge; the hinge is at +x.
+  // The stack between the back panel and the flap is  sum(gap + t) over the walls; the hinge wraps it, so its inside radius is half of that.
+  function buildTwin(CFG, model, p, v, turn, epsFull) {
+    var A = CFG.twin, T = p.t, L = A.L, W = A.W, walls = A.walls, nk = walls.length;
+    var gaps = A.pockets.map(function (pk) {
+      var n = p["n_" + pk.key] || 0, content = n * A.card.t;
+      if (pk.id === A.bills_pocket) content += (p.notes || 0) * A.note_t * 2;
+      return content > 0 ? content + A.slack : A.gapEmpty;
+    });
+    var plates = [], boxes = [], strips = [], yTop = T / 2, wallMid = [], wallTop = [];
+    for (var k = 0; k < nk; k++) {
+      var yb = yTop + gaps[k]; wallMid.push(yb + T / 2); yTop = yb + T; wallTop.push(yTop);
+    }
+    var S = yTop - T / 2, hs = S + A.flapGap, rIn = hs / 2, rs = rIn + T / 2, depth = 2 * T + hs;     // stack the hinge wraps, its inside and neutral radii, closed depth
+    var Lb = L - (rIn + T), Lf = A.flapLen - (rIn + T), x0 = -L / 2, hinge = model.hinges[0];
+    var t = new Turtle(T, x0, 0, 0);
+    t.straight(Lb, 0);
+    var iArc = t.pts.length - 1;
+    t.fold(hinge.id, turn(hinge), Math.PI * rs, epsFull(rIn));
+    var arc = t.pts.slice(iArc), ex = t.x, ey = t.y, ephi = t.phi;
+    t.straight(Lf, 0);
+    strips.push(t.pts);
+    // the back panel and the flap are plates (they have plan shapes); the arc between them is an extruded strip
+    plates.push({ id: "back panel", x: x0, y: 0, phi: 0, zc: 0, len: Lb, wid: W, t: T, rs: 1.0, re: [1.0, 1.0], tone: 0 });
+    var stud = A.stud, zs = stud.z - W / 2, xs = x0 + stud.x;
+    plates.push({ id: "flap", x: ex, y: ey, phi: ephi, zc: 0, len: Lf, wid: W, t: T, rs: 1.0, re: [A.flapR, A.flapR], tone: 0,
+                  hole: { u: (L / 2 - (rIn + T)) - xs, z: zs, r: stud.d / 2 + 0.6 } });
+    for (var j = 0; j < nk; j++) {
+      var w = walls[j], width = W - w.left - w.right, zc = (w.left - w.right) / 2;                // an inset from the left edge shifts the wall's centre toward +z
+      plates.push({ id: w.id, x: x0, y: wallMid[j], phi: 0, zc: zc, len: w.top, wid: width, t: T, rs: 0.8, re: w.radii, tone: 1 + j % 2, notch: w.notch || null });
+      strips.push([{ x: x0, y: wallMid[j], phi: 0, e: 0 }, { x: x0 + w.top, y: wallMid[j], phi: 0, e: 0 }]);
+    }
+    // contents: cards stand on the free end of the back panel with their long side toward the hinge; notes lie folded in the bills pocket
+    var y = T / 2;
+    for (var q = 0; q < nk; q++) {
+      var pk = A.pockets[q], n = p["n_" + pk.key] || 0, wq = walls[q], zq = (wq.left - wq.right) / 2, cy = y + (n ? A.slack / 2 : 0);
+      for (var c = 0; c < n; c++) boxes.push({ kind: "card", x: x0 + 0.8 + A.card.l / 2, y: cy + (c + 0.5) * A.card.t, z: zq, sx: A.card.l, sy: A.card.t * 0.96, sz: A.card.w });
+      if (pk.id === A.bills_pocket && (p.notes || 0) > 0) boxes.push({ kind: "note", x: x0 + 1 + 80 / 2, y: cy + n * A.card.t + (p.notes * A.note_t), z: zq, sx: 80, sy: p.notes * A.note_t * 2, sz: 62 });
+      y += gaps[q] + T;
+    }
+    var cyl = [{ x: xs, y: wallTop[nk - 1] + stud.h / 2, z: zs, r: stud.d / 2, h: stud.h }];
+    var warn = [];
+    A.pockets.forEach(function (pk, q) {
+      var n = p["n_" + pk.key] || 0;
+      if (pk.cap != null && n > pk.cap) warn.push(pk.id + " holds " + n + " cards; the maker says " + pk.cap + " per slot");
+      var wq = walls[q]; if (n && A.card.w > W - wq.left - wq.right) warn.push("a card (" + A.card.w + " mm wide) is wider than the " + pk.id);
+    });
+    var fitT = (A.closedDepth - gaps.reduce(function (a, b) { return a + b; }, 0) - A.flapGap) / (2 + nk);
+    var text = "Closed depth " + depth.toFixed(1) + " mm with this thickness and these contents" + (A.closedDepth ? " (the maker states " + A.closedDepth + " mm)" : "") + ". The hinge wraps " + hs.toFixed(1) +
+      " mm of stack, inside radius " + rIn.toFixed(1) + " mm." + (A.closedDepth ? (fitT >= 0.4 ? " The sheet thickness that would give " + A.closedDepth + " mm with these contents is " + fitT.toFixed(2) + " mm." : " These contents alone take more room than the maker's " + A.closedDepth + " mm allows.") : "") +
+      (warn.length ? "<br>" + warn.join("; ") + "." : "");
+    return { strips: strips, drawStrips: [arc], plates: plates, boxes: boxes, cyl: cyl, blocks: [], marks: t.marks, W: W, text: text,
+             twin: { depth: depth, stack: hs, rIn: rIn, layers: 2 + nk, fitT: fitT } };
   }
   return { build: build, ease: ease, lerp: lerp };
 })();
 
 </script>
 <script>
+/* Procedural leather surfaces for the 3D views: colour, grain relief and sheen, drawn on a canvas so that no photograph is copied.
+ *
+ * Each grain kind is a recipe matched by eye to what the records and photographs say about the leather, not a scan of it:
+ *   calf     fine, pebbled grain (jittered cells, low relief)
+ *   horse    smooth to wrinkled and valleyed (the maker's words for the WHALET's horse skin): long soft creases, few pores
+ *   nap      the reverse (flesh) side worn outward, as on reversed pig: fine fibrous fuzz, matt, no grain pattern
+ *   pig      grain side of pig: pores in groups of three across the surface
+ *   fish     scale pockets in offset rows (tilapia and perch leathers)
+ *   plain    almost featureless
+ *
+ *   LeatherLook.material(THREE, look) -> MeshStandardMaterial with map, bumpMap and roughness; textures repeat every look.tile_mm millimetres
+ *   look = { kind, colour: "#rrggbb", tile_mm, roughness, bump }
+ */
+var LeatherLook = (function () {
+  "use strict";
+  var cache = {};
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+  function grid(n, seed) { var r = rng(seed), g = new Float32Array(n * n); for (var i = 0; i < g.length; i++) g[i] = r(); return g; }
+  function smooth(t) { return t * t * (3 - 2 * t); }
+  function vnoise(g, n, x, y) {                                    // periodic value noise on an n x n lattice; x, y in lattice units
+    var xi = Math.floor(x), yi = Math.floor(y), fx = smooth(x - xi), fy = smooth(y - yi), a = ((xi % n) + n) % n, b = ((yi % n) + n) % n, a1 = (a + 1) % n, b1 = (b + 1) % n;
+    var v00 = g[b * n + a], v10 = g[b * n + a1], v01 = g[b1 * n + a], v11 = g[b1 * n + a1];
+    return (v00 + (v10 - v00) * fx) + ((v01 + (v11 - v01) * fx) - (v00 + (v10 - v00) * fx)) * fy;
+  }
+  function fbm(gs, n, x, y, oct) { var s = 0, a = 0.5, f = 1, t = 0; for (var o = 0; o < oct; o++) { s += a * vnoise(gs[o], n * f, x * f, y * f); t += a; a *= 0.5; f *= 2; } return s / t; }
+  function cells(n, seed) { var r = rng(seed), p = []; for (var j = 0; j < n; j++) for (var i = 0; i < n; i++) p.push([i + 0.15 + 0.7 * r(), j + 0.15 + 0.7 * r()]); return p; }
+  function worley(pts, n, x, y) {                                  // distances to the nearest and second-nearest feature point, periodic
+    var d1 = 9, d2 = 9, xi = Math.floor(x), yi = Math.floor(y);
+    for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) {
+      var cx = xi + dx, cy = yi + dy, ix = ((cx % n) + n) % n, iy = ((cy % n) + n) % n, q = pts[iy * n + ix], px = q[0] - ix + cx, py = q[1] - iy + cy;
+      var d = Math.hypot(px - x, py - y); if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+    }
+    return [d1, d2];
+  }
+  function height(kind, S, seed) {                                  // a tileable height field in [0, 1], S x S pixels
+    var h = new Float32Array(S * S), n = 8, gs = [grid(n, seed), grid(n * 2, seed + 1), grid(n * 4, seed + 2), grid(n * 8, seed + 3), grid(n * 16, seed + 4), grid(n * 32, seed + 5)];
+    var pc = kind === "calf" ? cells(26, seed + 9) : kind === "pig" ? cells(14, seed + 9) : kind === "fish" ? null : cells(10, seed + 9);
+    for (var y = 0; y < S; y++) for (var x = 0; x < S; x++) {
+      var u = x / S, v = y / S, val;
+      if (kind === "calf") { var w = worley(pc, 26, u * 26, v * 26); val = 0.62 * Math.min(1, (w[1] - w[0]) * 2.2) + 0.38 * fbm(gs, n, u * n, v * n, 6); }
+      else if (kind === "horse") {
+        var wx = fbm(gs, n, u * n, v * n, 3) * 2.2, wy = fbm(gs, n, u * n + 3.1, v * n + 1.7, 3) * 2.2;
+        var c = 1 - Math.abs(2 * fbm(gs, n, (u + 0.08 * wx) * n * 0.5, (v * 0.35 + 0.08 * wy) * n * 0.5, 4) - 1);   // long, soft valleys running mostly one way
+        val = 0.55 + 0.35 * (1 - Math.pow(c, 6)) - 0.1 * fbm(gs, n, u * n * 2, v * n * 2, 5);
+      }
+      else if (kind === "nap") { var f = fbm(gs, n, u * n * 4, v * n * 2, 6); val = 0.5 + 0.5 * (f - 0.5) * 2 * (0.7 + 0.3 * fbm(gs, n, u * n, v * n, 3)); }
+      else if (kind === "pig") { var w2 = worley(pc, 14, u * 14, v * 14); val = 0.75 + 0.2 * fbm(gs, n, u * n, v * n, 5) - (w2[0] < 0.06 ? 0.55 : w2[0] < 0.1 ? 0.25 : 0); }
+      else if (kind === "fish") { var row = Math.floor(v * 18), off = (row % 2) * 0.5, sx = (u * 14 + off) % 1, sy = (v * 18) % 1, rr = Math.hypot(sx - 0.5, sy * 1.2 - 0.2); val = 0.45 + 0.4 * Math.min(1, Math.abs(rr - 0.42) * 6) + 0.15 * fbm(gs, n, u * n, v * n, 4); }
+      else val = 0.5 + 0.15 * fbm(gs, n, u * n, v * n, 5);
+      h[y * S + x] = Math.max(0, Math.min(1, val));
+    }
+    return h;
+  }
+  function hex(c) { return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)]; }
+  function canvases(look) {
+    var key = look.kind + look.colour + (look.seed || 7);
+    if (cache[key]) return cache[key];
+    var S = 384, h = height(look.kind, S, look.seed || 7), base = hex(look.colour || "#2a2a2c"), bump = document.createElement("canvas"), col = document.createElement("canvas");
+    bump.width = bump.height = col.width = col.height = S;
+    var bc = bump.getContext("2d"), cc = col.getContext("2d"), bi = bc.createImageData(S, S), ci = cc.createImageData(S, S), mott = height("plain", S, (look.seed || 7) + 40);
+    for (var i = 0; i < S * S; i++) {
+      var g = Math.round(h[i] * 255); bi.data[4 * i] = bi.data[4 * i + 1] = bi.data[4 * i + 2] = g; bi.data[4 * i + 3] = 255;
+      var k = 0.86 + 0.22 * (mott[i] - 0.5) * 2 + 0.12 * (h[i] - 0.5);                     // gentle mottling, darker in the valleys
+      for (var c = 0; c < 3; c++) ci.data[4 * i + c] = Math.max(0, Math.min(255, Math.round(base[c] * k)));
+      ci.data[4 * i + 3] = 255;
+    }
+    bc.putImageData(bi, 0, 0); cc.putImageData(ci, 0, 0);
+    return (cache[key] = { bump: bump, col: col });
+  }
+  function material(THREE, look, tint) {
+    var cv = canvases(look), tile = look.tile_mm || 30, maps = [cv.col, cv.bump].map(function (c) {
+      var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / tile, 1 / tile); t.anisotropy = 4; return t;
+    });
+    if (THREE.sRGBEncoding) maps[0].encoding = THREE.sRGBEncoding;
+    return new THREE.MeshStandardMaterial({ map: maps[0], bumpMap: maps[1], bumpScale: look.bump == null ? 0.35 : look.bump, roughness: look.roughness == null ? 0.7 : look.roughness,
+                                            metalness: 0, color: new THREE.Color(tint || "#ffffff"), side: THREE.DoubleSide });
+  }
+  return { material: material, height: height };
+})();
+
+</script>
+<script>
 (function () {
   "use strict";
-  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"flap","kind":"flap","label":"Flap and spine","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"stack","label":"Stack the hinge wraps","min":10.0,"max":16.0,"step":0.5,"value":16.0,"unit":"mm","dec":1}],"hinges":[{"id":"main","name":"Main fold","closed":-180,"open":-20,"drv":"flap","tag":"translate(-108%, -50%)"}]},{"id":"gusset","kind":"gusset","label":"Bill-pocket gusset","controls":[{"id":"gusset","label":"Open the bill pocket"}],"params":[{"id":"rIn","label":"Crease radius, inside","min":0.25,"max":2.0,"step":0.05,"value":0.5,"unit":"mm","dec":2}],"hinges":[{"id":"crease","name":"Crease (the one in the report)","closed":0,"open":0,"drv":"gusset","tag":"translate(16px, -50%)"},{"id":"edgeF","name":"Front edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, -140%)"},{"id":"edgeB","name":"Back edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, 120%)"}]}],"sizes":{"one size":{"L":95,"W":145,"txt":"14.5 x 9.5 cm"}},"size":"one size","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"gusset":{"w":60.0,"a":18.0,"depth":70.0,"maxPhi":100.0},"id":"ma-mavr-origami-wallet","embed":false};
+  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"flap","kind":"flap","label":"Flap and spine","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"stack","label":"Stack the hinge wraps","min":10.0,"max":16.0,"step":0.5,"value":16.0,"unit":"mm","dec":1}],"hinges":[{"id":"main","name":"Main fold","closed":-180,"open":-20,"drv":"flap","tag":"translate(-108%, -50%)"}]},{"id":"gusset","kind":"gusset","label":"Bill-pocket gusset","controls":[{"id":"gusset","label":"Open the bill pocket"}],"params":[{"id":"rIn","label":"Crease radius, inside","min":0.25,"max":2.0,"step":0.05,"value":0.5,"unit":"mm","dec":2}],"hinges":[{"id":"crease","name":"Crease (the one in the report)","closed":0,"open":0,"drv":"gusset","tag":"translate(16px, -50%)"},{"id":"edgeF","name":"Front edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, -140%)"},{"id":"edgeB","name":"Back edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, 120%)"}]}],"sizes":{"one size":{"L":95,"W":145,"txt":"14.5 x 9.5 cm"}},"size":"one size","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"gusset":{"w":60.0,"a":18.0,"depth":70.0,"maxPhi":100.0},"id":"ma-mavr-origami-wallet","look":{"kind":"nap","colourways":[{"name":"black (reversed)","colour":"#2c2c2e","source":"inferred","ref":"corpus image 02: leather mean (64, 64, 65) with a large spread (32): a matt, napped surface with lighter wear"}],"roughness":0.92,"edge":"#3a3436","tile_mm":30.0,"grain_ref":"seller: 'reversed' GUIDI pig leather, read as the flesh side worn outward: a napped, matt surface","grain_source":"reported","details":[{"kind":"cross","panel":"flap","at":0.78,"offset_mm":18,"size_mm":10,"source":"inferred","ref":"photograph 04 shows the .925 silver cross on the flap, near its free edge"}]},"embed":false};
   var T = CFG.T;                                          // sheet thickness, mm
   var MODELS = CFG.models, byId = {};
   MODELS.forEach(function (m) { byId[m.id] = m; });
-  var state = { model: MODELS[0].id, size: CFG.size, p: {}, v: {}, colour: true, labels: true, view: "3d" };
+  var state = { model: MODELS[0].id, size: CFG.size, p: {}, v: {}, colour: !CFG.look, labels: true, view: "3d", look: 0 };
   MODELS.forEach(function (m) { m.params.forEach(function (q) { state.p[m.id + "." + q.id] = q.value; }); m.controls.forEach(function (c) { state.v[c.id] = 0; }); });
   function M() { return byId[state.model]; }
   function P(id) { return state.p[state.model + "." + id]; }
@@ -214,9 +355,14 @@ var WalletGeometry = (function () {
   var camera = new THREE.PerspectiveCamera(32, 4 / 3, 1, 3000);
   var controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = false;
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x555a60, 0.85));
+  var hemi = new THREE.HemisphereLight(0xffffff, 0x555a60, 0.85); scene.add(hemi);
   var sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(0.6, 1, 0.9); scene.add(sun);
   var fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-0.8, 0.3, -0.7); scene.add(fill);
+  var rim = new THREE.DirectionalLight(0xffffff, 0); rim.position.set(-0.4, 0.6, -1); scene.add(rim);
+  function lighting(leather) {                               // a studio set-up for black leather: a strong key, a rim to find the edges, sRGB output for the textures
+    renderer.outputEncoding = leather ? THREE.sRGBEncoding : THREE.LinearEncoding;
+    hemi.intensity = leather ? 0.3 : 0.85; sun.intensity = leather ? 1.05 : 0.75; fill.intensity = leather ? 0.2 : 0.3; rim.intensity = leather ? 0.75 : 0;
+  }
   var group = new THREE.Group(); scene.add(group);
   var grid = null, gridY = -T / 2 - 0.4, dirty = true;
   var tags = {};
@@ -234,10 +380,20 @@ var WalletGeometry = (function () {
     dirty = true;
   }
 
-  function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); if (c.geometry) c.geometry.dispose(); } }
+  function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); c.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); } }
   var base = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.0, side: THREE.DoubleSide });
+  var LM = {};
+  function leatherOn() { return !!(CFG.look && !state.colour && typeof LeatherLook !== "undefined"); }
+  function lmat() {                                          // the wallet's leather: grain recipe and colour from its appearance file
+    var cw = CFG.look.colourways[state.look] || CFG.look.colourways[0] || { colour: "#2a2a2c" }, key = state.look;
+    if (!LM[key]) LM[key] = LeatherLook.material(THREE, { kind: CFG.look.kind, colour: cw.colour, roughness: CFG.look.roughness, tile_mm: CFG.look.tile_mm });
+    return LM[key];
+  }
+  var edgeMat = null;
+  function emat() { return edgeMat || (edgeMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(CFG.look ? CFG.look.edge : "#3a3a3a"), roughness: 0.9, side: THREE.DoubleSide })); }
   function addStrip(pts, W) {
-    var n = pts.length, up = [], dn = [], col = [];
+    var n = pts.length, up = [], dn = [], col = [], sArc = [0], leather = leatherOn();
+    for (var k = 1; k < n; k++) sArc.push(sArc[k - 1] + Math.hypot(pts[k].x - pts[k - 1].x, pts[k].y - pts[k - 1].y));
     for (var i = 0; i < n; i++) {
       var q = pts[i], nx = -Math.sin(q.phi) * T / 2, ny = Math.cos(q.phi) * T / 2;
       up.push([q.x + nx, q.y + ny]); dn.push([q.x - nx, q.y - ny]);
@@ -248,17 +404,18 @@ var WalletGeometry = (function () {
       for (var i = 0; i < n; i++) { pos.push(pa[i][0], pa[i][1], -W / 2, pa[i][0], pa[i][1], W / 2); c.push(col[i][0], col[i][1], col[i][2], col[i][0], col[i][1], col[i][2]); }
       for (var j = 0; j < n - 1; j++) { var a = 2 * j, b = a + 1, c2 = a + 2, d = a + 3; idx.push(a, b, c2, b, d, c2); }
       var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(c, 3));
-      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, base);
+      var uv = []; for (var u = 0; u < n; u++) uv.push(sArc[u], -W / 2, sArc[u], W / 2); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, leather ? lmat() : base);
     }
     function side(z) {                                      // the edge of the sheet at one end of the width: the profile, with thickness
       var pos = [], c = [], idx = [];
       for (var i = 0; i < n; i++) { pos.push(up[i][0], up[i][1], z, dn[i][0], dn[i][1], z); c.push(col[i][0] * .8, col[i][1] * .8, col[i][2] * .8, col[i][0] * .8, col[i][1] * .8, col[i][2] * .8); }
       for (var j = 0; j < n - 1; j++) { var a = 2 * j; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
       var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(c, 3));
-      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, base);
+      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, leather ? emat() : base);
     }
     group.add(face(up), face(dn), side(-W / 2), side(W / 2));
-    var ln = new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: 0.55 });
+    var ln = new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: leather ? 0.18 : 0.55 });
     [[up, W / 2], [dn, W / 2], [up, -W / 2], [dn, -W / 2]].forEach(function (s) {
       var v = []; s[0].forEach(function (p) { v.push(new THREE.Vector3(p[0], p[1], s[1])); });
       group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(v), ln));
@@ -271,11 +428,56 @@ var WalletGeometry = (function () {
     var eg = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--muted") || "#5d646b"), transparent: true, opacity: 0.7 }));
     eg.position.copy(mesh.position); group.add(eg);
   }
+  // ---- the functional twin's parts: plates with plan shapes (rounded corners, a notch, a hole), cards, notes and the stud --------------------------------------------
+  var TONES = ["#5d6872", "#6f7b86", "#7f8b95"];
+  function plateShape(pl) {
+    var len = pl.len, hw = pl.wid / 2, rs = Math.min(pl.rs, hw, len / 2), r0 = Math.min(pl.re[0], hw), r1 = Math.min(pl.re[1], hw), sh = new THREE.Shape();
+    sh.moveTo(rs, -hw); sh.lineTo(len - r0, -hw); sh.quadraticCurveTo(len, -hw, len, -hw + r0);          // plan: x along the plate, y = -z, so the shape's +y is world -z
+    if (pl.notch) {
+      var d = pl.notch.d, h = Math.min(pl.notch.h, hw - r0 - 1); sh.lineTo(len, -h);
+      for (var i = 1; i <= 16; i++) { var y = -h + 2 * h * i / 16; sh.lineTo(len - d * Math.pow(1 - Math.abs(y) / h, 2), y); }
+    }
+    sh.lineTo(len, hw - r1); sh.quadraticCurveTo(len, hw, len - r1, hw); sh.lineTo(rs, hw); sh.quadraticCurveTo(0, hw, 0, hw - rs); sh.lineTo(0, -hw + rs); sh.quadraticCurveTo(0, -hw, rs, -hw);
+    if (pl.hole) { var hp = new THREE.Path(); hp.absarc(pl.hole.u, -pl.hole.z, pl.hole.r, 0, Math.PI * 2, true); sh.holes.push(hp); }
+    return sh;
+  }
+  function addPlate(pl) {
+    var g = new THREE.ExtrudeGeometry(plateShape(pl), { depth: pl.t, bevelEnabled: false, curveSegments: 8 });
+    g.rotateX(-Math.PI / 2); g.translate(0, -pl.t / 2, 0);
+    var lea = leatherOn(), m = new THREE.Mesh(g, lea ? [lmat(), emat()] : new THREE.MeshStandardMaterial({ color: new THREE.Color(state.colour ? TONES[pl.tone] : "#6a737c"), roughness: 0.7, side: THREE.DoubleSide }));
+    m.rotation.z = pl.phi; m.position.set(pl.x, pl.y, pl.zc);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 25), new THREE.LineBasicMaterial({ color: new THREE.Color(lea ? "#000000" : (cssVar("--fg") || "#17191b")), transparent: true, opacity: lea ? 0.35 : 0.5 })));
+    group.add(m);
+  }
+  function addBox(b) {
+    var m = new THREE.Mesh(new THREE.BoxGeometry(b.sx, b.sy, b.sz), new THREE.MeshStandardMaterial({ color: new THREE.Color(b.kind === "card" ? "#d9d3c3" : "#a9bda4"), roughness: 0.55 }));
+    m.position.set(b.x, b.y, b.z);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: new THREE.Color("#3a3a3a"), transparent: true, opacity: 0.45 })));
+    group.add(m);
+  }
+  function addCyl(c) {
+    var m = new THREE.Mesh(new THREE.CylinderGeometry(c.r, c.r, c.h, 24), new THREE.MeshStandardMaterial({ color: new THREE.Color("#2a2a2a"), roughness: 0.35, metalness: 0.6 }));
+    m.position.set(c.x, c.y, c.z); group.add(m);
+  }
+  var silver = null;
+  function addDetails(r) {                                   // fittings from the appearance file, placed on a named panel of the model
+    if (!CFG.look || !CFG.look.details || !r.segs) return;
+    silver = silver || new THREE.MeshStandardMaterial({ color: new THREE.Color("#c9cbcf"), roughness: 0.28, metalness: 0.95 });
+    CFG.look.details.forEach(function (d) {
+      if (d.kind !== "cross" || !r.panels || r.panels[d.panel] == null) return;
+      var s = r.segs[r.panels[d.panel]]; if (!s) return;
+      var L = s.len * (d.at == null ? 0.5 : d.at), nx = -Math.sin(s.phi), ny = Math.cos(s.phi), sz = d.size_mm || 9, g = new THREE.Group();
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(sz * 0.26, 0.7, sz), silver)); g.add(new THREE.Mesh(new THREE.BoxGeometry(sz * 0.78, 0.7, sz * 0.26), silver));
+      g.position.set(s.x + Math.cos(s.phi) * L + nx * (T / 2 + 0.35), s.y + Math.sin(s.phi) * L + ny * (T / 2 + 0.35), d.offset_mm || 0); g.rotation.z = s.phi; group.add(g);
+    });
+  }
   var current = null;
   function build() {
+    lighting(leatherOn());
     current = buildModel(M());
     disposeGroup();
-    current.strips.forEach(function (s) { addStrip(s, current.W); });
+    (current.drawStrips || current.strips).forEach(function (s) { addStrip(s, current.W); });
+    (current.plates || []).forEach(addPlate); (current.boxes || []).forEach(addBox); (current.cyl || []).forEach(addCyl); addDetails(current);
     current.blocks.forEach(addBlock);
     var lowest = 0; current.strips.forEach(function (s) { s.forEach(function (q) { lowest = Math.min(lowest, q.y); }); });
     gridY = lowest - T / 2 - 0.4; if (grid) grid.position.y = gridY;           // the floor sits under the lowest layer, so it never cuts through the sheet
@@ -355,6 +557,7 @@ var WalletGeometry = (function () {
   function tick() { if (dirty) { renderer.render(scene, camera); placeTags(); dirty = false; } requestAnimationFrame(tick); }
 
   // ---- controls ------------------------------------------------------------------------------------------------------------------------------------------
+  function esc(x) { return String(x == null ? "" : x).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function el(tag, attrs, html) { var e = document.createElement(tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); if (html) e.innerHTML = html; return e; }
   function renderControls() {
     var box = document.getElementById("ctls"); box.innerHTML = "";
@@ -396,6 +599,11 @@ var WalletGeometry = (function () {
   document.getElementById("modelctl").hidden = MODELS.length < 2;
   segment(document.getElementById("models"), MODELS.map(function (m) { return { id: m.id, label: m.label }; }), "model", setModel);
   document.getElementById("colour").addEventListener("change", function (e) { state.colour = e.target.checked; build(); });
+  if (CFG.look && CFG.look.colourways.length) {
+    var looks = CFG.look.colourways, lk = document.getElementById("looks");
+    document.getElementById("lookctl").hidden = looks.length < 2;
+    looks.forEach(function (c, i) { var bt = el("button", { "aria-pressed": String(i === 0) }, esc(c.name)); bt.addEventListener("click", function () { state.look = i; Array.prototype.forEach.call(lk.children, function (x, j) { x.setAttribute("aria-pressed", String(j === i)); }); build(); }); lk.appendChild(bt); });
+  }
   document.getElementById("labels").addEventListener("change", function (e) { state.labels = e.target.checked; dirty = true; });
   function setView(v) {
     state.view = v; document.getElementById("v3d").setAttribute("aria-pressed", String(v === "3d")); document.getElementById("vedge").setAttribute("aria-pressed", String(v === "edge")); frame(v);

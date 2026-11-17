@@ -1,0 +1,8 @@
+# How the wallet looks in the 3D views. Read from the record and the photographs; it changes no number in any result.
+colourways:
+  - {name: soft black, colour: "#1d1c21", source: inferred, ref: "corpus image 015: leather mean (30, 27, 33) under the studio light, standard deviation 5 (a smooth, even surface)"}
+grain: {kind: calf, source: inferred, ref: "retailer: 1 mm calf, 'soft black'; the photographs show a fine, even grain"}
+roughness: 0.62
+edge: {colour: "#2a2424", source: assumed, ref: "raw cut edge"}
+details:
+  - {kind: cross, panel: top panel, at: 0.5, offset_mm: 0, size_mm: 9, source: inferred, ref: "photograph 013 shows a silver cross on a middle panel; its place when closed is not known"}
