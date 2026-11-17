@@ -1,19 +1,26 @@
 # Different leathers, thicknesses and ageing
 
+> **Correction (this revision).** Earlier versions of this repo quoted "24-53 MPa, vegetable-tanned bovine, back versus flank"
+> and cited *Materials* 2022, 15(15):5107. That paper does not report that: I read its full text. It measures **footwear-upper
+> calfskin, 1.2 +- 0.1 mm: E = 72 N/mm2, CV 29 % (9 specimens)**, calfskin with a chrome-tanned sheep lining 70.2 N/mm2 (CV 19.4 %),
+> and Poisson's ratio 0.6 (measured by hand just before break). It does not say how the calfskin was tanned. The 24-53 range had no
+> source I can show, so it is removed everywhere, defaults are now 72 MPa (labelled as that one tensile measurement), and the
+> numbers below were recomputed.
+
 You want to compare how different leathers and thicknesses bend, and how they age. This is what works today, what the
 research says about ageing, and how the simulator will handle the parts that cannot be predicted.
 
 ## 1. Thickness: works now
 
 `walletsim sweep` folds a strip around a fixed inside radius (what a wallet's contents impose) for several thicknesses.
-180 deg fold, inside radius 3 mm, E = 38 MPa (middle of the 24-53 MPa literature range), Poisson 0.3, CalculiX, about 7 s per row:
+180 deg fold, inside radius 3 mm, E = 72 MPa (the tensile value measured for 1.2 mm calfskin; yours will differ), Poisson 0.3, CalculiX, about 7 s per row:
 
 | t [mm] | closed-form strain | FEM peak strain | bending moment [N mm] | relative to 0.6 mm |
 |---|---|---|---|---|
-| 0.6 | 9.1 % | 10.1 % | 2.2 | 1.0x |
-| 1.0 | 14.3 % | 16.3 % | 9.6 | 4.3x |
-| 1.4 | 18.9 % | 22.2 % | 24.4 | 10.9x |
-| 2.0 | 25.0 % | 30.1 % | 63.8 | 28.5x |
+| 0.6 | 9.1 % | 10.1 % | 4.2 | 1.0x |
+| 1.0 | 14.3 % | 16.3 % | 18.2 | 4.3x |
+| 1.4 | 18.9 % | 22.2 % | 46.3 | 10.9x |
+| 2.0 | 25.0 % | 30.1 % | 120.9 | 28.5x |
 
 - **Strain grows with thickness** at a fixed radius, which is why thick leather cracks at a tight spine fold first.
 - **Stiffness grows much faster.** A homogeneous plate has bending stiffness proportional to t^3 (3.3x thicker = 37x stiffer;
@@ -31,8 +38,8 @@ research says about ageing, and how the simulator will handle the parts that can
 
 ## 2. Different leathers: needs a measured card
 
-A leather's name does not determine its behaviour. Stiffness differed about 2x between two parts of one hide (24 vs 53 MPa
-in one vegetable-tanned study), tensile *strength* varied 4-7x within one hide (see section 6), and comparisons between
+A leather's name does not determine its behaviour. Stiffness of one calfskin lot varied with a CV of 29 % over nine specimens
+(Mihai et al. 2022), tensile *strength* varied 4-7x within one hide (see section 6), and comparisons between
 tannages disagree (see below). So every leather in the archive gets a
 **material card** (`walletsim.materials`) with provenance on each number: `measured`, `literature` or `assumed`.
 
@@ -45,7 +52,7 @@ tannages disagree (see below). So every leather in the archive gets a
 | Strain to crack | flex-test strips over several mandrel radii | needs tests, enables `fit-law` |
 | Finish and fat content | known from the supplier or not at all | recorded, not simulated |
 
-Only one card ships: the vegetable-tanned literature range. No chrome-tanned, oil-pull-up or other values are built in,
+Only one card ships: the calfskin upper (72 N/mm2, CV 29 %, tanning unknown), because it is the one measurement I have read in full. No chrome-tanned, oil-pull-up or other values are built in,
 because I did not find matched, cited numbers and I will not invent them. They come from your strips.
 
 ## 3. Ageing: what is known
@@ -154,7 +161,7 @@ use either claim: ageing enters only through measured states. Check which mode m
 - Is "relative ranking of leathers and thicknesses" enough as the first deliverable, with calibrated cycles after the tests?
 
 ## Sources
-- Vegetable-tanned modulus: [Materials 2022, 15(15), 5107](https://mdpi.com/1996-1944/15/15/5107/html)
+- Calfskin tensile modulus 72 N/mm2 (CV 29 %), sheep lining, Poisson 0.6: Mihai, Seul, Curteza & Costea, [Materials 2022, 15(15), 5107](https://doi.org/10.3390/ma15155107) (read in full)
 - Heat and humidity on vegetable-tanned leather: [ScienceDirect](https://www.sciencedirect.com/science/article/abs/pii/S1296207424001390)
 - Chrome-tanned ageing (temperature, humidity, UV): [study](https://www.researchgate.net/publication/287841114_Study_of_the_effect_of_temperature_relative_humidity_and_UV_radiation_on_chrome-tanned_leather_ageing)
 - Artificially aged chrome-tanned garment leather: [study](https://www.researchgate.net/publication/289872277_Determination_of_some_physical_characteristics_of_artificially_aged_chrome_tanned_garment_leather)

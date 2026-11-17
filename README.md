@@ -13,7 +13,7 @@ Nothing here simulates a full wallet yet. What exists and is tested:
 |---|---|---|
 | FEM backend check: a strip bent 180° in CalculiX vs closed form (Poisson 0) | `walletsim validate-fem` | **strain +1.0 %, bending moment -0.2 % vs theory**, same on two mesh densities; 8 s on 4 CPU cores |
 | Thickness sweep at a fixed fold radius: strain and bending moment per thickness | `walletsim sweep` | works; stiffness is a placeholder until measured |
-| Material cards with provenance, aged states as measured data | `walletsim.materials` | structure only; one literature card (vegetable-tanned range) |
+| Material cards with provenance, aged states as measured data | `walletsim.materials` | structure only; one literature card (calfskin upper, 72 MPa tensile, CV 29 %) |
 | Level-0 fold screen: `eps = t/(2R+t)` with screening flags | `walletsim screen --t 1.0 --radius 2.0` | done |
 | "x folds" bookkeeping: rank locations by cycles per use x strain^m across a range of exponents, and fit a cycles-to-crack law to **your own** flex-test data | `walletsim fit-law`, `walletsim.damage` | done, refuses uncalibrated absolute life |
 | Docs: architecture, claims policy, capture protocol, **capture feasibility research**, **materials and ageing**, data model, roadmap | `docs/` | draft for review |

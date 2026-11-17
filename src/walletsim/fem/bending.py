@@ -32,8 +32,8 @@ class BendingJob:
     length_mm: float = 40.0
     width_mm: float = 10.0
     angle_deg: float = 180.0
-    youngs_modulus_mpa: float = 50.0    # PLACEHOLDER. Measured vegetable-tanned bovine leather: ~24-53 MPa, depending on
-                                        # hide position (Materials 2022, 15(15):5107). The strain result does not depend on it
+    youngs_modulus_mpa: float = 50.0    # PLACEHOLDER. One measured value: 72 MPa tensile for 1.2 mm calfskin, CV 29 % (Mihai et al.,
+                                        # Materials 2022, 15(15):5107). The strain result does not depend on it
     poisson: float = 0.3                # PLACEHOLDER: leather Poisson's ratio has no standard test
     material: str = "neo-hooke"         # "neo-hooke" (stable at large strain) or "linear" (St. Venant-Kirchhoff, small strain only)
     nx: int = 40                        # elements along the length

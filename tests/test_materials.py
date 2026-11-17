@@ -1,6 +1,6 @@
 import pytest
 
-from walletsim.materials import LeatherMaterial, MaterialState, Value, scale_flexural_rigidity, vegetable_tanned_literature
+from walletsim.materials import LeatherMaterial, MaterialState, Value, scale_flexural_rigidity, calfskin_upper_literature
 
 
 def test_value_validates_provenance_and_range():
@@ -22,9 +22,10 @@ def test_flexural_rigidity_scales_with_the_exponent():
 
 
 def test_literature_card_is_labelled_and_has_no_aged_state():
-    card = vegetable_tanned_literature()
+    card = calfskin_upper_literature()
     e = card.state("new").youngs_modulus_mpa
-    assert e.source == "literature" and e.range == (24.0, 53.0)
+    assert e.source == "literature" and e.value == 72.0 and e.cv == 0.29 and "5107" in e.ref
+    assert card.tanning == "unknown"      # the paper does not state it, so the card does not guess
     assert card.state("new").strain_to_crack is None
     with pytest.raises(KeyError):
         card.state("aged")          # ageing is never invented
@@ -47,8 +48,8 @@ def test_sampling_matches_the_stated_mean_and_cv():
 
 
 def test_sampling_uses_the_range_when_there_is_no_cv_and_never_invents_spread():
-    x = Value(38.0, "literature", low=24.0, high=53.0).sample(10_000, seed=2)
-    assert x.min() >= 24.0 and x.max() <= 53.0 and x.std() > 5
+    x = Value(40.0, "assumed", low=30.0, high=50.0).sample(10_000, seed=2)
+    assert x.min() >= 30.0 and x.max() <= 50.0 and x.std() > 2
     assert (Value(7.0, "measured").sample(5) == 7.0).all()
 
 

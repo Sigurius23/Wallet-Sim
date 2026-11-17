@@ -105,12 +105,16 @@ def scale_flexural_rigidity(d_ref: float, t_ref_mm: float, t_mm: float, exponent
     return d_ref * (t_mm / t_ref_mm) ** exponent
 
 
-def vegetable_tanned_literature() -> LeatherMaterial:
-    """The one card backed by a published measurement: metal-free vegetable-tanned bovine leather, tensile modulus
-    ~24 MPa (flank) to ~53 MPa (back), Materials 2022, 15(15):5107 (check which sample is which before citing).
-    Thickness is deliberately unset (the wallet's own measurement goes here) and no aged state is provided."""
-    e = Value(38.0, "literature", low=24.0, high=53.0, ref="Materials 2022, 15(15):5107, tensile modulus, back vs flank")
+def calfskin_upper_literature() -> LeatherMaterial:
+    """The one card backed by a measurement I have read in full: footwear-upper calfskin, 1.2 +- 0.1 mm, tensile modulus
+    72 N/mm2 with a coefficient of variation of 29 % over 9 specimens (ISO 3376 tensile test, 20 C / 65 % RH, 100 mm/min;
+    the modulus is the instrument's value at the maximum elastic load, so it is a TENSILE figure, not a bending one).
+    Mihai, Seul, Curteza & Costea, Materials 2022, 15(15):5107, doi:10.3390/ma15155107, Table 1 (sample S1, material M1).
+    The paper does not state the tanning of the calfskin, so it is recorded as unknown. A wallet leather will differ:
+    thickness is deliberately unset and no aged state is provided."""
+    e = Value(72.0, "literature", cv=0.29, ref="Mihai et al., Materials 2022, 15(15):5107, Table 1 (S1, M1): 72 N/mm2, CV 29 %, n=9, tensile")
     return LeatherMaterial(
-        name="vegetable-tanned bovine (literature range)", tanning="vegetable",
-        thickness_mm=Value(1.2, "assumed", ref="set to the measured thickness of the real wallet"),
-        states={"new": MaterialState("new", e, notes="range spans hide position; use the strip you actually tested")})
+        name="calfskin upper, 1.2 mm (literature)", tanning="unknown", species="bovine",
+        thickness_mm=Value(1.2, "literature", low=1.1, high=1.3, ref="1.2 +- 0.1 mm, same paper"),
+        states={"new": MaterialState("new", e, notes="tensile modulus; Poisson's ratio 0.6 in the paper was measured by hand just before break and "
+                                                     "is a lateral-contraction figure for a fibrous sheet, not an isotropic bulk value")})

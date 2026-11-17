@@ -56,8 +56,9 @@ def _sweep(a: argparse.Namespace) -> int:
             print()
     print("moment scales linearly with E for this (small-stress) case; strain does not depend on E.")
     if spread is not None:
-        print(f"spread: lognormal stiffness, cv={a.cv:g}, {a.samples} samples. The cv is a stand-in (tensile-strength cv within one leather: "
-              "aldehyde 0.31, chrome 0.44); the stiffness spread of YOUR leather is not measured yet.")
+        print(f"spread: lognormal stiffness, cv={a.cv:g}, {a.samples} samples. For reference: 0.29 is the stiffness cv measured on 9 calfskin "
+              "specimens (Mihai et al. 2022); 0.31 (aldehyde) and 0.44 (chrome) are tensile-STRENGTH cvs, a different quantity. "
+              "The stiffness spread of YOUR leather is not measured yet.")
     return 0
 
 
@@ -88,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     w = sub.add_parser("sweep", help="how strain and bending moment change with leather thickness at a fixed fold radius")
     w.add_argument("--inside-radius", type=float, default=3.0, help="inside bend radius, mm (what the contents impose)")
     w.add_argument("--t", type=float, nargs="+", default=[0.6, 1.0, 1.4, 2.0], help="thicknesses, mm")
-    w.add_argument("--E", type=float, default=38.0, help="Young's modulus, MPa (default: middle of the 24-53 MPa literature range)")
+    w.add_argument("--E", type=float, default=72.0, help="Young's modulus, MPa (default: 72, the tensile value measured for 1.2 mm calfskin, Mihai et al. 2022; supply your leather's own)")
     w.add_argument("--poisson", type=float, default=0.3)
     w.add_argument("--angle", type=float, default=180.0)
     w.add_argument("--cv", type=float, default=None, help="coefficient of variation of stiffness within the leather, e.g. 0.4")

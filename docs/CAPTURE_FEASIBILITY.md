@@ -28,11 +28,12 @@ the trust level for every wallet captured from photos alone.
 
 ## B. Material properties: the biggest gap
 
-- **Stiffness varies 2x across one hide.** A 2022 study of vegetable-tanned bovine leather reports a Young's modulus of
-  roughly **24-53 MPa** (flank versus back; check the table's mapping in the paper). A database range for cowhide is
-  30-110 MPa (not a measurement). So "this leather" is not one number, and which part of the hide a panel was cut from matters.
-- **Poisson's ratio:** no reliable measured value found; there is no standard test for it. A database lists 0.6 with no
-  attribution. An older paper measures it for leather with an image-analysis technique.
+- **Stiffness varies within one leather.** The one measurement I have read in full (calfskin upper, 1.2 mm, 9 specimens) has a modulus
+  of **72 N/mm2 with a coefficient of variation of 29 %** (Mihai et al. 2022). A database range for cowhide is 30-110 MPa (not a
+  measurement). So "this leather" is not one number, and which part of the hide a panel was cut from may matter.
+- **Poisson's ratio:** the same paper reports 0.6 for calfskin, measured by hand just before break; it is a lateral-contraction figure
+  for a fibrous sheet, not an isotropic bulk value (which cannot exceed 0.5), and there is no standard test. An older paper measures
+  it for leather with an image-analysis technique.
 - **Anisotropy:** leather bends and stretches differently along and across the backbone. It cannot be read from a photo.
 - **What to measure instead:** folds are bending-dominated, so the most useful single measurement is **bending
   stiffness** from a cantilever bending-length test on a strip: a ruler, an offcut, a phone photo. Leather studies
@@ -75,7 +76,7 @@ properties. These stay in the "unknown" column and are listed with every result.
 ## Sources
 - Leather micro-CT of layers and fibre bundles: [Micro-computed tomography studies for three-dimensional leather structure analysis](https://www.researchgate.net/publication/290041265_Micro-computed_tomography_studies_for_three-dimensional_leather_structure_analysis)
 - Industrial CT of finished footwear: [Lumafield, non-destructive inspection of shoe assemblies](https://www.lumafield.com/resource/non-destructive-inspection-of-shoe-assemblies)
-- Measured modulus of vegetable-tanned bovine leather: [Materials 2022, 15(15), 5107](https://mdpi.com/1996-1944/15/15/5107/html)
+- Measured modulus of calfskin upper leather and sheep lining: [Materials 2022, 15(15), 5107](https://doi.org/10.3390/ma15155107)
 - Leather Poisson's ratio by image analysis: [Application to leather](https://www.researchgate.net/publication/235652490_Development_of_an_image_analysis_technique_for_measurement_of_Poisson's_ratio_for_viscoelastic_materials_Application_to_leather)
 - Leather flexural rigidity and drape: [Study on effect of leather rigidity and thickness](https://pmc.ncbi.nlm.nih.gov/articles/PMC8398511/)
 - Softness standard: [ISO 17235:2015 (DIN Media)](https://www.dinmedia.de/en/standard/din-en-iso-17235/232360090)
