@@ -155,7 +155,7 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     dirty = true;
   }
 
-  function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); if (c.geometry) c.geometry.dispose(); } }
+  function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); c.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); } }
   var base = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.0, side: THREE.DoubleSide });
   function addStrip(pts, W) {
     var n = pts.length, up = [], dn = [], col = [];
@@ -192,11 +192,43 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
     var eg = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--muted") || "#5d646b"), transparent: true, opacity: 0.7 }));
     eg.position.copy(mesh.position); group.add(eg);
   }
+  // ---- the functional twin's parts: plates with plan shapes (rounded corners, a notch, a hole), cards, notes and the stud --------------------------------------------
+  var TONES = ["#5d6872", "#6f7b86", "#7f8b95"];
+  function plateShape(pl) {
+    var len = pl.len, hw = pl.wid / 2, rs = Math.min(pl.rs, hw, len / 2), r0 = Math.min(pl.re[0], hw), r1 = Math.min(pl.re[1], hw), sh = new THREE.Shape();
+    sh.moveTo(rs, -hw); sh.lineTo(len - r0, -hw); sh.quadraticCurveTo(len, -hw, len, -hw + r0);          // plan: x along the plate, y = -z, so the shape's +y is world -z
+    if (pl.notch) {
+      var d = pl.notch.d, h = Math.min(pl.notch.h, hw - r0 - 1); sh.lineTo(len, -h);
+      for (var i = 1; i <= 16; i++) { var y = -h + 2 * h * i / 16; sh.lineTo(len - d * Math.pow(1 - Math.abs(y) / h, 2), y); }
+    }
+    sh.lineTo(len, hw - r1); sh.quadraticCurveTo(len, hw, len - r1, hw); sh.lineTo(rs, hw); sh.quadraticCurveTo(0, hw, 0, hw - rs); sh.lineTo(0, -hw + rs); sh.quadraticCurveTo(0, -hw, rs, -hw);
+    if (pl.hole) { var hp = new THREE.Path(); hp.absarc(pl.hole.u, -pl.hole.z, pl.hole.r, 0, Math.PI * 2, true); sh.holes.push(hp); }
+    return sh;
+  }
+  function addPlate(pl) {
+    var g = new THREE.ExtrudeGeometry(plateShape(pl), { depth: pl.t, bevelEnabled: false, curveSegments: 8 });
+    g.rotateX(-Math.PI / 2); g.translate(0, -pl.t / 2, 0);
+    var m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(state.colour ? TONES[pl.tone] : "#6a737c"), roughness: 0.7, side: THREE.DoubleSide }));
+    m.rotation.z = pl.phi; m.position.set(pl.x, pl.y, pl.zc);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 25), new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: 0.5 })));
+    group.add(m);
+  }
+  function addBox(b) {
+    var m = new THREE.Mesh(new THREE.BoxGeometry(b.sx, b.sy, b.sz), new THREE.MeshStandardMaterial({ color: new THREE.Color(b.kind === "card" ? "#d9d3c3" : "#a9bda4"), roughness: 0.55 }));
+    m.position.set(b.x, b.y, b.z);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: new THREE.Color("#3a3a3a"), transparent: true, opacity: 0.45 })));
+    group.add(m);
+  }
+  function addCyl(c) {
+    var m = new THREE.Mesh(new THREE.CylinderGeometry(c.r, c.r, c.h, 24), new THREE.MeshStandardMaterial({ color: new THREE.Color("#2a2a2a"), roughness: 0.35, metalness: 0.6 }));
+    m.position.set(c.x, c.y, c.z); group.add(m);
+  }
   var current = null;
   function build() {
     current = buildModel(M());
     disposeGroup();
-    current.strips.forEach(function (s) { addStrip(s, current.W); });
+    (current.drawStrips || current.strips).forEach(function (s) { addStrip(s, current.W); });
+    (current.plates || []).forEach(addPlate); (current.boxes || []).forEach(addBox); (current.cyl || []).forEach(addCyl);
     current.blocks.forEach(addBlock);
     var lowest = 0; current.strips.forEach(function (s) { s.forEach(function (q) { lowest = Math.min(lowest, q.y); }); });
     gridY = lowest - T / 2 - 0.4; if (grid) grid.position.y = gridY;           // the floor sits under the lowest layer, so it never cuts through the sheet

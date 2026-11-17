@@ -59,10 +59,10 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
 </style>
 <main>
   <header id="hdr">
-    <p class="eyebrow">Sruli Recht &middot; fold structure</p>
+    <p class="eyebrow">Sruli Recht &middot; functional twin</p>
     <h1>Sruli Recht WHALET SR202 (EDITIONS reissue, 2022) in 3D</h1>
   </header>
-  <div class="banner"><strong>A structural sketch, not a scan.</strong> The only measurement behind it is the maker's or seller's closed depth, 10 mm, not checked. The hinge is the record's first fold, flap hinge; the pockets, card slots and fittings are not drawn, and the grey block only stands for the pack the hinge wraps. The record's other fold (left end fold) is not drawn: the sketch shows one hinge. Panels can pass through each other and nothing here is a leather simulation.</div>
+  <div class="banner"><strong>A reconstruction at the maker's stated size (85 x 100 mm, closed depth 10 mm), not a scan and not a flat pattern.</strong> The back panel, flap and four layered pockets are drawn at real size from a product photograph; how the layers join, and the sheet thickness, are not known and are marked as assumed. Contents change the stack and so the hinge radius. Panels are rigid between the folds, the leather is not simulated, and the strain is the closed form scaled with the fold angle.</div>
 
   <div class="app">
     <div class="stagewrap">
@@ -86,13 +86,13 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
   </section>
 
   <div class="notes">
-    <div class="card"><h2>What it shows</h2><ul><li><em>Flap and spine:</em> the sheet seen along its length: a back panel, the hinge, and the flap that lies over the front, with a block for the pack it wraps.</li><li>Each fold turns through a fixed length of sheet, so a fold that opens gets a larger radius.</li></ul></div>
+    <div class="card"><h2>What it shows</h2><ul><li>Open the flap, and fill the pockets with ISO cards or folded banknotes: the layers move apart, the closed depth changes and the flap hinge's radius and strain follow.</li><li>Compare the closed depth with the maker's figure: the page states which sheet thickness would reproduce it with the contents you chose.</li><li>Each layer's size comes from the open-wallet photograph, scaled so the body width is the maker's 85 mm (about 3 mm of reading error).</li></ul></div>
     <div class="card"><h2>What the colours are</h2><ul>
       <li>The closed-form strain on the outside of each fold, from the simulation's geometry, scaled with the fold angle (the pleat result: strain follows the angle).</li>
       <li>Not a leather simulation. It does not include set, the stitching or the grain.</li></ul></div>
-    <div class="card"><h2>What would make it real</h2><ul><li>Closed thickness at the fold edge-on with a ruler, and how much of it the hinge actually wraps.</li><li>The sheet thickness, measured at several points: it sets every radius here.</li><li>The flat pattern, to say which fold is which.</li></ul></div>
+    <div class="card"><h2>What would make it real</h2><ul><li>The flat pattern (the maker has the laser-cutting file) to replace the photograph reading.</li><li>The sheet thickness, and the closed depth empty and loaded.</li><li>Which three slots the maker means: the photograph shows four layers behind the front panel.</li></ul></div>
   </div>
-  <p class="foot">Source: retailer or reseller text and product photographs in the Wallet-corpus- archive (item sr005). The photographs are research documentation only and are not shown here. Sizes one size: 8.5 x 10 cm are read as the closed footprint. Strain is the closed form t / (2R + t), where t is the sheet thickness and R the inside radius.</p>
+  <p class="foot">Source: retailer or reseller text and product photographs in the Wallet-corpus- archive (item sr005). The photographs are research documentation only and are not shown here. Sizes closed: 85 x 100 mm are read as the closed footprint. Strain is the closed form t / (2R + t), where t is the sheet thickness and R the inside radius.</p>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -173,7 +173,64 @@ var WalletGeometry = (function () {
       return { strips: [t.pts, other], blocks: [], marks: t.marks, W: G.depth,
                text: "The V of the pleat is open " + phi.toFixed(0) + "&deg;; front and back panels are " + gap.toFixed(1) + " mm apart, centre line to centre line." };
     }
+    if (model.kind === "twin") return buildTwin(CFG, model, p, v, turn, epsFull);
     throw new Error("unknown model kind " + model.kind);
+  }
+
+  // ---- the functional twin: real-size layers, pockets that fill with cards, and a flap hinge whose radius follows what is inside ----------------------------------
+  // Closed and landscape: the back panel runs along +x from its free end (x = -L/2); every wall is attached at that free end and reaches toward the hinge; the hinge is at +x.
+  // The stack between the back panel and the flap is  sum(gap + t) over the walls; the hinge wraps it, so its inside radius is half of that.
+  function buildTwin(CFG, model, p, v, turn, epsFull) {
+    var A = CFG.twin, T = p.t, L = A.L, W = A.W, walls = A.walls, nk = walls.length;
+    var gaps = A.pockets.map(function (pk) {
+      var n = p["n_" + pk.key] || 0, content = n * A.card.t;
+      if (pk.id === A.bills_pocket) content += (p.notes || 0) * A.note_t * 2;
+      return content > 0 ? content + A.slack : A.gapEmpty;
+    });
+    var plates = [], boxes = [], strips = [], yTop = T / 2, wallMid = [], wallTop = [];
+    for (var k = 0; k < nk; k++) {
+      var yb = yTop + gaps[k]; wallMid.push(yb + T / 2); yTop = yb + T; wallTop.push(yTop);
+    }
+    var S = yTop - T / 2, hs = S + A.flapGap, rIn = hs / 2, rs = rIn + T / 2, depth = 2 * T + hs;     // stack the hinge wraps, its inside and neutral radii, closed depth
+    var Lb = L - (rIn + T), Lf = A.flapLen - (rIn + T), x0 = -L / 2, hinge = model.hinges[0];
+    var t = new Turtle(T, x0, 0, 0);
+    t.straight(Lb, 0);
+    var iArc = t.pts.length - 1;
+    t.fold(hinge.id, turn(hinge), Math.PI * rs, epsFull(rIn));
+    var arc = t.pts.slice(iArc), ex = t.x, ey = t.y, ephi = t.phi;
+    t.straight(Lf, 0);
+    strips.push(t.pts);
+    // the back panel and the flap are plates (they have plan shapes); the arc between them is an extruded strip
+    plates.push({ id: "back panel", x: x0, y: 0, phi: 0, zc: 0, len: Lb, wid: W, t: T, rs: 1.0, re: [1.0, 1.0], tone: 0 });
+    var stud = A.stud, zs = stud.z - W / 2, xs = x0 + stud.x;
+    plates.push({ id: "flap", x: ex, y: ey, phi: ephi, zc: 0, len: Lf, wid: W, t: T, rs: 1.0, re: [A.flapR, A.flapR], tone: 0,
+                  hole: { u: (L / 2 - (rIn + T)) - xs, z: zs, r: stud.d / 2 + 0.6 } });
+    for (var j = 0; j < nk; j++) {
+      var w = walls[j], width = W - w.left - w.right, zc = (w.left - w.right) / 2;                // an inset from the left edge shifts the wall's centre toward +z
+      plates.push({ id: w.id, x: x0, y: wallMid[j], phi: 0, zc: zc, len: w.top, wid: width, t: T, rs: 0.8, re: w.radii, tone: 1 + j % 2, notch: w.notch || null });
+      strips.push([{ x: x0, y: wallMid[j], phi: 0, e: 0 }, { x: x0 + w.top, y: wallMid[j], phi: 0, e: 0 }]);
+    }
+    // contents: cards stand on the free end of the back panel with their long side toward the hinge; notes lie folded in the bills pocket
+    var y = T / 2;
+    for (var q = 0; q < nk; q++) {
+      var pk = A.pockets[q], n = p["n_" + pk.key] || 0, wq = walls[q], zq = (wq.left - wq.right) / 2, cy = y + (n ? A.slack / 2 : 0);
+      for (var c = 0; c < n; c++) boxes.push({ kind: "card", x: x0 + 0.8 + A.card.l / 2, y: cy + (c + 0.5) * A.card.t, z: zq, sx: A.card.l, sy: A.card.t * 0.96, sz: A.card.w });
+      if (pk.id === A.bills_pocket && (p.notes || 0) > 0) boxes.push({ kind: "note", x: x0 + 1 + 80 / 2, y: cy + n * A.card.t + (p.notes * A.note_t), z: zq, sx: 80, sy: p.notes * A.note_t * 2, sz: 62 });
+      y += gaps[q] + T;
+    }
+    var cyl = [{ x: xs, y: wallTop[nk - 1] + stud.h / 2, z: zs, r: stud.d / 2, h: stud.h }];
+    var warn = [];
+    A.pockets.forEach(function (pk, q) {
+      var n = p["n_" + pk.key] || 0;
+      if (pk.cap != null && n > pk.cap) warn.push(pk.id + " holds " + n + " cards; the maker says " + pk.cap + " per slot");
+      var wq = walls[q]; if (n && A.card.w > W - wq.left - wq.right) warn.push("a card (" + A.card.w + " mm wide) is wider than the " + pk.id);
+    });
+    var fitT = (A.closedDepth - gaps.reduce(function (a, b) { return a + b; }, 0) - A.flapGap) / (2 + nk);
+    var text = "Closed depth " + depth.toFixed(1) + " mm with this thickness and these contents" + (A.closedDepth ? " (the maker states " + A.closedDepth + " mm)" : "") + ". The hinge wraps " + hs.toFixed(1) +
+      " mm of stack, inside radius " + rIn.toFixed(1) + " mm." + (A.closedDepth ? (fitT >= 0.4 ? " The sheet thickness that would give " + A.closedDepth + " mm with these contents is " + fitT.toFixed(2) + " mm." : " These contents alone take more room than the maker's " + A.closedDepth + " mm allows.") : "") +
+      (warn.length ? "<br>" + warn.join("; ") + "." : "");
+    return { strips: strips, drawStrips: [arc], plates: plates, boxes: boxes, cyl: cyl, blocks: [], marks: t.marks, W: W, text: text,
+             twin: { depth: depth, stack: hs, rIn: rIn, layers: 2 + nk, fitT: fitT } };
   }
   return { build: build, ease: ease, lerp: lerp };
 })();
@@ -182,7 +239,7 @@ var WalletGeometry = (function () {
 <script>
 (function () {
   "use strict";
-  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"flap","kind":"flap","label":"Flap and spine","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"stack","label":"Stack the hinge wraps","min":4.0,"max":8.0,"step":0.5,"value":8.0,"unit":"mm","dec":1}],"hinges":[{"id":"main","name":"Flap hinge","closed":-180,"open":-20,"drv":"flap","tag":"translate(-108%, -50%)"}]}],"sizes":{"one size":{"L":100,"W":85,"txt":"8.5 x 10 cm"}},"size":"one size","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"gusset":{"w":60.0,"a":18.0,"depth":70.0,"maxPhi":100.0},"id":"sr-whalet-sr202-2022","embed":false};
+  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"twin","kind":"twin","label":"Wallet","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"t","label":"Sheet thickness","min":0.8,"max":1.6,"step":0.05,"value":1.0,"unit":"mm","dec":2},{"id":"n_back_pocket","label":"Cards in the back pocket","min":0,"max":8,"step":1,"value":0,"unit":"cards","dec":0},{"id":"n_second_pocket","label":"Cards in the second pocket","min":0,"max":8,"step":1,"value":0,"unit":"cards","dec":0},{"id":"n_third_pocket","label":"Cards in the third pocket","min":0,"max":8,"step":1,"value":0,"unit":"cards","dec":0},{"id":"n_front_pocket","label":"Cards in the front pocket","min":0,"max":8,"step":1,"value":0,"unit":"cards","dec":0},{"id":"notes","label":"Folded banknotes in the back pocket","min":0,"max":20,"step":1,"value":0,"unit":"notes","dec":0}],"hinges":[{"id":"hinge","name":"Flap hinge","closed":180,"open":15,"drv":"flap","tag":"translate(10px, -130%)"}]}],"sizes":{"closed":{"L":100,"W":85,"txt":"85 x 100 mm"}},"size":"closed","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"twin":{"L":100.0,"W":85.0,"walls":[{"id":"back wall","top":95.5,"left":8.8,"right":1.0,"radii":[14.0,1.0],"notch":null},{"id":"second wall","top":79.6,"left":15.8,"right":2.6,"radii":[12.0,8.0],"notch":null},{"id":"third wall","top":71.0,"left":16.9,"right":4.0,"radii":[10.0,10.0],"notch":null},{"id":"front wall","top":62.5,"left":0.5,"right":0.5,"radii":[1.0,1.0],"notch":{"d":11.0,"h":11.0}}],"pockets":[{"id":"back pocket","key":"back_pocket","cap":null,"role":"the maker's larger third slot, for bills"},{"id":"second pocket","key":"second_pocket","cap":null,"role":"not named by the maker; a fourth layer shows in image 035"},{"id":"third pocket","key":"third_pocket","cap":5,"role":"a card slot (maker: 4-5 cards per slot)"},{"id":"front pocket","key":"front_pocket","cap":5,"role":"a card slot (maker: 4-5 cards per slot)"}],"bills_pocket":"back pocket","flapLen":90.0,"flapR":14.0,"flapGap":0.3,"card":{"l":85.6,"w":53.98,"t":0.76},"note_t":0.11,"gapEmpty":0.2,"slack":0.3,"closedDepth":10.0,"stud":{"x":50.0,"z":80.0,"d":7.0,"h":2.0}},"id":"sr-whalet-sr202-2022","embed":false};
   var T = CFG.T;                                          // sheet thickness, mm
   var MODELS = CFG.models, byId = {};
   MODELS.forEach(function (m) { byId[m.id] = m; });
@@ -234,7 +291,7 @@ var WalletGeometry = (function () {
     dirty = true;
   }
 
-  function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); if (c.geometry) c.geometry.dispose(); } }
+  function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); c.traverse(function (o) { if (o.geometry) o.geometry.dispose(); }); } }
   var base = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.0, side: THREE.DoubleSide });
   function addStrip(pts, W) {
     var n = pts.length, up = [], dn = [], col = [];
@@ -271,11 +328,43 @@ var WalletGeometry = (function () {
     var eg = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--muted") || "#5d646b"), transparent: true, opacity: 0.7 }));
     eg.position.copy(mesh.position); group.add(eg);
   }
+  // ---- the functional twin's parts: plates with plan shapes (rounded corners, a notch, a hole), cards, notes and the stud --------------------------------------------
+  var TONES = ["#5d6872", "#6f7b86", "#7f8b95"];
+  function plateShape(pl) {
+    var len = pl.len, hw = pl.wid / 2, rs = Math.min(pl.rs, hw, len / 2), r0 = Math.min(pl.re[0], hw), r1 = Math.min(pl.re[1], hw), sh = new THREE.Shape();
+    sh.moveTo(rs, -hw); sh.lineTo(len - r0, -hw); sh.quadraticCurveTo(len, -hw, len, -hw + r0);          // plan: x along the plate, y = -z, so the shape's +y is world -z
+    if (pl.notch) {
+      var d = pl.notch.d, h = Math.min(pl.notch.h, hw - r0 - 1); sh.lineTo(len, -h);
+      for (var i = 1; i <= 16; i++) { var y = -h + 2 * h * i / 16; sh.lineTo(len - d * Math.pow(1 - Math.abs(y) / h, 2), y); }
+    }
+    sh.lineTo(len, hw - r1); sh.quadraticCurveTo(len, hw, len - r1, hw); sh.lineTo(rs, hw); sh.quadraticCurveTo(0, hw, 0, hw - rs); sh.lineTo(0, -hw + rs); sh.quadraticCurveTo(0, -hw, rs, -hw);
+    if (pl.hole) { var hp = new THREE.Path(); hp.absarc(pl.hole.u, -pl.hole.z, pl.hole.r, 0, Math.PI * 2, true); sh.holes.push(hp); }
+    return sh;
+  }
+  function addPlate(pl) {
+    var g = new THREE.ExtrudeGeometry(plateShape(pl), { depth: pl.t, bevelEnabled: false, curveSegments: 8 });
+    g.rotateX(-Math.PI / 2); g.translate(0, -pl.t / 2, 0);
+    var m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(state.colour ? TONES[pl.tone] : "#6a737c"), roughness: 0.7, side: THREE.DoubleSide }));
+    m.rotation.z = pl.phi; m.position.set(pl.x, pl.y, pl.zc);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(g, 25), new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: 0.5 })));
+    group.add(m);
+  }
+  function addBox(b) {
+    var m = new THREE.Mesh(new THREE.BoxGeometry(b.sx, b.sy, b.sz), new THREE.MeshStandardMaterial({ color: new THREE.Color(b.kind === "card" ? "#d9d3c3" : "#a9bda4"), roughness: 0.55 }));
+    m.position.set(b.x, b.y, b.z);
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry), new THREE.LineBasicMaterial({ color: new THREE.Color("#3a3a3a"), transparent: true, opacity: 0.45 })));
+    group.add(m);
+  }
+  function addCyl(c) {
+    var m = new THREE.Mesh(new THREE.CylinderGeometry(c.r, c.r, c.h, 24), new THREE.MeshStandardMaterial({ color: new THREE.Color("#2a2a2a"), roughness: 0.35, metalness: 0.6 }));
+    m.position.set(c.x, c.y, c.z); group.add(m);
+  }
   var current = null;
   function build() {
     current = buildModel(M());
     disposeGroup();
-    current.strips.forEach(function (s) { addStrip(s, current.W); });
+    (current.drawStrips || current.strips).forEach(function (s) { addStrip(s, current.W); });
+    (current.plates || []).forEach(addPlate); (current.boxes || []).forEach(addBox); (current.cyl || []).forEach(addCyl);
     current.blocks.forEach(addBlock);
     var lowest = 0; current.strips.forEach(function (s) { s.forEach(function (q) { lowest = Math.min(lowest, q.y); }); });
     gridY = lowest - T / 2 - 0.4; if (grid) grid.position.y = gridY;           // the floor sits under the lowest layer, so it never cuts through the sheet

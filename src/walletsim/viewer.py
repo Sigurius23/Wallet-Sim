@@ -15,6 +15,8 @@ from __future__ import annotations
 import html
 import json
 import re
+
+import yaml
 from importlib import resources
 from pathlib import Path
 
@@ -164,13 +166,68 @@ def _flap(rec: WalletRecord) -> dict:
     return {"cfg": cfg, "text": text, "n": 0}
 
 
+def _v(x):
+    """The value of a record leaf ({value, source, ref}) or the bare value."""
+    return x["value"] if isinstance(x, dict) and "value" in x else x
+
+
+def _twin(rec: WalletRecord, asm: dict) -> dict:
+    """The functional twin: real-size layers read from assembly.yaml (a reconstruction, with provenance on each number), pockets that fill with cards, the flap hinge."""
+    if asm.get("kind") != "twin":
+        raise ViewerError("assembly.yaml must have kind: twin")
+    L, W = float(_v(asm["back"]["length_mm"])), float(_v(asm["back"]["width_mm"]))
+    card, note = asm["card"], asm["note"]
+    pockets = []
+    for pk in asm["pockets"]:
+        key = re.sub(r"[^a-z0-9]+", "_", pk["id"].lower()).strip("_")
+        pockets.append({"id": pk["id"], "key": key, "cap": pk.get("cards_capacity"), "role": pk.get("role", "")})
+    if len(pockets) != len(asm["walls"]):
+        raise ViewerError(f"assembly.yaml: {len(asm['walls'])} walls need {len(asm['walls'])} pockets, got {len(pockets)}")
+    walls = [{"id": w["id"], "top": float(w["top_mm"]), "left": float(w["left_inset_mm"]), "right": float(w["right_inset_mm"]),
+              "radii": [float(r) for r in w["end_radii_mm"]], "notch": ({"d": float(w["notch"]["depth_mm"]), "h": float(w["notch"]["half_width_mm"])} if w.get("notch") else None)}
+             for w in asm["walls"]]
+    cl = ((rec.raw.get("construction") or {}).get("closed_thickness_mm") or {})
+    st = asm["stud"]
+    A = {"L": L, "W": W, "walls": walls, "pockets": pockets, "bills_pocket": asm.get("bills_pocket"),
+         "flapLen": float(_v(asm["flap"]["length_mm"])), "flapR": float(_v(asm["flap"]["corner_radius_mm"])), "flapGap": float(_v(asm["flap"]["clearance_mm"])),
+         "card": {"l": float(card["length_mm"]), "w": float(card["width_mm"]), "t": float(card["thickness_mm"])}, "note_t": float(note["thickness_mm"]),
+         "gapEmpty": float(_v(asm["gap_empty_mm"])), "slack": float(_v(asm["slack_mm"])), "closedDepth": float(_v(cl["value"])) if cl.get("value") else None,
+         "stud": {"x": float(_v(st["x_from_free_end_mm"])), "z": float(_v(st["z_from_left_mm"])), "d": float(_v(st["diameter_mm"])), "h": float(_v(st["height_mm"]))}}
+    lo, hi = (float(x) for x in asm.get("thickness_range_mm", [rec.shell_t, rec.shell_t]))
+    params = [{"id": "t", "label": "Sheet thickness", "min": lo, "max": hi, "step": 0.05, "value": float(rec.shell_t), "unit": "mm", "dec": 2}]
+    for pk in pockets:
+        cap = pk["cap"]
+        params.append({"id": "n_" + pk["key"], "label": f"Cards in the {pk['id']}", "min": 0, "max": 8, "step": 1, "value": 0, "unit": "cards", "dec": 0})
+    params.append({"id": "notes", "label": f"Folded banknotes in the {asm.get('bills_pocket', 'bills pocket')}", "min": 0, "max": 20, "step": 1, "value": 0, "unit": "notes", "dec": 0})
+    model = {"id": "twin", "kind": "twin", "label": "Wallet", "controls": [{"id": "flap", "label": "Open the flap"}], "params": params,
+             "hinges": [{"id": "hinge", "name": "Flap hinge", "closed": 180, "open": 15, "drv": "flap", "tag": "translate(10px, -130%)"}]}
+    size = {"L": round(L), "W": round(W), "txt": f"{W:g} x {L:g} mm"}
+    cfg = {"T": float(rec.shell_t), "leaves": 0, "models": [model], "sizes": {"closed": size}, "size": "closed", "edgeLabel": "Side view", "words": WORDS, "twin": A}
+    depth = f"{A['closedDepth']:g} mm" if A["closedDepth"] else "not recorded"
+    text = {
+        "eyebrow": f"{E(str(rec.raw.get('maker', '')))} &middot; functional twin",
+        "banner": (f"<strong>A reconstruction at the maker's stated size ({W:g} x {L:g} mm, closed depth {depth}), not a scan and not a flat pattern.</strong> The back panel, flap and four layered pockets are drawn at real size from "
+                   "a product photograph; how the layers join, and the sheet thickness, are not known and are marked as assumed. Contents change the stack and so the hinge radius. "
+                   "Panels are rigid between the folds, the leather is not simulated, and the strain is the closed form scaled with the fold angle."),
+        "shows": ["Open the flap, and fill the pockets with ISO cards or folded banknotes: the layers move apart, the closed depth changes and the flap hinge's radius and strain follow.",
+                  "Compare the closed depth with the maker's figure: the page states which sheet thickness would reproduce it with the contents you chose.",
+                  "Each layer's size comes from the open-wallet photograph, scaled so the body width is the maker's 85 mm (about 3 mm of reading error)."],
+        "real": ["The flat pattern (the maker has the laser-cutting file) to replace the photograph reading.", "The sheet thickness, and the closed depth empty and loaded.",
+                 "Which three slots the maker means: the photograph shows four layers behind the front panel."],
+    }
+    return {"cfg": cfg, "text": text, "n": 0}
+
+
 def config(wallet_dir: str | Path) -> tuple[WalletRecord, dict, dict]:
     """The record, the viewer's configuration (what the geometry library draws) and its page text, all read from the record."""
     rec = load_wallet(wallet_dir)
     if rec.wallet_type != CUSTOM:
         raise ViewerError("only custom (one-sheet) records have a 3D sketch so far; bifold, trifold and z-fold have the fold simulator's plots")
     specs = _specs(rec)
-    if any("stack_from_loops" in s for s in specs):
+    asm_path = rec.path / "assembly.yaml"
+    if asm_path.exists():
+        built = _twin(rec, yaml.safe_load(asm_path.read_text()))
+    elif any("stack_from_loops" in s for s in specs):
         built = _chain(rec)
     elif any("stack_from_closed_thickness" in s for s in specs):
         built = _flap(rec)

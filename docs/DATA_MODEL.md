@@ -106,3 +106,8 @@ Rules:
 - A simulation result stores a copy of the record version it ran on, so results stay reproducible.
 
 A template lives in `wallets/_template/wallet.yaml`.
+
+### `assembly.yaml` (optional): the functional twin
+A wallet folder may hold `assembly.yaml`, a **reconstruction** of the interior at real size, kept apart from `wallet.yaml` because it is not a fact about the wallet: it is read off photographs and carries its own provenance on every number
+(`kind: twin`, the back panel and flap, `walls` with their reach and insets, `pockets` with their roles and card capacities, the closure stud, the card and note thickness, the empty-gap and stretch allowances, a thickness range). `walletsim wallet-viewer` then builds a
+model whose flap opens, whose pockets fill with cards and notes, and whose closed depth, stack, hinge radius and strain follow the contents, and it says which sheet thickness would reproduce the maker's closed depth. See `wallets/sr-whalet-sr202-2022/assembly.yaml`.

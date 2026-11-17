@@ -86,11 +86,59 @@ def test_only_one_sheet_records_with_a_known_structure_get_a_viewer(tmp_path):
     assert "folds" in str(e.value)
 
 
-def test_a_flap_record_without_a_gusset_gets_one_model_and_says_which_folds_it_leaves_out():
-    whalet = ROOT / "wallets" / "sr-whalet-sr202-2022"
+def test_a_flap_record_without_a_gusset_gets_one_model_and_says_which_folds_it_leaves_out(tmp_path):
+    whalet = tmp_path / "w"                                                                 # the record alone: without its assembly.yaml the viewer falls back to the flap sketch
+    shutil.copytree(ROOT / "wallets" / "sr-whalet-sr202-2022", whalet, ignore=shutil.ignore_patterns("sim", "assembly.yaml", "viewer.html"))
     cfg = _cfg(build_viewer(whalet))
     assert [m["kind"] for m in cfg["models"]] == ["flap"]                                  # only a fold marked or named as a gusset gets the gusset model
     p = cfg["models"][0]["params"][0]
     assert (p["min"], p["value"], p["max"]) == (4.0, 8.0, 8.0)
     html = build_viewer(whalet)
     assert "left end fold" in html and "not drawn" in html and "photograph 01" not in html     # nothing borrowed from another wallet's record
+
+
+# ---- the functional twin (the geometry library runs in node; skipped where node is not installed)
+import subprocess
+
+import pytest
+
+needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+
+
+def _twin_build(params: dict, flap: float = 0.0) -> dict:
+    from walletsim.viewer import config
+    whalet = ROOT / "wallets" / "sr-whalet-sr202-2022"
+    _, cfg, _ = config(whalet)
+    js = (ROOT / "src" / "walletsim" / "geometry.js").read_text()
+    prog = js + f"""
+    var CFG = {json.dumps(cfg)}, m = CFG.models[0], p = {{}};
+    m.params.forEach(function (q) {{ p[q.id] = q.value; }}); Object.assign(p, {json.dumps(params)});
+    var r = WalletGeometry.build(CFG, m, CFG.size, p, {{flap: {flap}}});
+    console.log(JSON.stringify({{twin: r.twin, plates: r.plates.length, boxes: r.boxes.length, text: r.text}}));
+    """
+    out = subprocess.run(["node", "-e", prog], capture_output=True, text=True, check=True)
+    return json.loads(out.stdout)
+
+
+@needs_node
+def test_an_empty_twin_is_six_layers_and_the_closed_depth_follows_the_sheet_thickness():
+    r = _twin_build({})
+    assert r["plates"] == 6 and r["boxes"] == 0                                   # back panel, flap and four walls
+    assert r["twin"]["depth"] == pytest.approx(6 * 1.0 + 4 * 0.2 + 0.3)           # 6 layers x t + 4 empty gaps + the flap clearance
+    assert _twin_build({"t": 1.5})["twin"]["depth"] == pytest.approx(6 * 1.5 + 4 * 0.2 + 0.3)
+    assert r["twin"]["fitT"] == pytest.approx((10 - 4 * 0.2 - 0.3) / 6)           # the thickness that reproduces the maker's 10 mm when empty
+
+
+@needs_node
+def test_cards_open_their_pocket_and_the_hinge_radius_follows_the_stack():
+    empty, loaded = _twin_build({}), _twin_build({"n_front_pocket": 4})
+    added = 4 * 0.76 + 0.3 - 0.2                                                  # the cards plus the stretch allowance, less the empty gap they replace
+    assert loaded["twin"]["depth"] - empty["twin"]["depth"] == pytest.approx(added)
+    assert loaded["twin"]["rIn"] == pytest.approx(loaded["twin"]["stack"] / 2) and loaded["boxes"] == 4
+    assert "holds 7 cards" in _twin_build({"n_front_pocket": 7})["text"]           # beyond the maker's 4-5 per slot is flagged, not refused
+
+
+def test_the_twin_is_the_default_viewer_when_a_wallet_has_an_assembly_file():
+    cfg = _cfg(build_viewer(ROOT / "wallets" / "sr-whalet-sr202-2022"))
+    assert [m["kind"] for m in cfg["models"]] == ["twin"] and cfg["twin"]["closedDepth"] == 10.0
+    assert [p["id"] for p in cfg["models"][0]["params"]][:2] == ["t", "n_back_pocket"]

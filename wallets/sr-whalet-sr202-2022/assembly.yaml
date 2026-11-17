@@ -1,0 +1,37 @@
+# WHALET SR202: the functional reconstruction (the "twin"), drawn at the maker's stated size.
+# This file is separate from wallet.yaml on purpose: wallet.yaml holds facts and their provenance, this holds my RECONSTRUCTION of the interior from product photographs.
+# Nothing here is a flat pattern or a measurement. Dimensions marked `inferred` were read off corpus image 035 (the open wallet), scaled so that the body width
+# (405 px across) equals the maker's 85 mm (4.76 px per mm). They carry about +-3 mm of reading error and the photograph's perspective.
+kind: twin
+orientation: "closed, landscape, free end of the back panel at the left (-x), flap hinge at the right (+x), as in corpus image 036"
+back:
+  length_mm: {value: 100, source: reported, ref: "maker: 85 x 100 x 10 mm"}
+  width_mm: {value: 85, source: reported, ref: "maker: 85 x 100 x 10 mm"}
+flap:
+  length_mm: {value: 90, source: inferred, ref: "image 036: the flap's rounded free end stops about 10 mm short of the back panel's free end"}
+  corner_radius_mm: {value: 14, source: inferred, ref: "images 035 and 036"}
+  clearance_mm: {value: 0.3, source: assumed, ref: "air between the front wall and the closed flap"}
+# Layers between the back panel and the flap, back to front. `top_mm` is how far the wall reaches from the back panel's free end toward the hinge.
+# The maker names THREE slots (4-5 cards per slot; "the back section is a larger third slot ... for bills"). Image 035 shows FOUR stepped layers behind the
+# front panel, which makes four pockets; which three the maker means is not recoverable from the evidence, so the pocket roles below are my reading.
+walls:
+  - {id: back wall, top_mm: 95.5, left_inset_mm: 8.8, right_inset_mm: 1.0, end_radii_mm: [14, 1], source: inferred}
+  - {id: second wall, top_mm: 79.6, left_inset_mm: 15.8, right_inset_mm: 2.6, end_radii_mm: [12, 8], source: inferred}
+  - {id: third wall, top_mm: 71.0, left_inset_mm: 16.9, right_inset_mm: 4.0, end_radii_mm: [10, 10], source: inferred}
+  - {id: front wall, top_mm: 62.5, left_inset_mm: 0.5, right_inset_mm: 0.5, end_radii_mm: [1, 1], notch: {depth_mm: 11, half_width_mm: 11}, source: inferred}
+pockets:   # the gap in front of each wall, back to front; the first lies between the back panel and the back wall
+  - {id: back pocket, role: "the maker's larger third slot, for bills", cards_capacity: null, source: reported}
+  - {id: second pocket, role: "not named by the maker; a fourth layer shows in image 035", cards_capacity: null, source: assumed}
+  - {id: third pocket, role: "a card slot (maker: 4-5 cards per slot)", cards_capacity: 5, source: reported}
+  - {id: front pocket, role: "a card slot (maker: 4-5 cards per slot)", cards_capacity: 5, source: reported}
+bills_pocket: back pocket
+stud:
+  x_from_free_end_mm: {value: 50, source: inferred, ref: "images 035 (stud) and 036 (flap hole), both read to within about 9 mm"}
+  z_from_left_mm: {value: 80, source: inferred, ref: "image 035"}
+  diameter_mm: {value: 7, source: inferred}
+  height_mm: {value: 2, source: assumed}
+card: {length_mm: 85.6, width_mm: 53.98, thickness_mm: 0.76, source: literature, ref: ISO/IEC 7810 ID-1}
+note: {thickness_mm: 0.11, source: assumed, ref: "one banknote, about 0.1 mm; folded once, so two layers. A typical value, not a reading"}
+gap_empty_mm: {value: 0.2, source: assumed, ref: "an empty pocket: the two walls nearly touch"}
+slack_mm: {value: 0.3, source: assumed, ref: "extra room a loaded pocket takes beyond its contents' thickness: the maker says the leather stretches to fit"}
+thickness_range_mm: [0.8, 1.6]

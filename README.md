@@ -36,7 +36,7 @@ No validated leather fatigue law exists; the leather-specific research codes (Fr
 ```bash
 pip install -e ".[dev]"            # numpy only; the FEM check also needs CalculiX
 sudo apt-get install calculix-ccx  # Debian/Ubuntu
-pytest                             # 114 tests, ~280 s
+pytest                             # 117 tests, ~280 s
 walletsim validate-fem             # the 180° bending benchmark
 walletsim fold-styles              # compare fold constructions, about 15 s
 walletsim gusset                   # accordion pleat, about 17 s
