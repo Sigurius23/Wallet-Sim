@@ -43,6 +43,7 @@ A single page (it loads Three.js from a CDN) that folds one 1 mm strip with the 
 It is a **structural sketch, not a scan or a simulation**: the flat cut pattern is unknown, so there are no pockets, flap or silver cross, panels can pass through each other, and the colours are the closed-form strain
 at each fold scaled with the fold angle. Two sliders open the wallet like a book and open the pockets; a third sets the loop radius.
 
-What building it showed: in this one-sheet layout the loops and the spine are **coupled**. The layers sit one loop-gap apart, so with the loops' 0.5 mm inside radius the spine wraps about 7 mm
-(inside radius 3.5 mm, closed-form strain 12.5 %), not the 3 mm the record lists for the spine independently. If this layout is right, the record's spine stack should be derived from the loop radius.
-That needs the topology confirmed first (the flat pattern, or photographs of the wallet unfolded).
+What building it showed, and what changed because of it: in this one-sheet layout the loops and the spine are **coupled**. The layers sit one loop-gap apart, so the spine wraps
+`leaves x t + (leaves + 1) x gap` = 3 x 1 + 4 x 1 = 7 mm at the loops' recorded 0.5 mm inside radius (inside radius 3.5 mm, closed-form strain 12.5 %). The record used to list the spine at 3 mm
+independently, which this layout contradicts. **The record now derives the spine stack from the loop** (`stack_from_loops` in `wallet.yaml`), so it is 7 mm with a range of 5 to 19 mm that follows the
+loops' range, tagged `assumed` because the loop radius it comes from is assumed. The layout itself is still an inference from the edge-on photographs: confirm it with the flat pattern or photographs of the wallet unfolded.

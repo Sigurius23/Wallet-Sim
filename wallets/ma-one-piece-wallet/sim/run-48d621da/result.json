@@ -5,7 +5,7 @@
   "walletsim": "0.1.0",
   "ccx": "CalculiX ccx 2.21",
   "taut_n_per_mm": 0.1,
-  "hash": "3afba0a5"
+  "hash": "48d621da"
  },
  "inputs": [
   {
@@ -51,13 +51,6 @@
    "ref": ""
   },
   {
-   "name": "spine: stack it wraps",
-   "value": 3.0,
-   "unit": "mm",
-   "source": "inferred",
-   "ref": "3 inner leaves seen x 1 mm of leather = 3.0 mm when empty; the upper bound adds 8 cards (assumed)"
-  },
-  {
    "name": "loop 1 (end opposite the spine): stack it wraps",
    "value": 1.0,
    "unit": "mm",
@@ -70,22 +63,36 @@
    "unit": "mm",
    "source": "assumed",
    "ref": "as loop 1; the second loop turns the other way, so the grain is on the inside"
+  },
+  {
+   "name": "inner leaves",
+   "value": 3,
+   "unit": "",
+   "source": "inferred",
+   "ref": "three inner leaves seen in the edge-on photographs"
+  },
+  {
+   "name": "spine: stack it wraps (derived from the loops)",
+   "value": 7.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": "derived: 3 leaves x 1 mm + 4 gaps x 1 mm (the void inside 'loop 1 (end opposite the spine)'); layout inferred from the edge-on photographs."
   }
  ],
- "stack_at_spine_mm": 3.0,
+ "stack_at_spine_mm": 7.0,
  "folds": [
   {
    "fold": "spine",
    "sense": "out",
-   "stack_mm": 3.0,
-   "inside_radius_mm": 1.5,
-   "tension_loose": 0.15500073177137474,
-   "tension_taut": 0.17146918421888857,
-   "closed_form": 0.25,
-   "grain_taut": 0.17146918421888857,
+   "stack_mm": 7.0,
+   "inside_radius_mm": 3.5,
+   "tension_loose": 0.11182440733358323,
+   "tension_taut": 0.12952153426216184,
+   "closed_form": 0.125,
+   "grain_taut": 0.12952153426216184,
    "note": "",
-   "moment_taut_n_mm_per_mm": 2.16443,
-   "standoff_loose_mm": 0.7863833509861005,
+   "moment_taut_n_mm_per_mm": 1.607775,
+   "standoff_loose_mm": 0.7479820938144339,
    "error": ""
   },
   {
@@ -122,15 +129,30 @@
   {
    "fold": "spine",
    "sense": "out",
-   "stack_mm": 9.1,
-   "inside_radius_mm": 4.55,
-   "tension_loose": 0.09703189885677954,
-   "tension_taut": 0.1054360614423342,
-   "closed_form": 0.0990099009900991,
-   "grain_taut": 0.1054360614423342,
+   "stack_mm": 5.0,
+   "inside_radius_mm": 2.5,
+   "tension_loose": 0.1297396206114364,
+   "tension_taut": 0.1449155838712869,
+   "closed_form": 0.16666666666666674,
+   "grain_taut": 0.1449155838712869,
    "note": "",
-   "moment_taut_n_mm_per_mm": 1.265843,
-   "standoff_loose_mm": 0.5256670128641154,
+   "moment_taut_n_mm_per_mm": 1.869859,
+   "standoff_loose_mm": 0.8450049726608317,
+   "error": "",
+   "end": "low"
+  },
+  {
+   "fold": "spine",
+   "sense": "out",
+   "stack_mm": 19.0,
+   "inside_radius_mm": 9.5,
+   "tension_loose": 0.05203570564978088,
+   "tension_taut": 0.053058788550514935,
+   "closed_form": 0.050000000000000044,
+   "grain_taut": 0.053058788550514935,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 0.642968,
+   "standoff_loose_mm": 0.25782101241520117,
    "error": "",
    "end": "high"
   },
@@ -195,8 +217,8 @@
    "end": "high"
   }
  ],
- "elasticity_stack": -0.7497261488040282,
- "elasticity_thickness": 0.7501954612091815,
+ "elasticity_stack": -0.8748287907583617,
+ "elasticity_thickness": 0.8751026099171574,
  "failure_modes": [
   {
    "id": 1,

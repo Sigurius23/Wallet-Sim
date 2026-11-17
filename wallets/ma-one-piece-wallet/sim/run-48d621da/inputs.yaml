@@ -47,7 +47,10 @@ construction:
   #   - NO scale in any photograph: every radius and thickness below is an inference or an assumption          -
   folds_modelled:
     - name: spine
-      stack_mm: {value: 3.0, low: 3.0, high: 9.1, source: inferred, ref: "3 inner leaves seen x 1 mm of leather = 3.0 mm when empty; the upper bound adds 8 cards (assumed)"}
+      # DERIVED, not independent. In the one-sheet accordion the layers lie one gap apart and the gap is the void inside a loop, so the spine wraps
+      # leaves x t + (leaves + 1) x gap = 3 x 1.0 + 4 x 1.0 = 7.0 mm at the recorded loop. The range follows the loops' range (5.0 to 19.0 mm), which already
+      # includes whatever the pockets hold. This replaces an earlier independent value of 3.0 mm (3 leaves touching), which the layout contradicts.
+      stack_from_loops: {leaves: {value: 3, source: inferred, ref: "three inner leaves seen in the edge-on photographs"}, gap_from: "loop 1 (end opposite the spine)"}
       sense: out
     - name: loop 1 (end opposite the spine)
       stack_mm: {value: 1.0, low: 0.5, high: 4.0, source: assumed, ref: "the void inside the loop looks about one leather thickness across in the enlarged photograph; the upper bound is a pocket holding about 5 cards"}

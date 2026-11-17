@@ -126,8 +126,8 @@ def test_ma_record_is_photos_only_with_nothing_measured_and_lists_its_folds():
     assert [f.name.split(" ")[0] + " " + f.sense for f in rec.custom_folds] == ["spine out", "loop out", "loop in"]
     plan = rec.plan()
     assert [f.sense for f in plan.folds] == ["out", "out", "in"] and plan.closed_thickness_mm != plan.closed_thickness_mm   # NaN: not recorded
-    assert rec.stack_at_spine_mm == pytest.approx(3.0)                       # the 'spine' fold's stack
-    assert rec.custom_folds[0].low_mm == pytest.approx(3.0) and rec.custom_folds[0].high_mm == pytest.approx(9.1)
+    assert rec.stack_at_spine_mm == pytest.approx(7.0)                       # the 'spine' fold's stack, derived from the loops
+    assert rec.custom_folds[0].low_mm == pytest.approx(5.0) and rec.custom_folds[0].high_mm == pytest.approx(19.0)
 
 
 def test_a_custom_record_must_list_its_folds_with_valid_senses_and_ranges(tmp_path):
@@ -181,3 +181,28 @@ def test_json_sweep_rows_keep_the_name_of_the_fold_they_belong_to():
                           elasticity_stack=0.0, elasticity_thickness=0.0)
     row = _json(rep)["sweeps"][0]
     assert row["fold"] == "spine" and row["end"] == "high" and row["stack_mm"] == 9.1
+
+
+def test_the_spine_stack_is_derived_from_the_loop_gap_and_follows_its_range(tmp_path):
+    rec = load_wallet(MA)
+    spine, loop1, _ = rec.custom_folds
+    n, t = 3, rec.shell_t
+    assert spine.stack_mm == pytest.approx(n * t + (n + 1) * loop1.stack_mm)          # 3 x 1.0 + 4 x 1.0
+    assert spine.low_mm == pytest.approx(n * t + (n + 1) * loop1.low_mm)              # 5.0
+    assert spine.high_mm == pytest.approx(n * t + (n + 1) * loop1.high_mm)            # 19.0
+    assert spine.source == "assumed" and "derived" in spine.ref                       # it inherits the loop's weakest provenance
+    assert any(i.name == "inner leaves" and i.source == "inferred" for i in rec.inputs)
+
+    def wider_loops(d):
+        for f in d["construction"]["folds_modelled"][1:]:
+            f["stack_mm"].update(value=2.0, low=1.0, high=5.0)
+    rec2 = load_wallet(_copy_ma(tmp_path / "w", wider_loops))
+    assert rec2.stack_at_spine_mm == pytest.approx(3 * 1.0 + 4 * 2.0)                 # the spine moves when the loops do
+
+
+def test_a_derived_spine_must_name_a_loop_that_exists(tmp_path):
+    def broken(d):
+        d["construction"]["folds_modelled"][0]["stack_from_loops"]["gap_from"] = "no such fold"
+    with pytest.raises(RecordError) as e:
+        load_wallet(_copy_ma(tmp_path / "x", broken))
+    assert "gap_from" in str(e.value)

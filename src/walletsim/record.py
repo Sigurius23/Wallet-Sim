@@ -200,10 +200,17 @@ def load_wallet(path: str | Path) -> WalletRecord:
         specs = cons.get("folds_modelled") or []
         if not specs:
             errors.append("construction.type custom needs construction.folds_modelled: a list of {name, stack_mm, sense}")
+        derived: list[tuple[int, str, dict]] = []                       # folds whose stack follows from another fold's (resolved after the explicit ones)
+        slots: list[CustomFold | None] = []
         for k, fs in enumerate(specs):
             nm = fs.get("name", f"fold {k + 1}")
+            if "stack_from_loops" in fs:
+                slots.append(None)
+                derived.append((len(slots) - 1, nm, fs))
+                continue
             got = _leaf(fs, "stack_mm", errors)
             if got is None:
+                slots.append(None)
                 continue
             sense = fs.get("sense", "out")
             if sense not in ("out", "in"):
@@ -212,8 +219,35 @@ def load_wallet(path: str | Path) -> WalletRecord:
             lo, hi = leaf.get("low"), leaf.get("high")
             if (lo is None) != (hi is None) or (lo is not None and not lo <= got[0] <= hi):
                 errors.append(f"{nm}: give both low and high with low <= value <= high, or neither")
-            custom.append(CustomFold(nm, float(got[0]), lo, hi, got[1], sense, float(fs.get("cycles_per_use", 1.0)), got[2]))
+            fold = CustomFold(nm, float(got[0]), lo, hi, got[1], sense, float(fs.get("cycles_per_use", 1.0)), got[2])
+            slots.append(fold)
             inputs.append(Input(f"{nm}: stack it wraps", got[0], "mm", got[1], got[2], "the inside radius of this fold"))
+        for idx, nm, fs in derived:
+            # One-sheet accordion: the layers lie one gap apart, and the gap is the void inside a loop. A spine that wraps `leaves` leaves therefore
+            # wraps  leaves x t + (leaves + 1) x gap  (the +1 counts the gap above the bottom panel). The gap is taken from the named loop fold.
+            spec = fs["stack_from_loops"]
+            leaves = _leaf(spec, "leaves", errors)
+            gap_name = spec.get("gap_from")
+            gap = next((f for f in slots if f is not None and f.name == gap_name), None)
+            if gap is None:
+                errors.append(f"{nm}: stack_from_loops.gap_from must name another fold with its own stack_mm, got {gap_name!r}")
+                continue
+            if leaves is None or shell_t is None:
+                continue
+            n, t0 = float(leaves[0]), float(shell_t)
+            stack = n * t0 + (n + 1) * gap.stack_mm
+            lo = n * t0 + (n + 1) * gap.low_mm if gap.low_mm is not None else None
+            hi = n * t0 + (n + 1) * gap.high_mm if gap.high_mm is not None else None
+            src = "assumed" if gap.source == "assumed" or leaves[1] == "assumed" else leaves[1] if gap.source == "inferred" else gap.source
+            ref = (f"derived: {n:g} leaves x {t0:g} mm + {n + 1:g} gaps x {gap.stack_mm:g} mm (the void inside '{gap.name}'); layout inferred from the edge-on photographs. {spec.get('ref', '')}").strip()
+            sense = fs.get("sense", "out")
+            if sense not in ("out", "in"):
+                errors.append(f"{nm}: sense must be out or in")
+            fold = CustomFold(nm, stack, lo, hi, src, sense, float(fs.get("cycles_per_use", 1.0)), ref)
+            slots[idx] = fold
+            inputs.append(Input("inner leaves", leaves[0], "", leaves[1], leaves[2], "the spine's stack (derived)"))
+            inputs.append(Input(f"{nm}: stack it wraps (derived from the loops)", round(stack, 4), "mm", src, ref, "the inside radius of this fold"))
+        custom.extend(f for f in slots if f is not None)
         cl = _leaf(cons, "closed_thickness_mm", [], optional=True)
         if cl is not None:
             closed_known = float(cl[0])

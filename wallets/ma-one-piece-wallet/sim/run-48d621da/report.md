@@ -3,8 +3,8 @@
 > **This record comes from a retailer's text and product photographs, not from a wallet in hand.** Nothing is measured. Every radius and stack is an inference or an assumption, shown with its range. The results say what the model gives for those inputs, not what this wallet does.
 
 - wallet: `ma-one-piece-wallet` (custom, 3 folds listed in the record, plain layup); status: photos-only
-- inputs by source: 1 inferred, 1 design, 1 literature, 6 assumed (of 9)
-- model: walletsim 0.1.0, CalculiX ccx 2.21, plane-strain neo-Hookean fold, pull for 'taut' 0.1 N per mm; run `3afba0a5`
+- inputs by source: 1 inferred, 1 design, 1 literature, 7 assumed (of 10)
+- model: walletsim 0.1.0, CalculiX ccx 2.21, plane-strain neo-Hookean fold, pull for 'taut' 0.1 N per mm; run `48d621da`
 
 ## Inputs and where each came from
 
@@ -16,15 +16,16 @@
 | cards | 0  | **assumed** | the stack the spine wraps | photographed empty |
 | card thickness | 0.76 mm | **literature** | the stack the spine wraps | ISO/IEC 7810 ID-1 nominal thickness |
 | other contents | 0.0 mm | **assumed** | the stack the spine wraps |  |
-| spine: stack it wraps | 3.0 mm | **inferred** | the inside radius of this fold | 3 inner leaves seen x 1 mm of leather = 3.0 mm when empty; the upper bound adds 8 cards (assumed) |
 | loop 1 (end opposite the spine): stack it wraps | 1.0 mm | **assumed** | the inside radius of this fold | the void inside the loop looks about one leather thickness across in the enlarged photograph; the upper bound  |
 | loop 2 (end opposite the spine): stack it wraps | 1.0 mm | **assumed** | the inside radius of this fold | as loop 1; the second loop turns the other way, so the grain is on the inside |
+| inner leaves | 3  | **inferred** | the spine's stack (derived) | three inner leaves seen in the edge-on photographs |
+| spine: stack it wraps (derived from the loops) | 7.0 mm | **assumed** | the inside radius of this fold | derived: 3 leaves x 1 mm + 4 gaps x 1 mm (the void inside 'loop 1 (end opposite the spine)'); layout inferred  |
 
 Folds modelled (stack = what each fold wraps in the closed wallet; the range is what the sweep below covers). Closed thickness: not recorded.
 
 | fold | grain | stack [mm] | range [mm] | source |
 |---|---|---|---|---|
-| spine | out | 3 | 3 to 9.1 | **inferred** |
+| spine | out | 7 | 5 to 19 | **assumed** |
 | loop 1 (end opposite the spine) | out | 1 | 0.5 to 4 | **assumed** |
 | loop 2 (end opposite the spine) | in | 1 | 0.5 to 4 | **assumed** |
 
@@ -32,7 +33,7 @@ Folds modelled (stack = what each fold wraps in the closed wallet; the range is 
 
 | fold | grain | stack [mm] | inside radius [mm] (R/t) | tension face, loose | taut | closed-form limit | grain face (taut) |
 |---|---|---|---|---|---|---|---|
-| spine | out | 3.00 | 1.50 (1.5) | 15.5 % | 17.1 % | 25.0 % | 17.1 % |
+| spine | out | 7.00 | 3.50 (3.5) | 11.2 % | 13.0 % | 12.5 % | 13.0 % |
 | loop 1 (end opposite the spine) | out | 1.00 | 0.50 (0.5) | 18.9 % (bridges) | 20.6 % (bridges) | 50.0 % | 20.6 % |
 | loop 2 (end opposite the spine) | in | 1.00 | 0.50 (0.5) | 18.9 % (bridges) | 20.6 % (bridges) | 50.0 % | -17.7 % |
 
@@ -55,8 +56,9 @@ The stacks are inferences or assumptions, so each fold is run at the low, record
 
 | fold | end of range | stack [mm] | inside radius (R/t) | tension face, loose | taut | closed form |
 |---|---|---|---|---|---|---|
-| spine | recorded | 3 | 1.50 (1.50) | 15.5 % | 17.1 % | 25.0 % |
-| spine | high | 9.1 | 4.55 (4.55) | 9.7 % | 10.5 % | 9.9 % |
+| spine | low | 5 | 2.50 (2.50) | 13.0 % | 14.5 % | 16.7 % |
+| spine | recorded | 7 | 3.50 (3.50) | 11.2 % | 13.0 % | 12.5 % |
+| spine | high | 19 | 9.50 (9.50) | 5.2 % | 5.3 % | 5.0 % |
 | loop 1 (end opposite the spine) | low | 0.5 | 0.25 (0.25) | closed form only | | 66.7 % |
 | loop 1 (end opposite the spine) | recorded | 1 | 0.50 (0.50) | 18.9 % (bridges) | 20.6 % (bridges) | 50.0 % |
 | loop 1 (end opposite the spine) | high | 4 | 2.00 (2.00) | 14.0 % | 15.3 % | 20.0 % |
