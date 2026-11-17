@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -62,6 +62,24 @@ def _sweep(a: argparse.Namespace) -> int:
     return 0
 
 
+def _fold_styles(a: argparse.Namespace) -> int:
+    from .fem.fold import FemUnavailable as _NoFem
+    from .fold_styles import STYLES, StyleParams, compare_styles, format_report, stack_inside_radius
+    radius = a.radius if a.radius is not None else stack_inside_radius(a.cards)
+    p = StyleParams(t=a.t, E=a.E, nu=a.poisson, skive_ratio=a.skive_ratio, lining_t=a.lining_t,
+                    lining_e_ratio=a.lining_e_ratio, hinge_e_ratio=a.hinge_e_ratio, hinge_t_ratio=a.hinge_t_ratio)
+    try:
+        res = compare_styles(p, radius, taut_n_per_mm=a.taut, styles=a.styles)
+    except (FemUnavailable, _NoFem) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except (ValueError, KeyError, RuntimeError) as exc:
+        print(f"error: {str(exc).strip().splitlines()[0]}", file=sys.stderr)
+        return 1
+    print(format_report(res, p, radius, None if a.radius is not None else a.cards))
+    return 0
+
+
 def _fit_law(a: argparse.Namespace) -> int:
     with open(a.csv, newline="") as f:
         rows = [(float(r["strain"]), float(r["cycles"])) for r in csv.DictReader(f)]
@@ -95,6 +113,21 @@ def main(argv: list[str] | None = None) -> int:
     w.add_argument("--cv", type=float, default=None, help="coefficient of variation of stiffness within the leather, e.g. 0.4")
     w.add_argument("--samples", type=int, default=0, help="number of stiffness samples for the spread (needs --cv)")
     w.set_defaults(fn=_sweep)
+    fs = sub.add_parser("fold-styles", help="compare fold constructions (plain, skived, lined, hinged) in a free fold and around a card stack")
+    fs.add_argument("--t", type=float, default=1.2, help="shell leather thickness, mm")
+    fs.add_argument("--E", type=float, default=72.0, help="shell Young's modulus, MPa (strain does not depend on it, moment does)")
+    fs.add_argument("--poisson", type=float, default=0.3)
+    g = fs.add_mutually_exclusive_group()
+    g.add_argument("--cards", type=float, default=5.0, help="cards in the stack the spine folds around (0.76 mm each, half-round end)")
+    g.add_argument("--radius", type=float, default=None, help="inside radius of the fold, mm (overrides --cards)")
+    fs.add_argument("--taut", type=float, default=0.1, help="pull on the panel for the 'taut' wrap, N per mm of width")
+    fs.add_argument("--skive-ratio", type=float, default=0.5, help="skived thickness at the fold / t")
+    fs.add_argument("--lining-t", type=float, default=0.5)
+    fs.add_argument("--lining-e-ratio", type=float, default=1.0, help="lining stiffness / shell stiffness (an assumption you vary)")
+    fs.add_argument("--hinge-t-ratio", type=float, default=0.6)
+    fs.add_argument("--hinge-e-ratio", type=float, default=0.5)
+    fs.add_argument("--styles", nargs="+", default=None, help="subset of: plain skived lined skived+lined hinged")
+    fs.set_defaults(fn=_fold_styles)
     f = sub.add_parser("fit-law", help="fit a cycles-to-crack law to your flex-test data (csv: strain,cycles)")
     f.add_argument("csv")
     f.add_argument("--at", type=float, nargs="*", help="strains (fraction) to predict at")

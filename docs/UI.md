@@ -56,6 +56,7 @@ region name does not guarantee a strength. So:
 A third detail mode beside **Overview** and **Materials and Source**, called **Behaviour**:
 - an animated open and close of the wallet, with a strain overlay at the folds;
 - the failure-mode list for that wallet, each marked computed, flagged or not modelled;
+- the fold-style comparison from [`FOLD_STYLES.md`](FOLD_STYLES.md): the same wallet with a different spine construction, side by side;
 - the same wallet in another leather or thickness (a swap control driven by material cards), and the ranges that result;
 - for a worn wallet, predicted hot spots next to the real wear photos.
 This is the part nothing in the sketches covers yet, so it needs your input.
