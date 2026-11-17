@@ -20,6 +20,9 @@ walletsim = "walletsim.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+walletsim = ["viewer_template.html"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["fem: needs CalculiX (ccx) on PATH"]

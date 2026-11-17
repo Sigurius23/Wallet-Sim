@@ -33,6 +33,11 @@ See `sim/run-*/report.md` and `page.html`. Two folds are modelled:
 
 Not modelled: the flap hinge, the bottoms of the four pockets, the card slits, the diagonal back crease, the cross, and any wear. The stiffness is the calfskin placeholder (72 MPa) because no pig leather value is on record; it changes the closing moment, not the strain.
 
+## The 3D viewer (`viewer.html`)
+Built by `walletsim wallet-viewer wallets/ma-mavr-origami-wallet`. Two parts, switched at the top of the controls, both **structural sketches, not scans or simulations**:
+- **Flap and spine:** the sheet seen along its length: a back panel, the main fold as a hinge (inside radius 8 mm at the 16 mm stack, a slider covers 10 to 16 mm) and the flap that lies over the front. A grey block stands for the pack the hinge wraps. Reading the main fold as the flap's hinge is mine, from photographs 01 and 03.
+- **Bill-pocket gusset:** one side pleat of the large pocket seen across its width, from closed flat (four layers) to open, as opened by hand in photograph 03. Its **size is a drawn guess** (pleat arms 18 mm, half-width 60 mm, depth 70 mm: no photograph has a scale); only the crease radius, assumed at 0.5 mm, sets a strain. The viewer colours the two edges of the pleat as well as the centre crease, the same way; the report models only the crease.
+
 ## To turn this into a real record
 Closed thickness at the spine edge-on with a ruler, and a count of the layers; one gusset crease photographed edge-on, empty and loaded; the sheet thickness; and a bend or tensile test on an offcut. The flap wear in image 04 is the one outcome this wallet already
 has: photograph it and the pocket mouths with a ruler, and ask the seller how long it was carried.

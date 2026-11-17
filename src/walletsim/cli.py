@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | wallet-page | edge-turn | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | wallet-page | wallet-viewer | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -199,6 +199,17 @@ def _wallet_page(a: argparse.Namespace) -> int:
     return 0
 
 
+def _wallet_viewer(a: argparse.Namespace) -> int:
+    from .viewer import ViewerError, write_viewer
+    try:
+        out = write_viewer(a.wallet, a.out)
+    except (FileNotFoundError, ValueError, KeyError, ViewerError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"3D viewer written to {out} ({out.stat().st_size / 1e3:.0f} kB; it loads Three.js from a CDN)")
+    return 0
+
+
 def _edge_turn(a: argparse.Namespace) -> int:
     from .fold_styles import edge_turn_table, format_edge_turn_report
     print(format_edge_turn_report(edge_turn_table(a.t, tuple(a.skive_ratios), tuple(a.cores)), a.t))
@@ -314,6 +325,10 @@ def main(argv: list[str] | None = None) -> int:
     wp.add_argument("--run", default=None, help="a specific sim/run-<hash> folder")
     wp.add_argument("--out", default=None)
     wp.set_defaults(fn=_wallet_page)
+    wv = sub.add_parser("wallet-viewer", help="build a 3D structural sketch of a one-sheet wallet record's folds (opens and closes)")
+    wv.add_argument("wallet", help="a wallets/<id> folder")
+    wv.add_argument("--out", default=None, help="default: wallets/<id>/viewer.html")
+    wv.set_defaults(fn=_wallet_viewer)
     et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
     et.add_argument("--t", type=float, default=1.2)
     et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])

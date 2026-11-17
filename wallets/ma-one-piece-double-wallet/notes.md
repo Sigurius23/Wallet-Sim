@@ -36,5 +36,8 @@ One thing the layout does predict: more leaves make a **larger** spine radius (9
 Measure a physical One Piece Double Wallet: closed thickness and layer count at the spine; the loops' and left folds' inside radius edge-on next to a ruler; the sheet thickness; and ask the maker whether the folds are skived or dampened.
 The flat pattern would confirm or correct the layout above.
 
-## Not done
-No 3D viewer for this wallet yet: the One Piece Wallet's viewer is written for three leaves and would need its fold list made data-driven (four leaves, five hinges).
+## The 3D viewer (`viewer.html`)
+Built by `walletsim wallet-viewer wallets/ma-one-piece-double-wallet` from this record (four leaves, five hinges, sizes S, L and XL). It is a **structural sketch, not a scan or a simulation**: one 1 mm strip folded as the
+layout above says, with no pockets, flap or cross; panels can pass through each other; the colours are the closed-form strain at each fold scaled with the fold angle. The sliders open the wallet like a book and open the
+pockets, and one slider sets the hairpin radius (0.25 to 2 mm, the record's range), which moves the spine with it. Opened part-way it makes a zig-zag, which is the shape of the fan of pockets in photographs 013 and 014 only
+loosely: the real pockets are fan-shaped, and a strip cannot draw that.

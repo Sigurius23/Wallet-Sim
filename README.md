@@ -15,7 +15,7 @@ Nothing here simulates a full wallet yet. What exists and is tested:
 | Thickness sweep at a fixed fold radius: strain and bending moment per thickness | `walletsim sweep` | works; stiffness is a placeholder until measured |
 | Material cards with provenance, aged states as measured data | `walletsim.materials` | structure only; one literature card (calfskin upper, 72 MPa tensile, CV 29 %) |
 | **Fold styles**: plain, skived, lined, skived + lined, hinged, turned-edge and bound-edge folds in a free fold and wrapped around a card stack; **gussets** (V, S, W pleats at several openings) and a **box-shaped spine**; the turned-edge turn (closed form). Every construction and its status: [`docs/CONSTRUCTIONS.md`](docs/CONSTRUCTIONS.md) | `walletsim fold-styles`, `gusset`, `box-spine`, `edge-turn`; [`docs/FOLD_STYLES.md`](docs/FOLD_STYLES.md) |
-| **Three M.A+ wallets** from the Wallet-corpus- archive, recorded from retailer or reseller text and photographs only (status `photos-only`, nothing measured), each with a one-page summary: the **One Piece Wallet** (a spine plus three tight hairpins, with a 3D viewer), the **One Piece Double Wallet** (four leaves, five folds) and the **MAV.R pig-leather origami** (its one hard datum is the seller's 18 mm closed depth) | `walletsim wallet-report wallets/ma-one-piece-wallet` (also `ma-one-piece-double-wallet`, `ma-mavr-origami-wallet`), then `walletsim wallet-page wallets/<slug>`; notes in `wallets/ma-*/notes.md` | model can only screen the tight hairpins; layouts are read from photographs; the closed thickness and the hairpin radii are what is needed |
+| **Three M.A+ wallets** from the Wallet-corpus- archive, recorded from retailer or reseller text and photographs only (status `photos-only`, nothing measured), each with a one-page summary: the **One Piece Wallet** (a spine plus three tight hairpins), the **One Piece Double Wallet** (four leaves, five folds) and the **MAV.R pig-leather origami** (its one hard datum is the seller's 18 mm closed depth) | `walletsim wallet-report wallets/ma-one-piece-wallet` (also `ma-one-piece-double-wallet`, `ma-mavr-origami-wallet`), then `walletsim wallet-page wallets/<slug>` (one-page summary) and `walletsim wallet-viewer wallets/<slug>` (3D sketch of how it folds and opens); notes in `wallets/ma-*/notes.md` | model can only screen the tight hairpins; layouts are read from photographs; the closed thickness and the hairpin radii are what is needed |
 | **First wallet record and per-wallet report**: a `wallet.yaml` with provenance on every number, run through the simulator into a report (inputs and sources, fold results, sensitivity, all 14 failure modes, what to measure first) with figures. The first record is a **generated design**, not a photographed wallet | `walletsim wallet-report wallets/slim-6card-design`; [`wallets/`](wallets/README.md) | pipeline works; nothing is measured yet |
 | **Overall wallet fold types**: bifold, trifold (letter fold) and z-fold (accordion): the stack each fold wraps, which fold wears first, types compared at the same contents | `walletsim wallet-types`; [`docs/WALLET_TYPES.md`](docs/WALLET_TYPES.md) | folds evaluated one at a time; assumptions stated | **current focus**; agrees with closed forms to 2-3 % where they apply |
 | Level-0 fold screen: `eps = t/(2R+t)` with screening flags | `walletsim screen --t 1.0 --radius 2.0` | done |
@@ -35,7 +35,7 @@ No validated leather fatigue law exists; the leather-specific research codes (Fr
 ```bash
 pip install -e ".[dev]"            # numpy only; the FEM check also needs CalculiX
 sudo apt-get install calculix-ccx  # Debian/Ubuntu
-pytest                             # 98 tests, ~280 s
+pytest                             # 105 tests, ~280 s
 walletsim validate-fem             # the 180° bending benchmark
 walletsim fold-styles              # compare fold constructions, about 15 s
 walletsim gusset                   # accordion pleat, about 17 s
@@ -43,6 +43,7 @@ walletsim box-spine                # flat-walled spine against a round one, abou
 walletsim wallet-types             # bifold, trifold, z-fold at the same contents, about 40 s
 walletsim wallet-report wallets/slim-6card-design   # a wallet record -> report, figures, stored inputs, about 1 min
 walletsim wallet-page wallets/ma-one-piece-wallet     # the latest report of a wallet as one self-contained HTML page
+walletsim wallet-viewer wallets/ma-one-piece-double-wallet   # a 3D structural sketch of a one-sheet wallet's folds, opening and closing
 ```
 
 ## Layout

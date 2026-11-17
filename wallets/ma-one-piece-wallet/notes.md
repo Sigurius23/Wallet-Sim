@@ -41,6 +41,7 @@ Measure a physical One Piece Wallet: closed thickness and layer count at the spi
 and ask the maker whether the folds are skived or dampened. The report's "What to measure first" list says the same in order.
 
 ## The 3D viewer (`viewer.html`)
+Generated from this record by `walletsim wallet-viewer wallets/ma-one-piece-wallet` (the same generator draws the Double Wallet and the origami), so its leaves, sizes, loop range and sheet thickness are the record's.
 A single page (it loads Three.js from a CDN) that folds one 1 mm strip with the structure read from the photographs: bottom panel, spine, top panel, loop, leaf A, left fold, leaf B, loop, leaf C.
 It is a **structural sketch, not a scan or a simulation**: the flat cut pattern is unknown, so there are no pockets, flap or silver cross, panels can pass through each other, and the colours are the closed-form strain
 at each fold scaled with the fold angle. Two sliders open the wallet like a book and open the pockets; a third sets the loop radius.
