@@ -295,7 +295,7 @@ th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--lin
   }
   function bioHTML(g) {
     var w = g.wallets.filter(function (x) { return x.bio_ref; })[0];
-    return '<div class="bio"><h3>' + esc(g.designer) + "</h3>" + (w ? "<div>Biography: " + esc(w.bio_ref) + "</div>" :
+    return '<div class="bio"><h3>' + esc(g.designer) + "</h3>" + (w ? '<div class="muted">The corpus holds a biography for this designer (' + esc(w.bio_ref) + "). It is not reproduced here: biographies need the designer's permission.</div>" :
       '<div class="muted">No biography is recorded for this designer. Biographies and portraits need the designer\'s permission, so the archive leaves this empty until a record supplies one.</div>') +
       '<div class="small muted">' + g.wallets.length + " wallet" + (g.wallets.length === 1 ? "" : "s") + " in the archive: " + g.wallets.map(function (x) { return esc(short(x.name)); }).join(", ") + "</div></div>";
   }

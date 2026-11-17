@@ -1,0 +1,234 @@
+{
+ "id": "sr-whalet-sr202-2022",
+ "status": "photos-only",
+ "meta": {
+  "walletsim": "0.1.0",
+  "ccx": "CalculiX ccx 2.21",
+  "taut_n_per_mm": 0.1,
+  "hash": "6666bfd6"
+ },
+ "inputs": [
+  {
+   "name": "shell thickness",
+   "value": 1.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": "NOT STATED by the maker. A one-piece card wallet 10 mm deep closed; 1.0 mm is a stand-in for vegetable-tanned horse skin, not a reading"
+  },
+  {
+   "name": "shell stiffness E",
+   "value": 72,
+   "unit": "MPa",
+   "source": "assumed",
+   "ref": "placeholder: the tensile value measured for 1.2 mm CALFskin (Mihai et al., Materials 2022, 15(15):5107); no horse-skin value is on record. The maker says the leather 'is designed to stretch to fit' cards, which this elastic model does not capture"
+  },
+  {
+   "name": "Poisson's ratio",
+   "value": 0.3,
+   "unit": "-",
+   "source": "assumed",
+   "ref": ""
+  },
+  {
+   "name": "cards",
+   "value": 0,
+   "unit": "",
+   "source": "assumed",
+   "ref": "the 10 mm depth is the maker's figure; whether it was taken empty is not stated"
+  },
+  {
+   "name": "card thickness",
+   "value": 0.76,
+   "unit": "mm",
+   "source": "literature",
+   "ref": "ISO/IEC 7810 ID-1 nominal thickness"
+  },
+  {
+   "name": "other contents",
+   "value": 0.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": ""
+  },
+  {
+   "name": "closed thickness at the spine",
+   "value": 10.0,
+   "unit": "mm",
+   "source": "reported",
+   "ref": "maker's page (corpus SRW11): 'Dimensions of WHALET - 85 mm x 100 mm x 10 mm'. Not checked, and not said whether it is empty or loaded"
+  },
+  {
+   "name": "flap hinge (right end): stack it wraps (derived from the closed thickness)",
+   "value": 8.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": "derived: closed thickness 10 mm - 2 x 1 mm of shell; the lower bound 4 mm is assumed (the pack compresses). the flap closes over everything but the outer layers; the lower bound 4 mm is assumed (an empty wallet with slack panels is thinner than the stated depth)"
+  },
+  {
+   "name": "left end fold: stack it wraps (derived from the closed thickness)",
+   "value": 8.0,
+   "unit": "mm",
+   "source": "assumed",
+   "ref": "derived: closed thickness 10 mm - 2 x 1 mm of shell; the lower bound 4 mm is assumed (the pack compresses). the hairpin wrap at the other short end (low view, image 034); assumed to wrap the same pack"
+  },
+  {
+   "name": "closed thickness",
+   "value": 10.0,
+   "unit": "mm",
+   "source": "reported",
+   "ref": "maker's page (corpus SRW11): 'Dimensions of WHALET - 85 mm x 100 mm x 10 mm'. Not checked, and not said whether it is empty or loaded"
+  }
+ ],
+ "stack_at_spine_mm": 8.0,
+ "folds": [
+  {
+   "fold": "flap hinge (right end)",
+   "sense": "out",
+   "stack_mm": 8.0,
+   "inside_radius_mm": 4.0,
+   "tension_loose": 0.1041153340886436,
+   "tension_taut": 0.11773852674935537,
+   "closed_form": 0.11111111111111116,
+   "grain_taut": 0.11773852674935537,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 1.428482,
+   "standoff_loose_mm": 0.6858917499310957,
+   "error": ""
+  },
+  {
+   "fold": "left end fold",
+   "sense": "out",
+   "stack_mm": 8.0,
+   "inside_radius_mm": 4.0,
+   "tension_loose": 0.1041153340886436,
+   "tension_taut": 0.11773852674935537,
+   "closed_form": 0.11111111111111116,
+   "grain_taut": 0.11773852674935537,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 1.428482,
+   "standoff_loose_mm": 0.6858917499310957,
+   "error": ""
+  }
+ ],
+ "scenarios": [],
+ "sweeps": [
+  {
+   "fold": "flap hinge (right end)",
+   "sense": "out",
+   "stack_mm": 4.0,
+   "inside_radius_mm": 2.0,
+   "tension_loose": 0.14003369999633064,
+   "tension_taut": 0.15342388386679162,
+   "closed_form": 0.19999999999999996,
+   "grain_taut": 0.15342388386679162,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 2.009731,
+   "standoff_loose_mm": 0.874137474090761,
+   "error": "",
+   "end": "low"
+  },
+  {
+   "fold": "left end fold",
+   "sense": "out",
+   "stack_mm": 4.0,
+   "inside_radius_mm": 2.0,
+   "tension_loose": 0.14003369999633064,
+   "tension_taut": 0.15342388386679162,
+   "closed_form": 0.19999999999999996,
+   "grain_taut": 0.15342388386679162,
+   "note": "",
+   "moment_taut_n_mm_per_mm": 2.009731,
+   "standoff_loose_mm": 0.874137474090761,
+   "error": "",
+   "end": "low"
+  }
+ ],
+ "elasticity_stack": -0.888733136313971,
+ "elasticity_thickness": 0.8889804011045004,
+ "failure_modes": [
+  {
+   "id": 1,
+   "name": "Grain crack at the hinge",
+   "status": "computed",
+   "text": "flap hinge (right end): tension-face strain 10.4 % loose to 11.8 % taut (closed-form limit 11.1 %), inside radius 4.00 mm, R/t = 4.0; within the screening rules. Cycles to crack need flex-test data."
+  },
+  {
+   "id": 2,
+   "name": "Permanent set",
+   "status": "not modelled",
+   "text": "needs a cyclic viscoplastic model and fold-and-measure data; it is the usual first visible sign of a worn hinge"
+  },
+  {
+   "id": 3,
+   "name": "Finish crazing or delamination",
+   "status": "not modelled",
+   "text": "a film-on-substrate model quoted in prior-research/reference/durability.md section 2b has a stiff finish buckling at 2-12 % compressive strain; at flap hinge (right end) the compression face is -10.6 % and the grain is in tension, not compression"
+  },
+  {
+   "id": 4,
+   "name": "Stress at stitch holes",
+   "status": "unknown",
+   "text": "the wallet is stitched, but whether the stitching crosses or pins a fold is not recorded"
+  },
+  {
+   "id": 5,
+   "name": "Skive-line or thickness step",
+   "status": "unknown",
+   "text": "whether the folds are skived is not recorded; a skive line is a stiffness step where cracks start"
+  },
+  {
+   "id": 6,
+   "name": "Edge paint chipping",
+   "status": "unknown",
+   "text": "the edge treatment is not recorded; record it (painted edges chip where they flex)"
+  },
+  {
+   "id": 7,
+   "name": "Pocket-mouth and corner abrasion",
+   "status": "not modelled",
+   "text": "2 pocket(s) recorded; needs the card-pull scenario (roadmap phase 4) and wear photos to calibrate"
+  },
+  {
+   "id": 8,
+   "name": "Perforation tear line",
+   "status": "unknown",
+   "text": "no recorded row of holes crosses a fold"
+  },
+  {
+   "id": 9,
+   "name": "Layer delamination",
+   "status": "not modelled",
+   "text": "layers are treated as perfectly bonded; the record does not say what is glued"
+  },
+  {
+   "id": 10,
+   "name": "Cold embrittlement",
+   "status": "not modelled",
+   "text": "needs a cold flex test; no built-in factor"
+  },
+  {
+   "id": 11,
+   "name": "Wet and salt flex",
+   "status": "not modelled",
+   "text": "needs a wet flex test"
+  },
+  {
+   "id": 12,
+   "name": "Over-drying",
+   "status": "not modelled",
+   "text": "needs a measured material state (stiffness and strain to crack at a stated humidity)"
+  },
+  {
+   "id": 13,
+   "name": "Long-term chemical ageing",
+   "status": "not modelled",
+   "text": "ageing enters only through measured aged states; none recorded"
+  },
+  {
+   "id": 14,
+   "name": "Colour, patina, water spotting",
+   "status": "not modelled",
+   "text": "appearance only"
+  }
+ ]
+}

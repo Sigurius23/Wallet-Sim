@@ -101,7 +101,7 @@ def _facts(rec: WalletRecord, behaviour: dict | None) -> list[dict]:
     add("Designer", raw.get("maker"))
     add("Series", arch.get("series"))
     year = arch.get("year")
-    add("Year", None if year in (None, "unknown") else str(year), ref="" if year else "No design date is recorded.")
+    add("Year", None if year in (None, "unknown") else str(year), ref=(arch.get("year_note") or "") if year else "No design date is recorded.")
     sizes, ssrc = _sizes_text(rec)
     add("Closed size", sizes, ssrc)
     th = _leaf(shell.get("thickness_mm"))

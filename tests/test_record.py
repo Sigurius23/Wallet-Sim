@@ -286,3 +286,16 @@ def test_a_wallet_page_is_one_self_contained_file_with_every_fold_and_its_banner
     assert "It has been used." in html and "..</p>" not in html                                      # the usage sentence ends once
     out = write_page(run_dir=run)
     assert Path(out).read_text() == html
+
+
+WHALET = ROOT / "wallets" / "sr-whalet-sr202-2022"
+
+
+def test_the_whalet_derives_both_end_folds_from_the_makers_depth_and_marks_them_assumed():
+    rec = load_wallet(WHALET)
+    assert rec.status == "photos-only" and rec.provenance_counts()["measured"] == 0
+    assert [f.name.split(" ")[0] for f in rec.custom_folds] == ["flap", "left"]
+    for f in rec.custom_folds:
+        assert f.stack_mm == pytest.approx(10.0 - 2 * 1.0) and (f.low_mm, f.high_mm) == (4.0, 8.0)
+        assert f.source == "assumed"                       # the maker's 10 mm is reported, but the sheet it subtracts is an assumption
+    assert rec.raw["archive"]["year"] == 2022 and "2010" in rec.raw["archive"]["year_note"]

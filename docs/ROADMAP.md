@@ -7,7 +7,7 @@ and layup, measured leather cards (lining stiffness first), a stitched hinge and
 set and wear once flex data exist (the pleat crease and the turned-edge turn both depend on it). The UI outline ([`UI.md`](UI.md)) has a first build on the real records (`walletsim build-site`): timeline, wallet detail and a Behaviour view fed by the stored runs.
 
 ## Decisions needed from you
-1. **First real wallet.** Records for three **M.A+ wallets** now exist (One Piece Wallet, One Piece Double Wallet, and the MAV.R pig-leather origami; `wallets/ma-*`, from the Wallet-corpus- archive), but only from retailer or reseller text and photographs. A physical one, measured, is the next step (closed thickness, loop radius, sheet thickness); does a used one exist? (`slim-6card-design` is a stand-in generated design.)
+1. **First real wallet.** Records for four wallets now exist (three M.A+: One Piece Wallet, One Piece Double Wallet, the MAV.R pig-leather origami; and the Sruli Recht WHALET SR202; all from the Wallet-corpus- archive), but only from retailer, reseller or maker text and photographs. A physical one, measured, is the next step (closed thickness, loop radius, sheet thickness); does a used one exist? (`slim-6card-design` is a stand-in generated design.)
 2. **Physical flex tests.** Are you willing to cut strips and fold them to failure? Without them, "x folds" stays a
    relative index. This is the biggest lever on how far the simulator can be trusted.
 3. **GPU, and when.** Not needed for phases 1-3. Needed when we want design sweeps, many drops, or differentiable

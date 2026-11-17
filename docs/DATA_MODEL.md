@@ -96,6 +96,8 @@ Rules:
   A fold's stack may also be **derived**, so that it moves when the number it comes from moves:
   `stack_from_loops: {leaves: {value: 4, source: inferred}, gap_from: <loop fold>}` (a one-sheet accordion: `leaves x t + (leaves + 1) x gap`, with the gap taken from the named loop) and
   `stack_from_closed_thickness: {shells: 2, low: 10.0}` (a fold that wraps the whole pack: `closed_thickness_mm - shells x t`, with the stated lower bound; tagged `inferred`).
+  A fold's stack derived from the closed thickness is tagged `inferred` only if the shell thickness it subtracts is also stated; with an assumed shell thickness it is `assumed`.
+  `geometry: gusset` on a fold (or "gusset" in its name) makes the 3D viewer draw it as a bill-pocket pleat; `archive.year_note` qualifies a year (for example a reissue date); the viewer draws only the first fold of a closed-depth record plus any gusset.
   `seams.crosses_fold: unknown` says the seam exists but nobody has recorded where; the stitch-hole and perforation modes then read *unknown*, not *not triggered*.
   `usage: {used: true, condition: "..."}` marks a wallet that has been carried; the report prints the condition under its title, and no ageing is inferred from it.
 - A fold whose inside radius is below half the leather thickness is not run through the solver (the elastic model shows the leather bridging the gap); it gets the closed form and is

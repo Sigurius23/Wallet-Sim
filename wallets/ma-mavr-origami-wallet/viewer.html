@@ -58,11 +58,11 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
 @media (max-width: 760px) { .app { grid-template-columns: minmax(0, 1fr); } }
 </style>
 <main>
-  <header>
+  <header id="hdr">
     <p class="eyebrow">Maurizio Amadei (m.a+) &middot; fold structure</p>
     <h1>M.A+ MAV.R 1.0 Origami Wallet (W-9) in 3D</h1>
   </header>
-  <div class="banner"><strong>A structural sketch, not a scan.</strong> The only measurement behind it is the seller's closed depth, 18 mm, measured by hand laid flat. I read the main fold as the flap's hinge from photographs 01 and 03; the pockets, card slits, cross and back crease are not drawn, and the grey block only stands for the pack the hinge wraps. The size of the bill-pocket pleat is a drawn guess (no photograph has a scale). Panels can pass through each other and nothing here is a leather simulation.</div>
+  <div class="banner"><strong>A structural sketch, not a scan.</strong> The only measurement behind it is the maker's or seller's closed depth, 18 mm, not checked. The hinge is the record's first fold, main fold; the pockets, card slots and fittings are not drawn, and the grey block only stands for the pack the hinge wraps. The size of the bill-pocket pleat is a drawn guess (no photograph has a scale). Panels can pass through each other and nothing here is a leather simulation.</div>
 
   <div class="app">
     <div class="stagewrap">
@@ -86,11 +86,11 @@ th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform:
   </section>
 
   <div class="notes">
-    <div class="card"><h2>What it shows</h2><ul><li><em>Flap and spine:</em> the sheet seen along its length: a back panel, the main fold, and the flap that lies over the front, with a block for the pack it wraps.</li><li><em>Bill-pocket gusset:</em> one side pleat of the large pocket seen across its width, as opened by hand in photograph 03. The V closes flat when the pocket is empty.</li><li>Each fold turns through a fixed length of sheet, so a fold that opens gets a larger radius.</li></ul></div>
+    <div class="card"><h2>What it shows</h2><ul><li><em>Flap and spine:</em> the sheet seen along its length: a back panel, the hinge, and the flap that lies over the front, with a block for the pack it wraps.</li><li><em>Bill-pocket gusset:</em> one side pleat of the large pocket seen across its width. The V closes flat when the pocket is empty.</li><li>Each fold turns through a fixed length of sheet, so a fold that opens gets a larger radius.</li></ul></div>
     <div class="card"><h2>What the colours are</h2><ul>
       <li>The closed-form strain on the outside of each fold, from the simulation's geometry, scaled with the fold angle (the pleat result: strain follows the angle).</li>
       <li>Not a leather simulation. It does not include set, the stitching or the grain.</li></ul></div>
-    <div class="card"><h2>What would make it real</h2><ul><li>Closed thickness at the spine edge-on with a ruler, and how much of it the main fold actually wraps.</li><li>One gusset crease photographed edge-on, empty and loaded, with a ruler: its radius is assumed here and sets the tightest fold.</li><li>The flat pattern, to say which fold the flap really is.</li></ul></div>
+    <div class="card"><h2>What would make it real</h2><ul><li>Closed thickness at the fold edge-on with a ruler, and how much of it the hinge actually wraps.</li><li>One gusset crease photographed edge-on, empty and loaded, with a ruler: its radius is assumed here and sets the tightest fold.</li><li>The sheet thickness, measured at several points: it sets every radius here.</li><li>The flat pattern, to say which fold is which.</li></ul></div>
   </div>
   <p class="foot">Source: retailer or reseller text and product photographs in the Wallet-corpus- archive (item map04). The photographs are research documentation only and are not shown here. Sizes one size: 14.5 x 9.5 cm are read as the closed footprint. Strain is the closed form t / (2R + t), where t is the sheet thickness and R the inside radius.</p>
 </main>
@@ -182,7 +182,7 @@ var WalletGeometry = (function () {
 <script>
 (function () {
   "use strict";
-  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"flap","kind":"flap","label":"Flap and spine","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"stack","label":"Stack the hinge wraps","min":10.0,"max":16.0,"step":0.5,"value":16.0,"unit":"mm","dec":1}],"hinges":[{"id":"main","name":"Main fold","closed":-180,"open":-20,"drv":"flap","tag":"translate(-108%, -50%)"}]},{"id":"gusset","kind":"gusset","label":"Bill-pocket gusset","controls":[{"id":"gusset","label":"Open the bill pocket"}],"params":[{"id":"rIn","label":"Crease radius, inside","min":0.25,"max":2.0,"step":0.05,"value":0.5,"unit":"mm","dec":2}],"hinges":[{"id":"crease","name":"Crease (the one in the report)","closed":0,"open":0,"drv":"gusset","tag":"translate(16px, -50%)"},{"id":"edgeF","name":"Front edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, -140%)"},{"id":"edgeB","name":"Back edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, 120%)"}]}],"sizes":{"one size":{"L":95,"W":145,"txt":"14.5 x 9.5 cm"}},"size":"one size","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"gusset":{"w":60.0,"a":18.0,"depth":70.0,"maxPhi":100.0}};
+  var CFG = {"T":1.0,"leaves":0,"models":[{"id":"flap","kind":"flap","label":"Flap and spine","controls":[{"id":"flap","label":"Open the flap"}],"params":[{"id":"stack","label":"Stack the hinge wraps","min":10.0,"max":16.0,"step":0.5,"value":16.0,"unit":"mm","dec":1}],"hinges":[{"id":"main","name":"Main fold","closed":-180,"open":-20,"drv":"flap","tag":"translate(-108%, -50%)"}]},{"id":"gusset","kind":"gusset","label":"Bill-pocket gusset","controls":[{"id":"gusset","label":"Open the bill pocket"}],"params":[{"id":"rIn","label":"Crease radius, inside","min":0.25,"max":2.0,"step":0.05,"value":0.5,"unit":"mm","dec":2}],"hinges":[{"id":"crease","name":"Crease (the one in the report)","closed":0,"open":0,"drv":"gusset","tag":"translate(16px, -50%)"},{"id":"edgeF","name":"Front edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, -140%)"},{"id":"edgeB","name":"Back edge","closed":0,"open":0,"drv":"gusset","tag":"translate(-105%, 120%)"}]}],"sizes":{"one size":{"L":95,"W":145,"txt":"14.5 x 9.5 cm"}},"size":"one size","edgeLabel":"Side view","words":{"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight"},"gusset":{"w":60.0,"a":18.0,"depth":70.0,"maxPhi":100.0},"id":"ma-mavr-origami-wallet","embed":false};
   var T = CFG.T;                                          // sheet thickness, mm
   var MODELS = CFG.models, byId = {};
   MODELS.forEach(function (m) { byId[m.id] = m; });
@@ -428,6 +428,11 @@ var WalletGeometry = (function () {
   new MutationObserver(onTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
   document.getElementById("sizeinfo").textContent = CFG.sizes[state.size].txt + ", closed";
+  if (CFG.embed) {                                          // framed by the archive app: no title block, and tell the frame how tall the page is
+    document.getElementById("hdr").hidden = true; document.body.style.paddingBlock = "0 8px";
+    var postH = function () { try { parent.postMessage({ walletViewerHeight: document.documentElement.scrollHeight, id: CFG.id }, "*"); } catch (e) {} };
+    new ResizeObserver(postH).observe(document.body); window.addEventListener("load", postH);
+  }
   makeTags(); renderControls(); applyTheme(); build(); resize(); frame("3d"); tick();
   window.__wallet = { state: state, build: build, sync: sync, frame: frame, setView: setView, setModel: setModel, setSize: setSize, camera: camera, group: group, cfg: CFG };   // for testing
 })();

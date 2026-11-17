@@ -151,7 +151,8 @@ def failure_modes(rep: Report) -> list[dict]:
         add(4, "Stress at stitch holes", "flagged", f"stitching ({', '.join(s['id'] for s in crossing)}) crosses or pins the fold(s): {', '.join(crossing[0]['crosses_fold'])}. "
             "Holes in a bend remove part of the section there. No local model yet")
     elif seams_unknown:
-        add(4, "Stress at stitch holes", "unknown", "the wallet is stitched, but whether the stitching crosses or pins a fold is not recorded")
+        names = ", ".join(str(s.get("id")) for s in rec.seams if s.get("crosses_fold") == "unknown")
+        add(4, "Stress at stitch holes", "unknown", f"the record lists {names}, but whether it crosses or pins a fold is not recorded")
     else:
         add(4, "Stress at stitch holes", "not triggered", "no recorded stitch line crosses a fold")
     if skived:

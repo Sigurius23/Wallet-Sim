@@ -241,7 +241,8 @@ def load_wallet(path: str | Path) -> WalletRecord:
                 if sense not in ("out", "in"):
                     errors.append(f"{nm}: sense must be out or in")
                 # The number is derived from a stated thickness by a formula that assumes one fold wraps the whole pack, so it is inferred, never "reported" or "measured".
-                src = "inferred" if cl[1] in ("measured", "reported", "inferred") else cl[1]
+                shell_src = next((i.source for i in inputs if i.name == "shell thickness"), "assumed")
+                src = "inferred" if cl[1] in ("measured", "reported", "inferred") and shell_src in ("measured", "reported", "inferred") else "assumed"
                 slots[idx] = CustomFold(nm, stack, lo, stack if lo is not None else None, src, sense, float(fs.get("cycles_per_use", 1.0)), ref)
                 inputs.append(Input(f"{nm}: stack it wraps (derived from the closed thickness)", round(stack, 4), "mm", src, ref, "the inside radius of this fold"))
                 continue

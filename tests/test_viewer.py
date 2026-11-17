@@ -84,3 +84,13 @@ def test_only_one_sheet_records_with_a_known_structure_get_a_viewer(tmp_path):
     with pytest.raises(ViewerError) as e:
         build_viewer(out2)
     assert "folds" in str(e.value)
+
+
+def test_a_flap_record_without_a_gusset_gets_one_model_and_says_which_folds_it_leaves_out():
+    whalet = ROOT / "wallets" / "sr-whalet-sr202-2022"
+    cfg = _cfg(build_viewer(whalet))
+    assert [m["kind"] for m in cfg["models"]] == ["flap"]                                  # only a fold marked or named as a gusset gets the gusset model
+    p = cfg["models"][0]["params"][0]
+    assert (p["min"], p["value"], p["max"]) == (4.0, 8.0, 8.0)
+    html = build_viewer(whalet)
+    assert "left end fold" in html and "not drawn" in html and "photograph 01" not in html     # nothing borrowed from another wallet's record

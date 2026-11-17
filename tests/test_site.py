@@ -18,7 +18,7 @@ def _data_from(html: str) -> dict:
 
 def test_generated_test_designs_are_not_archive_items_unless_asked():
     ids = [w["id"] for w in build_data(WALLETS)["wallets"]]
-    assert ids == ["ma-mavr-origami-wallet", "ma-one-piece-double-wallet", "ma-one-piece-wallet"]
+    assert ids == ["ma-mavr-origami-wallet", "ma-one-piece-double-wallet", "ma-one-piece-wallet", "sr-whalet-sr202-2022"]
     d = build_data(WALLETS)
     assert d["hidden_designs"] and "slim-6card-design" not in ids
     assert "slim-6card-design" in [w["id"] for w in build_data(WALLETS, include_designs=True)["wallets"]]
@@ -26,14 +26,23 @@ def test_generated_test_designs_are_not_archive_items_unless_asked():
 
 def test_undated_wallets_stay_undated_and_unknown_fields_stay_empty():
     for w in build_data(WALLETS)["wallets"]:
-        assert w["year"] is None                                               # no record has a design year, so none is invented
         facts = {f["label"]: f for f in w["facts"]}
-        assert facts["Year"]["value"] is None                                  # nothing to put on the timeline axis
+        if w["id"].startswith("ma-"):
+            assert w["year"] is None and facts["Year"]["value"] is None        # no M.A+ record has a design year, so none is invented
+            assert facts["Sheet thickness"]["source"] == "reported"            # a retailer's figure is shown as reported, not measured
         assert facts["Hide region"]["value"] is None                           # no region is recorded for any of them
-        assert (facts["Tanning"]["value"] is None) == (w["id"] != "ma-mavr-origami-wallet")   # only the origami's listing states a tanning
-        assert facts["Sheet thickness"]["source"] == "reported"                # a retailer's figure is shown as reported, not measured
+        assert (facts["Tanning"]["value"] is None) == (w["id"] not in ("ma-mavr-origami-wallet", "sr-whalet-sr202-2022"))   # only these listings state a tanning
         assert w["status"] == "photos-only" and w["counts"]["measured"] == 0
         assert w["hero"] is None                                               # photographs are research documentation only: none is embedded
+
+
+def test_a_dated_wallet_gets_its_year_and_the_note_that_qualifies_it():
+    w = next(w for w in build_data(WALLETS)["wallets"] if w["id"] == "sr-whalet-sr202-2022")
+    year = next(f for f in w["facts"] if f["label"] == "Year")
+    assert w["year"] == 2022 and year["value"] == "2022" and "2010" in year["ref"]          # the reissue year, with the original's year in the note
+    sheet = next(f for f in w["facts"] if f["label"] == "Sheet thickness")
+    assert sheet["source"] == "assumed"                                                     # the maker gives no sheet thickness
+    assert next(f for f in w["facts"] if f["label"] == "Species")["value"] == "horse (equine)"
 
 
 def test_the_origami_pipeline_shows_what_the_listing_states_and_marks_the_rest():
@@ -55,7 +64,7 @@ def test_the_site_is_one_file_with_its_data_and_no_unfilled_placeholders(tmp_pat
     html = build_site(WALLETS)
     assert "__DATA__" not in html and "{{GEOMETRY_JS}}" not in html and "var WalletGeometry" in html
     data = _data_from(html)
-    assert [w["id"] for w in data["wallets"]] == ["ma-mavr-origami-wallet", "ma-one-piece-double-wallet", "ma-one-piece-wallet"]
+    assert [w["id"] for w in data["wallets"]] == ["ma-mavr-origami-wallet", "ma-one-piece-double-wallet", "ma-one-piece-wallet", "sr-whalet-sr202-2022"]
     assert "data:image" not in html                                            # nothing from the corpus photographs
     out = write_site(WALLETS, tmp_path / "site" / "index.html")
     assert out.read_text(encoding="utf-8") == html

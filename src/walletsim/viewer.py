@@ -112,8 +112,16 @@ def _chain(rec: WalletRecord) -> dict:
     return {"cfg": cfg, "text": text, "n": n}
 
 
+def _is_gusset(spec: dict) -> bool:
+    """A fold is drawn as a bill-pocket gusset when the record says so (geometry: gusset) or, if it says nothing, when its name does."""
+    g = spec.get("geometry")
+    return g == "gusset" or (g is None and "gusset" in str(spec.get("name", "")).lower())
+
+
 def _flap(rec: WalletRecord) -> dict:
+    specs = _specs(rec)
     folds = rec.custom_folds
+    gus_k = next((k for k, sp in enumerate(specs) if k > 0 and _is_gusset(sp)), None)
     main = folds[0]
     cl = (rec.raw.get("construction") or {}).get("closed_thickness_mm") or {}
     lo, hi = (main.low_mm, main.high_mm) if main.low_mm is not None else (main.stack_mm, main.stack_mm)
@@ -122,7 +130,7 @@ def _flap(rec: WalletRecord) -> dict:
     m1 = {"id": "flap", "kind": "flap", "label": "Flap and spine", "controls": [{"id": "flap", "label": "Open the flap"}],
           "params": [{"id": "stack", "label": "Stack the hinge wraps", "min": lo, "max": hi, "step": 0.5, "value": main.stack_mm, "unit": "mm", "dec": 1}], "hinges": [hinge]}
     models = [m1]
-    gus = next((f for f in folds[1:]), None)
+    gus = folds[gus_k] if gus_k is not None else None
     if gus is not None:
         glo, ghi = (gus.low_mm, gus.high_mm) if gus.low_mm is not None else (gus.stack_mm, gus.stack_mm)
         models.append({"id": "gusset", "kind": "gusset", "label": "Bill-pocket gusset", "controls": [{"id": "gusset", "label": "Open the bill pocket"}],
@@ -134,18 +142,25 @@ def _flap(rec: WalletRecord) -> dict:
            "gusset": GUSSET_GUESS}
     depth = cl.get("value")
     depth_txt = f"{float(depth):g} mm" if depth else "an unrecorded depth"
-    text = {
-        "eyebrow": f"{E(str(rec.raw.get('maker', '')))} &middot; fold structure",
-        "banner": (f"<strong>A structural sketch, not a scan.</strong> The only measurement behind it is the seller's closed depth, {depth_txt}, measured by hand laid flat. "
-                   "I read the main fold as the flap's hinge from photographs 01 and 03; the pockets, card slits, cross and back crease are not drawn, and the grey block only stands for the pack "
-                   "the hinge wraps. The size of the bill-pocket pleat is a drawn guess (no photograph has a scale). Panels can pass through each other and nothing here is a leather simulation."),
-        "shows": ["<em>Flap and spine:</em> the sheet seen along its length: a back panel, the main fold, and the flap that lies over the front, with a block for the pack it wraps.",
-                  "<em>Bill-pocket gusset:</em> one side pleat of the large pocket seen across its width, as opened by hand in photograph 03. The V closes flat when the pocket is empty.",
-                  "Each fold turns through a fixed length of sheet, so a fold that opens gets a larger radius."],
-        "real": ["Closed thickness at the spine edge-on with a ruler, and how much of it the main fold actually wraps.",
-                 "One gusset crease photographed edge-on, empty and loaded, with a ruler: its radius is assumed here and sets the tightest fold.",
-                 "The flat pattern, to say which fold the flap really is."],
-    }
+    dsrc = cl.get("source", "")
+    who = {"reported": "the maker's or seller's", "measured": "the measured", "inferred": "an inferred"}.get(dsrc, "the recorded")
+    not_drawn = [_short(f.name).lower() for k, f in enumerate(folds) if k > 0 and k != gus_k]
+    omitted = (f" The record's other fold{'s' if len(not_drawn) > 1 else ''} ({', '.join(not_drawn)}) {'are' if len(not_drawn) > 1 else 'is'} not drawn: the sketch shows one hinge." if not_drawn else "")
+    banner = (f"<strong>A structural sketch, not a scan.</strong> The only measurement behind it is {who} closed depth, {depth_txt}"
+              f"{'' if dsrc == 'measured' else ', not checked'}. The hinge is the record's first fold, {_short(main.name).lower()}; the pockets, card slots and fittings are not drawn, "
+              "and the grey block only stands for the pack the hinge wraps." + omitted
+              + (" The size of the bill-pocket pleat is a drawn guess (no photograph has a scale)." if gus is not None else "")
+              + " Panels can pass through each other and nothing here is a leather simulation.")
+    shows = ["<em>Flap and spine:</em> the sheet seen along its length: a back panel, the hinge, and the flap that lies over the front, with a block for the pack it wraps."]
+    if gus is not None:
+        shows.append("<em>Bill-pocket gusset:</em> one side pleat of the large pocket seen across its width. The V closes flat when the pocket is empty.")
+    shows.append("Each fold turns through a fixed length of sheet, so a fold that opens gets a larger radius.")
+    real = ["Closed thickness at the fold edge-on with a ruler, and how much of it the hinge actually wraps.",
+            "The sheet thickness, measured at several points: it sets every radius here."]
+    if gus is not None:
+        real.insert(1, "One gusset crease photographed edge-on, empty and loaded, with a ruler: its radius is assumed here and sets the tightest fold.")
+    real.append("The flat pattern, to say which fold is which.")
+    text = {"eyebrow": f"{E(str(rec.raw.get('maker', '')))} &middot; fold structure", "banner": banner, "shows": shows, "real": real}
     return {"cfg": cfg, "text": text, "n": 0}
 
 

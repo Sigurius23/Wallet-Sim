@@ -1,0 +1,79 @@
+# SRULI RECHT WHALET SR202, EDITIONS reissue (2022): record built from the Wallet-corpus- research archive (item sr005_whalet_sr202_editions_2022).
+# EVIDENCE: the maker's own product page (first-party, corpus source SRW11 and its product feed SRW29) and 4 product photographs. NOTHING HAS BEEN MEASURED on a physical wallet.
+# Corpus: https://github.com/Sigurius23/Wallet-corpus-  commit bda0572  carpe_diem_research/wallet/designers/sruli_recht/items/sr005_whalet_sr202_editions_2022/
+# Rights: the corpus images belong to Sruli Recht / Atelier Sruli Recht (photography Marinó Thorlacius) and are research documentation only; they are referenced by path, not copied.
+id: sr-whalet-sr202-2022
+name: Sruli Recht WHALET SR202 (EDITIONS reissue, 2022)
+maker: Sruli Recht
+status: photos-only
+photos:
+  low_view_closed: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/sruli_recht/items/sr005_whalet_sr202_editions_2022/images/034_edition_2022_01.jpg"
+  open_card_slots: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/sruli_recht/items/sr005_whalet_sr202_editions_2022/images/035_edition_2022_02.jpg"
+  closed_top: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/sruli_recht/items/sr005_whalet_sr202_editions_2022/images/036_edition_2022_03.jpg"
+  closed_back: "corpus:Wallet-corpus-@bda0572/carpe_diem_research/wallet/designers/sruli_recht/items/sr005_whalet_sr202_editions_2022/images/037_edition_2022_04.jpg"
+archive:
+  designer: Sruli Recht
+  year: 2022
+  year_note: "The EDITIONS page dates this reissue to 2022 (Shopify published 2022-08-03). It says the horse-skin WHALET was first made in 2010 with the same cutting file, so the design is older than the date shown."
+  series: WHALET
+  bio_ref: "designers/sruli_recht/README.md in the Wallet-corpus- archive (not reproduced here)"
+  hero_image: null
+  rights: {photos: "Sruli Recht / Atelier Sruli Recht, photography Marinó Thorlacius; research documentation only, not cleared for reuse", bio: "not cleared for reuse"}
+leather:
+  - id: shell
+    role: the single piece of leather the whole wallet is cut and folded from
+    thickness_mm: {value: 1.0, source: assumed, ref: "NOT STATED by the maker. A one-piece card wallet 10 mm deep closed; 1.0 mm is a stand-in for vegetable-tanned horse skin, not a reading"}
+    species: {value: horse (equine), source: reported, ref: "maker's page (corpus SRW11): 'It is made from horse skin'; 'regional vegetable tanned horse skin'"}
+    hide_region: {value: unknown, source: assumed}
+    windows:
+      beamhouse: unknown
+      tanning: {value: vegetable, source: reported, ref: "maker's page: the 2022 version is made 'from regional vegetable tanned horse skin' (the 2010 original was chromium-tanned Icelandic horse skin)"}
+      post_tanning: unknown
+      finishing: {value: "Black Sable (the one colour offered)", source: reported, ref: "maker's page: 'Black Sable, dark as Icelandic winter'; how it is dyed or finished is not stated"}
+    edge: {value: unknown, source: assumed}
+    material:
+      youngs_modulus_mpa: {value: 72, source: assumed, cv: 0.29, ref: "placeholder: the tensile value measured for 1.2 mm CALFskin (Mihai et al., Materials 2022, 15(15):5107); no horse-skin value is on record. The maker says the leather 'is designed to stretch to fit' cards, which this elastic model does not capture"}
+      poisson: {value: 0.3, source: assumed}
+components: []
+process_steps: []
+contents:
+  cards: {value: 0, source: assumed, note: "the 10 mm depth is the maker's figure; whether it was taken empty is not stated"}
+  card_mm: {value: 0.76, source: literature, ref: ISO/IEC 7810 ID-1 nominal thickness}
+  extra_mm: {value: 0.0, source: assumed}
+construction:
+  type: custom
+  grain: out
+  layup: plain
+  closed_thickness_mm: {value: 10.0, source: reported, ref: "maker's page (corpus SRW11): 'Dimensions of WHALET - 85 mm x 100 mm x 10 mm'. Not checked, and not said whether it is empty or loaded"}
+  # What the maker says: 'a single piece of leather, laser cut, folded into shape, formed with steam vapor, and hand tethered with black oxidized rivets to create a card wallet'.
+  # What the photographs show (corpus images 034 to 037, enlarged), with my confidence:
+  #   - a closed landscape wallet 100 x 85 mm with a flap that has rounded corners and a hole for a rivet or snap                moderate
+  #   - the open wallet (035): the flap, a stepped set of three rounded card panels, and a larger bottom panel with a rivet/snap   moderate
+  #   - the low view (034): a hairpin wrap at one short end and stepped layer edges at the other                                   low
+  #   - NO scale and no edge-on view that counts the layers: the 10 mm depth is the maker's figure, the layer count is not known
+  # Which end is the flap hinge, and which folds wrap the pack, is my reading of one oblique photograph. Both end folds are given the same stack, with a range.
+  # The rivets, the card panels and the flap's closure are not modelled.
+  folds_modelled:
+    - name: flap hinge (right end)
+      stack_from_closed_thickness: {shells: 2, low: 4.0, ref: "the flap closes over everything but the outer layers; the lower bound 4 mm is assumed (an empty wallet with slack panels is thinner than the stated depth)"}
+      sense: out
+    - name: left end fold
+      stack_from_closed_thickness: {shells: 2, low: 4.0, ref: "the hairpin wrap at the other short end (low view, image 034); assumed to wrap the same pack"}
+      sense: out
+panels:
+  - {id: sheet, leather: shell, outline: null, grain_direction_deg: {value: 0, source: assumed}}
+folds:
+  - {id: flap hinge, panel: sheet, rest_angle_deg: 180, skived: {value: unknown, source: assumed}}
+  - {id: left end fold, panel: sheet, rest_angle_deg: 180, skived: {value: unknown, source: assumed}}
+seams:
+  - id: rivets
+    note: "hand-tethered with black oxidised rivets (maker); their number and positions are not visible in the photographs"
+    crosses_fold: unknown
+    holes: {value: 0, source: assumed, note: "number of holes not recorded"}
+pockets:
+  - {id: card slots, card_capacity: 5, note: "maker: 'designed to hold 4-5 cards per slot'; the leather is eased by sliding in one card at a time"}
+  - {id: back slot, card_capacity: 0, note: "maker: 'the back section is a larger third slot, spaced for fitting bills, either folded or open'; no coin section"}
+sizes:
+  one size: {closed_footprint_cm: [8.5, 10], depth_cm: 1.0, source: reported}
+rights_note: "Source photographs are in the Wallet-corpus- archive (commit bda0572). They belong to Sruli Recht / Atelier Sruli Recht (photography Marinó Thorlacius) and are research documentation only, so they are not shown here."
+usage: {used: false}
