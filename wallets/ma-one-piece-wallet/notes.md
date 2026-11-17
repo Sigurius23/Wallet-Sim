@@ -37,3 +37,12 @@ See `sim/run-*/report.md`. In short: with the empty wallet's stacks the two loop
 ## To turn this into a real record
 Measure a physical One Piece Wallet: closed thickness and layer count at the spine; each loop's inside radius or gap, edge-on next to a ruler; the sheet thickness at several points;
 and ask the maker whether the folds are skived or dampened. The report's "What to measure first" list says the same in order.
+
+## The 3D viewer (`viewer.html`)
+A single page (it loads Three.js from a CDN) that folds one 1 mm strip with the structure read from the photographs: bottom panel, spine, top panel, loop, leaf A, left fold, leaf B, loop, leaf C.
+It is a **structural sketch, not a scan or a simulation**: the flat cut pattern is unknown, so there are no pockets, flap or silver cross, panels can pass through each other, and the colours are the closed-form strain
+at each fold scaled with the fold angle. Two sliders open the wallet like a book and open the pockets; a third sets the loop radius.
+
+What building it showed: in this one-sheet layout the loops and the spine are **coupled**. The layers sit one loop-gap apart, so with the loops' 0.5 mm inside radius the spine wraps about 7 mm
+(inside radius 3.5 mm, closed-form strain 12.5 %), not the 3 mm the record lists for the spine independently. If this layout is right, the record's spine stack should be derived from the loop radius.
+That needs the topology confirmed first (the flat pattern, or photographs of the wallet unfolded).

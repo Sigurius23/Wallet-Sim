@@ -1,0 +1,348 @@
+<title>One Piece Wallet 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: a stage (the 3D view with fold labels) beside a control column; stacked on a phone. Below, the live fold table and the plain statement of what this model is. */
+:root {
+  --bg: #f2f3f4; --surface: #ffffff; --fg: #17191b; --muted: #5d646b; --line: #d9dcdf;
+  --accent: #b3261e; --ink2: #1d5ba1; --warn: #9a5b00; --warnbg: #fbf0dc; --stage: #e9ebed; --grid: #cdd1d4; --track: #d3d7da;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif; --body: Inter, "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --surface: #1b1e21; --fg: #e9eaeb; --muted: #9aa1a8; --line: #33383d; --accent: #ef6a60; --ink2: #6fa5e6;
+  --warn: #e8b560; --warnbg: #3a2e18; --stage: #0e1011; --grid: #2a2e32; --track: #3a4046; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121416; --surface: #1b1e21; --fg: #e9eaeb; --muted: #9aa1a8; --line: #33383d; --accent: #ef6a60; --ink2: #6fa5e6;
+  --warn: #e8b560; --warnbg: #3a2e18; --stage: #0e1011; --grid: #2a2e32; --track: #3a4046; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); line-height: 1.5; padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 1080px; margin: 0 auto; display: grid; gap: 22px; }
+h1, h2 { font-family: var(--display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.7rem, 4.5vw, 2.4rem); line-height: 1.1; } h2 { font-size: 1.1rem; }
+.eyebrow { font-size: .76rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.banner { background: var(--warnbg); color: var(--warn); border-radius: 6px; padding: 11px 15px; font-size: .9rem; max-width: 92ch; }
+.app { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(250px, 1fr); gap: 18px; align-items: start; }
+.stagewrap { position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; aspect-ratio: 4 / 3; min-height: 280px; }
+#stage { position: absolute; inset: 0; } #stage canvas { display: block; width: 100%; height: 100%; }
+.tag { position: absolute; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; font-size: 11px; line-height: 1.35;
+  white-space: nowrap; pointer-events: none; font-variant-numeric: tabular-nums; }
+.tag b { font-weight: 600; }
+.views { position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.panel { display: grid; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.ctl { display: grid; gap: 5px; }
+.ctl label, .ctl .lab { font-size: .84rem; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; }
+.ctl .hint { color: var(--muted); font-size: .8rem; font-weight: 400; }
+input[type=range] { width: 100%; accent-color: var(--accent); min-height: 28px; }
+button { font: inherit; font-size: .85rem; font-weight: 600; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+button:hover { border-color: var(--muted); } button:focus-visible, input:focus-visible { outline: 2px solid var(--ink2); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: transparent; padding: 5px 13px; } .seg button[aria-pressed=true] { background: var(--fg); color: var(--bg); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chk { display: flex; gap: 8px; align-items: center; font-size: .84rem; } .chk input { width: 16px; height: 16px; accent-color: var(--accent); }
+.legend { display: grid; gap: 4px; font-size: .78rem; color: var(--muted); }
+.ramp { height: 10px; border-radius: 5px; border: 1px solid var(--line); }
+.ramp + div { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .87rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-weight: 600; font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); white-space: nowrap; } tr:last-child td { border-bottom: 0; }
+.bar { height: 8px; border-radius: 4px; background: var(--track); position: relative; min-width: 90px; } .bar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+.bar::after { content: ""; position: absolute; top: -3px; bottom: -3px; left: 33.3%; border-left: 1px dashed var(--muted); }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; font-size: .88rem; min-width: 0; } .card h2 { margin-bottom: 6px; }
+.card ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.foot { color: var(--muted); font-size: .8rem; max-width: 100ch; }
+@media (max-width: 760px) { .app { grid-template-columns: minmax(0, 1fr); } }
+</style>
+<main>
+  <header>
+    <p class="eyebrow">m.a+ by Maurizio Amadei &middot; fold structure</p>
+    <h1>One Piece Wallet in 3D</h1>
+  </header>
+  <div class="banner"><strong>A structural sketch, not a scan.</strong> The photographs show a spine wrapping three inner leaves and two tight loops, but not the flat cut pattern. This folds one 1 mm strip with that structure, widened to the wallet's width. It has no pockets, flap or silver cross, panels can pass through each other, and nothing here is a leather simulation.</div>
+
+  <div class="app">
+    <div class="stagewrap">
+      <div id="stage" role="img" aria-label="3D model of the folded sheet; drag to rotate"></div>
+      <div class="views"><div class="seg" role="group" aria-label="View"><button id="v3d" aria-pressed="true">3D</button><button id="vedge" aria-pressed="false">Edge-on, like the photo</button></div></div>
+    </div>
+    <div class="panel">
+      <div class="ctl"><div class="lab">Size <span class="hint" id="sizeinfo"></span></div>
+        <div class="seg" role="group" aria-label="Size"><button data-size="S" aria-pressed="true">S</button><button data-size="M" aria-pressed="false">M</button><button data-size="L" aria-pressed="false">L</button></div></div>
+      <div class="ctl"><label for="book">Open the wallet <span id="bookv" class="hint">closed</span></label><input id="book" type="range" min="0" max="100" value="0"></div>
+      <div class="ctl"><label for="pock">Open the pockets <span id="pockv" class="hint">closed</span></label><input id="pock" type="range" min="0" max="100" value="0"></div>
+      <div class="row"><button id="play" class="primary">Play</button><button id="reset">Reset</button></div>
+      <div class="ctl"><label for="rin">Loop radius, inside <span id="rinv" class="hint">0.5 mm</span></label><input id="rin" type="range" min="25" max="200" step="5" value="50">
+        <span class="hint" id="coupling"></span></div>
+      <div class="row"><label class="chk"><input id="colour" type="checkbox" checked>Colour by strain</label><label class="chk"><input id="labels" type="checkbox" checked>Fold labels</label></div>
+      <div class="legend"><div class="ramp" id="ramp"></div><div><span>0 %</span><span>20 % screening line</span><span>50 %+</span></div></div>
+    </div>
+  </div>
+
+  <section style="display:grid;gap:10px">
+    <h2>The four folds, right now</h2>
+    <div class="scroll"><table><thead><tr><th>fold</th><th>angle</th><th>inside radius</th><th>strain estimate</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div>
+  </section>
+
+  <div class="notes">
+    <div class="card"><h2>What it shows</h2><ul>
+      <li>One strip: bottom panel, spine, top panel, loop, leaf A, left fold, leaf B, loop, leaf C. That gives three inner leaves and two loops at one end, as in the edge-on photographs.</li>
+      <li>Each fold turns through a fixed length of sheet, so a fold that opens gets a larger radius.</li>
+      <li>The layers sit one loop-gap apart, so the loop radius also sets the stack the spine wraps.</li></ul></div>
+    <div class="card"><h2>What the colours are</h2><ul>
+      <li>The closed-form strain on the outside of each fold, from the simulation's geometry, scaled with the fold angle (the pleat result: strain follows the angle).</li>
+      <li>Not a leather simulation. It does not include set, the thread ties or the grain.</li></ul></div>
+    <div class="card"><h2>What would make it real</h2><ul>
+      <li>The flat pattern, or photographs of the wallet unfolded flat.</li>
+      <li>A measured closed thickness and each loop's radius.</li>
+      <li>The report recorded the spine at 3 mm and the loops at 1 mm independently. In this layout the loops set the spine, 7 mm at the default radius, so those inputs need reconciling.</li></ul></div>
+  </div>
+  <p class="foot">Source: retailer text and product photographs in the Wallet-corpus- archive (item map01). The photographs are research documentation only and are not shown here. Sizes S 11.5 x 7.5, M 13 x 9, L 15 x 10 cm are read as the closed footprint. Strain is the closed form t / (2R + t), where t is the sheet thickness and R the inside radius.</p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  "use strict";
+  var T = 1.0;                                            // sheet thickness, mm (retailer: 1 mm calf)
+  var SIZES = { S: { L: 75, W: 115, txt: "11.5 x 7.5 cm" }, M: { L: 90, W: 130, txt: "13 x 9 cm" }, L: { L: 100, W: 150, txt: "15 x 10 cm" } };
+  // closed / open turn of each fold in degrees; negative = clockwise as seen with the spine on the left
+  var HINGES = [
+    { id: "spine", name: "Spine",     closed: -180, open: -15, drv: "book" },
+    { id: "loop1", name: "Loop 1",    closed: -180, open: -135, drv: "pockets" },
+    { id: "fold2", name: "Left fold", closed:  180, open:  135, drv: "pockets" },
+    { id: "loop2", name: "Loop 2",    closed: -180, open: -135, drv: "pockets" }
+  ];
+  var state = { size: "S", rIn: 0.5, book: 0, pockets: 0, colour: true, labels: true, view: "3d" };
+
+  var ease = function (u) { return u * u * (3 - 2 * u); };
+  var lerp = function (a, b, u) { return a + (b - a) * u; };
+  var RAMP = [[0, "#5d6872"], [0.2, "#e5a93d"], [0.5, "#c4301f"], [0.67, "#6d0d0d"]];
+  function hex(c) { return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)].map(function (v) { return v / 255; }); }
+  function rampColour(e) {
+    var s = RAMP, i = 0; while (i < s.length - 2 && e > s[i + 1][0]) i++;
+    var u = Math.max(0, Math.min(1, (e - s[i][0]) / (s[i + 1][0] - s[i][0]))), a = hex(s[i][1]), b = hex(s[i + 1][1]);
+    return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+  }
+  document.getElementById("ramp").style.background = "linear-gradient(90deg," + RAMP.map(function (s) { return s[1] + " " + (s[0] / 0.67 * 100).toFixed(0) + "%"; }).join(",") + ")";
+
+  // ---- the model ------------------------------------------------------------------------------------------------
+  function params() {
+    var rn = state.rIn + T / 2;                             // neutral radius of a loop or the left fold
+    var rs = 4 * rn;                                        // spine neutral radius: four loop-gaps of stack, derived
+    return { rn: rn, rs: rs, rInSpine: rs - T / 2, stack: 2 * rs - T };
+  }
+  function turn(h) {                                        // current turn of a fold, degrees
+    var u = ease(h.drv === "book" ? state.book : state.pockets);
+    return lerp(h.closed, h.open, u);
+  }
+  function epsClosed(rIn) { return T / (2 * rIn + T); }
+  function buildPath() {
+    var p = params(), L = SIZES[state.size].L;
+    var Lt = L - p.rs - p.rn - T, xf = p.rn + T + 1.0, La = Lt - xf, Lb = Lt - 3, Lc = La - 8;
+    var pts = [], x = Lb, y = 0, phi = Math.PI, marks = {};
+    function push(e) { pts.push({ x: x, y: y, phi: phi, e: e }); }
+    function straight(len, e) {
+      var n = Math.max(2, Math.ceil(len / 10)), dx = Math.cos(phi) * len / n, dy = Math.sin(phi) * len / n;
+      for (var k = 0; k < n; k++) { x += dx; y += dy; push(e); }
+    }
+    function fold(h, rnClosed, rInClosed) {
+      var th = turn(h) * Math.PI / 180, ell = Math.PI * rnClosed, e = Math.abs(turn(h)) / 180 * epsClosed(rInClosed);
+      if (Math.abs(th) < 1e-3) { straight(ell, e); marks[h.id] = { x: x, y: y, e: e, ang: turn(h) }; return; }
+      var r = ell / Math.abs(th), s = Math.sign(th), nx = -Math.sin(phi), ny = Math.cos(phi);
+      var cx = x + s * r * nx, cy = y + s * r * ny, m = Math.max(6, Math.ceil(Math.abs(th) / (Math.PI / 30))), mid = null;
+      for (var k = 1; k <= m; k++) {
+        var ph = phi + th * k / m, qx = -Math.sin(ph), qy = Math.cos(ph);
+        pts.push({ x: cx - s * r * qx, y: cy - s * r * qy, phi: ph, e: e });
+        if (k === Math.round(m / 2)) mid = { x: cx - s * r * qx, y: cy - s * r * qy };
+      }
+      var last = pts[pts.length - 1]; x = last.x; y = last.y; phi = last.phi;
+      marks[h.id] = { x: mid.x, y: mid.y, e: e, ang: turn(h), r: r - T / 2 };
+    }
+    push(0);
+    straight(Lb, 0);        fold(HINGES[0], p.rs, p.rInSpine);
+    straight(Lt, 0);        fold(HINGES[1], p.rn, state.rIn);
+    straight(La, 0);        fold(HINGES[2], p.rn, state.rIn);
+    straight(La, 0);        fold(HINGES[3], p.rn, state.rIn);
+    straight(Lc, 0);
+    return { pts: pts, marks: marks, p: p, L: L };
+  }
+
+  // ---- three.js -----------------------------------------------------------------------------------------------------
+  var host = document.getElementById("stage");
+  var renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  host.appendChild(renderer.domElement);
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(32, 4 / 3, 1, 3000);
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = false;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x555a60, 0.85));
+  var sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(0.6, 1, 0.9); scene.add(sun);
+  var fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-0.8, 0.3, -0.7); scene.add(fill);
+  var group = new THREE.Group(); scene.add(group);
+  var grid = null;
+  var tags = {};
+  var OFFSET = { spine: "translate(-108%, -50%)", loop1: "translate(10px, -120%)", fold2: "translate(-50%, 120%)", loop2: "translate(10px, 10%)" };
+  HINGES.forEach(function (h) { var d = document.createElement("div"); d.className = "tag"; d.style.transform = OFFSET[h.id]; host.parentNode.appendChild(d); tags[h.id] = d; });
+
+  function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function applyTheme() {
+    renderer.setClearColor(new THREE.Color(cssVar("--stage") || "#e9ebed"), 1);
+    if (grid) { scene.remove(grid); grid.geometry.dispose(); }
+    grid = new THREE.GridHelper(600, 60, new THREE.Color(cssVar("--grid") || "#cdd1d4"), new THREE.Color(cssVar("--grid") || "#cdd1d4"));
+    grid.position.y = -T / 2 - 0.4; scene.add(grid);
+    dirty = true;
+  }
+
+  function disposeGroup() { for (var i = group.children.length - 1; i >= 0; i--) { var c = group.children[i]; group.remove(c); if (c.geometry) c.geometry.dispose(); } }
+  function build() {
+    var m = buildPath(), pts = m.pts, W = SIZES[state.size].W, n = pts.length;
+    disposeGroup();
+    var up = [], dn = [], col = [];
+    for (var i = 0; i < n; i++) {
+      var q = pts[i], nx = -Math.sin(q.phi) * T / 2, ny = Math.cos(q.phi) * T / 2;
+      up.push([q.x + nx, q.y + ny]); dn.push([q.x - nx, q.y - ny]);
+      col.push(state.colour ? rampColour(q.e) : hex("#6a737c"));
+    }
+    var base = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0.0, side: THREE.DoubleSide });
+    function strip(pa, sgn, flipN) {                        // a face of the sheet, shared vertices along the path
+      var pos = [], c = [], idx = [];
+      for (var i = 0; i < n; i++) { pos.push(pa[i][0], pa[i][1], -W / 2, pa[i][0], pa[i][1], W / 2); c.push(col[i][0], col[i][1], col[i][2], col[i][0], col[i][1], col[i][2]); }
+      for (var j = 0; j < n - 1; j++) { var a = 2 * j, b = a + 1, c2 = a + 2, d = a + 3; idx.push(a, b, c2, b, d, c2); }
+      var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(c, 3));
+      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, base);
+    }
+    function side(z) {                                      // the edge of the sheet at one end of the width: the profile, with thickness
+      var pos = [], c = [], idx = [];
+      for (var i = 0; i < n; i++) { pos.push(up[i][0], up[i][1], z, dn[i][0], dn[i][1], z); c.push(col[i][0] * .8, col[i][1] * .8, col[i][2] * .8, col[i][0] * .8, col[i][1] * .8, col[i][2] * .8); }
+      for (var j = 0; j < n - 1; j++) { var a = 2 * j; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+      var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(c, 3));
+      g.setIndex(idx); g.computeVertexNormals(); return new THREE.Mesh(g, base);
+    }
+    group.add(strip(up), strip(dn), side(-W / 2), side(W / 2));
+    var ln = new THREE.LineBasicMaterial({ color: new THREE.Color(cssVar("--fg") || "#17191b"), transparent: true, opacity: 0.55 });
+    [[up, W / 2], [dn, W / 2], [up, -W / 2], [dn, -W / 2]].forEach(function (s) {
+      var v = []; s[0].forEach(function (p) { v.push(new THREE.Vector3(p[0], p[1], s[1])); });
+      group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(v), ln));
+    });
+    group.userData.marks = m.marks; group.userData.W = W; group.userData.L = m.L; group.userData.p = m.p;
+    updateReadout(m);
+    dirty = true;
+  }
+
+  // ---- camera ----------------------------------------------------------------------------------------------------------
+  function poseBounds(poses) {                              // bounding box of the profile over several (book, pockets) poses
+    var keep = [state.book, state.pockets], b = { x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9 };
+    poses.forEach(function (ps) {
+      state.book = ps[0]; state.pockets = ps[1];
+      buildPath().pts.forEach(function (q) { b.x0 = Math.min(b.x0, q.x - T); b.x1 = Math.max(b.x1, q.x + T); b.y0 = Math.min(b.y0, q.y - T); b.y1 = Math.max(b.y1, q.y + T); });
+    });
+    state.book = keep[0]; state.pockets = keep[1]; return b;
+  }
+  function frame(view) {
+    var W = SIZES[state.size].W, closed = poseBounds([[0, 0]]), all = poseBounds([[0, 0], [1, 0], [1, 1], [0, 1]]);
+    var b = view === "edge" ? closed : all, cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2, dx = b.x1 - b.x0, dy = b.y1 - b.y0;
+    var tgt = new THREE.Vector3(cx, cy, 0);
+    if (view === "edge") {
+      camera.fov = 10; var t = Math.tan(camera.fov * Math.PI / 360), d = Math.max(dx / 2 / (t * camera.aspect), dy / 2 / t) * 1.2;
+      camera.position.set(cx, cy, d + W / 2);                 // the near face of the strip is what is seen, so measure from it
+    } else {
+      camera.fov = 32; var r = 0.5 * Math.sqrt(dx * dx + dy * dy + W * W), dist = r / Math.sin(camera.fov * Math.PI / 360) * 0.98;
+      camera.position.set(cx + dist * 0.46, cy + dist * 0.5, dist * 0.74);
+    }
+    camera.updateProjectionMatrix(); controls.target.copy(tgt); controls.update(); dirty = true;
+  }
+
+  // ---- readouts -------------------------------------------------------------------------------------------------------------
+  var tb = document.getElementById("tbody");
+  function pct(e) { return (100 * e).toFixed(e < 0.1 ? 1 : 0) + " %"; }
+  function updateReadout(m) {
+    var rows = "";
+    HINGES.forEach(function (h) {
+      var k = m.marks[h.id], rIn = k.r;
+      var col = rampColour(k.e), css = "rgb(" + col.map(function (v) { return Math.round(v * 255); }).join(",") + ")";
+      rows += "<tr><td>" + h.name + "</td><td>" + Math.abs(k.ang).toFixed(0) + "&deg;</td><td>" + (rIn > 50 ? "flat" : rIn.toFixed(rIn < 5 ? 2 : 1) + " mm") + "</td><td>" + pct(k.e) +
+        "</td><td><div class=\"bar\"><i style=\"width:" + Math.min(100, k.e / 0.67 * 100).toFixed(0) + "%;background:" + css + "\"></i></div></td></tr>";
+      tags[h.id].innerHTML = "<b>" + h.name + "</b> " + pct(k.e);
+      tags[h.id].dataset.x = k.x; tags[h.id].dataset.y = k.y;
+    });
+    tb.innerHTML = rows;
+    document.getElementById("coupling").textContent = "The layers sit one loop-gap apart, so the spine wraps " + m.p.stack.toFixed(1) + " mm here (inside radius " + m.p.rInSpine.toFixed(1) + " mm).";
+    document.getElementById("rinv").textContent = state.rIn.toFixed(2).replace(/0$/, "") + " mm";
+    document.getElementById("bookv").textContent = state.book < 0.02 ? "closed" : state.book > 0.98 ? "open" : Math.round(state.book * 100) + " %";
+    document.getElementById("pockv").textContent = state.pockets < 0.02 ? "closed" : state.pockets > 0.98 ? "open" : Math.round(state.pockets * 100) + " %";
+  }
+  function placeTags() {
+    var rect = host.getBoundingClientRect(), W = group.userData.W || 0, v = new THREE.Vector3();
+    HINGES.forEach(function (h) {
+      var d = tags[h.id]; d.hidden = !state.labels;
+      if (!state.labels) return;
+      v.set(+d.dataset.x, +d.dataset.y, W / 2).project(camera);
+      d.style.left = ((v.x * 0.5 + 0.5) * rect.width) + "px"; d.style.top = ((-v.y * 0.5 + 0.5) * rect.height) + "px";
+    });
+  }
+
+  // ---- loop ---------------------------------------------------------------------------------------------------------------------
+  var dirty = true;
+  function resize() {
+    var r = host.getBoundingClientRect(); if (r.width < 10) return;
+    renderer.setSize(r.width, r.height, false); camera.aspect = r.width / r.height; camera.updateProjectionMatrix(); dirty = true;
+  }
+  new ResizeObserver(resize).observe(host);
+  controls.addEventListener("change", function () { dirty = true; });
+  function tick() { if (dirty) { renderer.render(scene, camera); placeTags(); dirty = false; } requestAnimationFrame(tick); }
+
+  // ---- controls ------------------------------------------------------------------------------------------------------------------
+  var bookIn = document.getElementById("book"), pockIn = document.getElementById("pock"), rinIn = document.getElementById("rin");
+  function sync() { bookIn.value = Math.round(state.book * 100); pockIn.value = Math.round(state.pockets * 100); }
+  bookIn.addEventListener("input", function () { stop(); state.book = bookIn.value / 100; build(); });
+  pockIn.addEventListener("input", function () { stop(); state.pockets = pockIn.value / 100; build(); });
+  rinIn.addEventListener("input", function () { state.rIn = rinIn.value / 100; build(); });
+  document.getElementById("colour").addEventListener("change", function (e) { state.colour = e.target.checked; build(); });
+  document.getElementById("labels").addEventListener("change", function (e) { state.labels = e.target.checked; dirty = true; });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-size]"), function (b) {
+    b.addEventListener("click", function () {
+      state.size = b.dataset.size;
+      Array.prototype.forEach.call(document.querySelectorAll("[data-size]"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      document.getElementById("sizeinfo").textContent = SIZES[state.size].txt + ", closed"; build(); frame(state.view);
+    });
+  });
+  function setView(v) {
+    state.view = v; document.getElementById("v3d").setAttribute("aria-pressed", String(v === "3d")); document.getElementById("vedge").setAttribute("aria-pressed", String(v === "edge")); frame(v);
+  }
+  document.getElementById("v3d").addEventListener("click", function () { setView("3d"); });
+  document.getElementById("vedge").addEventListener("click", function () { setView("edge"); });
+
+  var anim = null, playBtn = document.getElementById("play");
+  function stop() { if (anim) { cancelAnimationFrame(anim.id); anim = null; playBtn.textContent = "Play"; } }
+  function play() {
+    if (anim) { stop(); return; }
+    playBtn.textContent = "Pause";
+    var t0 = performance.now(), D = 1800, H = 700;           // open the wallet, open the pockets, hold, then back
+    var seq = [[0, D, "book", 0, 1], [D, 2 * D, "pockets", 0, 1], [2 * D, 2 * D + H, null], [2 * D + H, 3 * D + H, "pockets", 1, 0], [3 * D + H, 4 * D + H, "book", 1, 0]];
+    anim = { id: 0 };
+    (function step(now) {
+      var t = now - t0; if (t > 4 * D + H) t = 4 * D + H;
+      seq.forEach(function (s) { if (s[2] && t >= s[0] && t <= s[1]) state[s[2]] = lerp(s[3], s[4], (t - s[0]) / (s[1] - s[0])); });
+      sync(); build();
+      if (t >= 4 * D + H) { stop(); return; }
+      anim.id = requestAnimationFrame(step);
+    })(t0);
+  }
+  playBtn.addEventListener("click", play);
+  document.getElementById("reset").addEventListener("click", function () { stop(); state.book = 0; state.pockets = 0; sync(); build(); });
+
+  var mq = window.matchMedia("(prefers-color-scheme: dark)");
+  var onTheme = function () { applyTheme(); build(); };
+  if (mq.addEventListener) mq.addEventListener("change", onTheme);
+  new MutationObserver(onTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  document.getElementById("sizeinfo").textContent = SIZES.S.txt + ", closed";
+  applyTheme(); build(); resize(); frame("3d"); tick();
+  window.__wallet = { state: state, build: build, sync: sync, frame: frame, setView: setView, camera: camera, group: group };   // for testing
+})();
+</script>
