@@ -101,7 +101,7 @@ main { max-width: 1280px; margin: 0 auto; padding-top: 28px; min-width: 0; }
 .wtabs a { padding: 10px 8px 12px; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; margin-bottom: -1px; } .wtabs a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--fg); }
 .banner { background: var(--amber-soft); color: var(--amber); border-radius: 6px; padding: 11px 15px; font-size: .9rem; max-width: 86ch; margin-bottom: 26px; }
 .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 40px; align-items: start; } .two > * { min-width: 0; }
-.hero { aspect-ratio: 4 / 3; } .caption { color: var(--muted); font-size: .8rem; margin-top: 8px; }
+.hero { aspect-ratio: 2 / 1; } .caption { color: var(--muted); font-size: .8rem; margin-top: 8px; }
 dl.facts { margin: 0; display: grid; } .fact { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
 .fact dt { color: var(--muted); font-size: .88rem; } .fact dd { margin: 0; display: grid; gap: 3px; } .fact .ref { color: var(--muted); font-size: .8rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .sect { display: grid; gap: 14px; margin-top: 44px; min-width: 0; } .sect > p { margin: 0; max-width: 72ch; }
@@ -119,7 +119,10 @@ ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: .
 .sources { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 20px 40px; align-items: center; margin-top: 8px; }
 .matrix { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 0 28px; align-items: center; }
 .comps { display: grid; min-width: 0; }
-.comp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(40px, 120px) minmax(0, 220px); align-items: center; gap: 0 6px; padding: 14px 0; border-top: 1px solid var(--line); }
+.comp { display: grid; grid-template-columns: minmax(0, 1fr) minmax(50px, 130px) minmax(0, 560px); align-items: center; gap: 0 6px; padding: 18px 0; border-top: 1px solid var(--line); }
+.curve { width: 100%; height: 90px; display: block; overflow: visible; } .curve path { fill: none; stroke: var(--faint); stroke-width: 1.4; stroke-dasharray: 2 4; vector-effect: non-scaling-stroke; } .curve circle { fill: var(--ink); }
+.matrix { grid-template-columns: minmax(0, 280px) minmax(0, 1fr) !important; align-items: start; }
+.matrix .plate { aspect-ratio: 4 / 3; }
 .comp .link { height: 0; border-top: 1px dotted var(--faint); }
 .comp .tilecap { display: grid; gap: 2px; font-size: .9rem; } .comp .tilecap .reg { color: var(--amber); font-size: .8rem; } .comp .tilecap .reg.known { color: var(--fg); }
 .hide { width: 100%; background: var(--plate); border-radius: 6px; padding: 8px; } .hide svg { display: block; width: 100%; height: auto; }
@@ -172,7 +175,7 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
   .process { grid-template-columns: minmax(0, 1fr); gap: 18px; } .process::before { left: 17px; right: auto; top: 0; bottom: 0; width: 1px; height: auto; }
   .step { grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; justify-items: start; } .step .n { grid-row: 1 / span 3; }
   .item { grid-template-columns: minmax(0, 1fr); gap: 4px; }
-  .matrix { grid-template-columns: minmax(0, 1fr); gap: 16px; } .comp { grid-template-columns: minmax(0, 1fr) 24px minmax(0, 150px); }
+  .matrix { grid-template-columns: minmax(0, 1fr) !important; gap: 16px; } .comp { grid-template-columns: minmax(0, 1fr); } .curve { display: none; }
 }
 @media (max-width: 760px) {
   .tabs a { padding: 12px 6px 10px; } .tools { margin-left: 0; width: 100%; } .search { flex: 1; width: auto; } .results { right: 0; left: 0; width: auto; top: 46px; }
@@ -357,7 +360,8 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
     var hero = w.hero ? "" : '<p class="caption">Cross-section drawn from the record\'s fold structure. The photographs are not shown' + (w.rights_note ? ": research documentation only." : ".") + "</p>";
     var photos = w.photos.length ? "<ul class=\"plain\">" + w.photos.map(function (p) { return "<li>" + esc(p.role) + ' <span class="muted">(' + esc(p.path) + ")</span></li>"; }).join("") + "</ul>" : '<p class="muted small">No photographs are referenced.</p>';
     var cor = w.corpus ? "Wallet-corpus- archive, item " + esc(w.corpus.item) + ", commit " + esc(w.corpus.commit) : "No archive item is named.";
-    return '<div class="two"><div>' + plate(w, "hero") + hero + '</div><dl class="facts">' + shown + "</dl></div>" +
+    var shell = w.components && w.components[0], made = shell && speciesKey(shell.species.value) ? '<div class="sect" style="margin-top:26px"><p class="eyebrow">Made from</p>' + animalBox(shell) + '<p class="small muted" style="margin:0">Drag to turn it. <a href="#w-' + esc(w.id) + '--materials" style="text-decoration:underline">Materials &amp; Source</a> has the treatment steps and what is known about this leather.</p></div>' : "";
+    return '<div class="two"><div>' + plate(w, "hero") + hero + made + '</div><dl class="facts">' + shown + "</dl></div>" +
       '<div class="sect"><h3>What the record is built from</h3><p class="muted">' + esc(w.status_note) + " " + (w.usage && w.usage.used ? "" : "") + "</p>" + srcBar(w.counts) +
       '<p class="small muted">' + cor + ". " + esc(w.rights_note || "") + "</p></div>" +
       '<div class="sect"><h3>Photographs the record points to</h3>' + photos + "</div>";
@@ -382,7 +386,7 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
     var comps = w.components.map(function (c) {
       var sp = c.species.value, reg = c.region.value;
       return '<div class="comp"><div class="tilecap who"><b style="font-weight:500">' + esc(cap(c.role)) + '</b><span>' + esc(c.thickness.value != null ? c.thickness.value + " mm" : "thickness not recorded") + " " + chip(c.thickness.source, c.thickness.ref) + "</span></div>" +
-        '<div class="link"></div><div>' + animalBox(c) + '<div class="tilecap" style="margin-top:8px"><span><b style="font-weight:500">' + (sp ? esc(cap(String(sp))) : '<span class="unk">Species not recorded</span>') + "</b> " + chip(c.species.source, c.species.ref) + "</span>" +
+        '<svg class="curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0,34 C45,34 55,8 100,8"/></svg><div>' + animalBox(c) + '<div class="tilecap" style="margin-top:8px"><span><b style="font-weight:500">' + (sp ? esc(cap(String(sp))) : '<span class="unk">Species not recorded</span>') + "</b> " + chip(c.species.source, c.species.ref) + "</span>" +
         '<span class="reg' + (reg ? " known" : "") + '">' + (reg ? "Region: " + esc(reg) + " " + chip(c.region.source, c.region.ref) : "Region not recorded: no cut zone is drawn") + "</span></div></div></div>";
     }).join("");
     var others = W.filter(function (x) { return x.id !== w.id; }).sort(function (a, b) { return (b.designer === w.designer) - (a.designer === w.designer); });
@@ -433,7 +437,7 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
       '<div><span class="chip ' + (w.status === "measured" ? "measured" : "reported") + '" style="margin-right:6px">' + esc(w.status_label) + "</span>" + (w.usage && w.usage.used ? '<span class="small muted">Used. ' + esc(w.usage.condition || "") + "</span>" : "") + "</div></div>" +
       '<nav class="wtabs" aria-label="Wallet views">' + T.map(function (t) { return '<a href="#w-' + esc(id) + (t[0] === "overview" ? "" : "--" + t[0]) + '"' + (t[0] === tab ? ' aria-current="page"' : "") + ">" + esc(t[1]) + "</a>"; }).join("") + "</nav>" + body;
     if (tab === "behaviour" && w.viewer) mountFrame(w);
-    if (tab === "materials") mountAnimals();
+    if (tab === "materials" || tab === "overview") mountAnimals();
   }
   function mountFrame(w) {                                              // the 3D sketch runs in its own frame; it reports its height so the frame fits it
     var f = document.getElementById("vframe"); if (!f) return;
