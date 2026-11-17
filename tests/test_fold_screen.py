@@ -7,7 +7,7 @@ from walletsim.fold_screen import inside_radius_for_strain, outer_fibre_strain, 
     (0.8, 0.5, 0.444), (1.0, 0.5, 0.500), (1.0, 2.0, 0.200), (1.4, 3.0, 0.189), (2.5, 5.0, 0.200), (2.0, 5.0, 0.167),
 ])
 def test_matches_the_reference_table(t, r, expected):
-    # values from the strain table in prior-research/docs/durability.md
+    # values from the strain table in prior-research/reference/durability.md
     assert outer_fibre_strain(t, r) == pytest.approx(expected, abs=0.001)
 
 

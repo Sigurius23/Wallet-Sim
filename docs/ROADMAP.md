@@ -26,6 +26,8 @@
 | 5 | **Drop test** | defined after decision 6 | phase 3 |
 | 6 | **Archive and viewer** | browse wallets, replay folds, compare designs side by side | several wallets |
 
+Research items with no model yet (see `FAILURE_MODES.md`): permanent set under repeated flexing, finish crazing and delamination, wet and salt flex.
+
 Wallet #2 and #3 come before any new physics: a simulator tuned on one wallet proves nothing.
 
 ## Not planned

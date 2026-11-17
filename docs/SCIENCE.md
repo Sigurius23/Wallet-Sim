@@ -16,7 +16,7 @@ Every simulation output carries the tier it belongs to, the material parameters 
 measured, inferred or assumed (see `DATA_MODEL.md`).
 
 ## The fidelity ladder
-Conclusions from `prior-research/docs/durability.md`, which is itself a literature survey and should be re-verified
+Conclusions from `prior-research/reference/durability.md`, which is itself a literature survey and should be re-verified
 before anything is published:
 
 | Level | Model | Data needed | Used here for |

@@ -25,13 +25,20 @@ in every frame. The earlier prototype used a 300 x 250 mm mat with four ArUco ma
 - Total closed thickness at the spine and at the middle, empty and with N cards.
 - Weight. Outer dimensions open and closed.
 - Number of cards each slot holds comfortably, and whether a banknote compartment exists.
-- What is known: leather type and tannage, finish (aniline, pigmented, wax, burnished), thread, pricking-iron pitch,
-  maker, age.
+- What is known about the leather, by processing window (ask the maker; each blank is recorded as unknown): species and where on the
+  hide each panel was cut; tannage (vegetable, which tannin, chrome, aldehyde, combination); retan, fatliquor level, drying,
+  milling; finish (full aniline, semi-aniline, pigmented, pull-up wax, topcoat); edge treatment (burnished or painted); thread,
+  pricking-iron pitch, maker, age.
 - Usage history if worn: months of use, how it is carried (back pocket, jacket), typical card count.
 
 ## Optional physical tests (turn a relative index into a calibrated one)
 From an offcut or a spare wallet of the same leather: a few 10 x 60 mm strips, folded to 3-4 mandrel radii for as many
-cycles as it takes to see the first grain crack. Record radius and cycles. `walletsim fit-law` fits the law and states
+cycles as it takes to see the first grain crack. **This is not the standard flex test.** The Bally flexometer (ISO 5402-1:2022)
+folds the specimen in half, grain face to face, and oscillates 22.5 degrees at 100 cycles/min: a severe crease, not a gentle bend.
+Mandrel strips are fine for *relative* comparisons between leathers and for fitting this project's own law; use the standard
+method (a lab) when you need numbers that mean the same thing elsewhere. Also record, at the end, the angle a strip returns to
+after N folds: permanent set often shows before any crack. If the wallet will see winter, repeat a few strips cold; flex life
+fell about 4x between 23 C and -10 C in one comparison. Record radius and cycles. `walletsim fit-law` fits the law and states
 the range it is valid for. Condition the strips first (same temperature and humidity, a day or more).
 
 ## Bending test and spare cross-section (Tier 2, see `CAPTURE_FEASIBILITY.md`)

@@ -31,8 +31,9 @@ research says about ageing, and how the simulator will handle the parts that can
 
 ## 2. Different leathers: needs a measured card
 
-A leather's name does not determine its behaviour. Stiffness varies about 2x across one hide (24 vs 53 MPa in one
-vegetable-tanned study), and comparisons between tannages disagree (see below). So every leather in the archive gets a
+A leather's name does not determine its behaviour. Stiffness differed about 2x between two parts of one hide (24 vs 53 MPa
+in one vegetable-tanned study), tensile *strength* varied 4-7x within one hide (see section 6), and comparisons between
+tannages disagree (see below). So every leather in the archive gets a
 **material card** (`walletsim.materials`) with provenance on each number: `measured`, `literature` or `assumed`.
 
 | Input | How to get it | Status |
@@ -85,8 +86,70 @@ carried (body heat, sweat humidity, light, still air). Time points such as 0, 1,
 way before every measurement, then record thickness, weight, bending length, appearance photos, and cycles to first crack at
 two or three mandrel radii. Report it as "N weeks at these conditions", never as years.
 
+## 6. What the treatments and anatomy library adds
+
+Your update (`prior-research/reference/treatments/`, `anatomy/`) organises how a leather gets its properties into **four
+processing windows**, each deciding different things. A material card now records what is known about each one (and
+`missing_windows()` lists what to ask the maker):
+
+| Window | Decides | Example descriptor |
+|---|---|---|
+| Beamhouse | stretch, softness ceiling, grain tightness; cannot be recovered later | heavy or light liming, bating, unhairing route |
+| Tanning | heat resistance, water uptake, **how it ages**, whether it patinas | vegetable (which tannin), chrome, aldehyde, combination |
+| Post-tanning | temper (firm or soft), colour, break, yield | retan, fatliquor level, drying, milling |
+| Finishing | surface durability, stain resistance, breathability | aniline, semi-aniline, pigmented, pull-up wax, edge treatment |
+
+The library's **property matrix** gives, for each treatment, the *direction* of change in softness, strength, elongation,
+firmness, heat stability, flex resistance and so on (checked vs single-source figures are tagged). I use it as **priors and
+sanity checks, not numbers**: for example, vegetable tanning pushes firmness up and flexibility down, so a vegetable-tanned
+wallet whose measured bending stiffness comes out *softer* than a chrome one is a result to question before trusting. Its
+central point is that every lever is zero-sum (more fatliquor means softer but a coarser break), so a card claiming
+"soft and tight-grained" needs a measurement, not an assumption.
+
+**Within-leather variability.** Tensile strength varied 4-7x across one chrome-tanned sheepskin (2,147 specimens); the
+coefficient of variation inside a single leather was 0.31 (aldehyde) and 0.44 (chrome); and a survey of three species found
+**no region consistently strongest** (the butt is reliably the thickest, most uniform and least stretchy, which is not the
+same thing). So a card carries a spread as well as a value (`Value.cv`), and `walletsim sweep --cv 0.4 --samples 2000` shows
+what that does. With a stand-in stiffness cv of 0.4, the P5 to P95 bending moment of a 1.2 mm leather runs from 7.9 to
+27 N mm and that of a 0.8 mm leather from 2.5 to 8.8 (medians 14.6 and 4.7). The two ranges **overlap** (7.9 is below 8.8): a
+stiff 0.8 mm piece and a soft 1.2 mm piece of the same leather can bend alike, so within-leather spread is comparable to a
+0.4 mm thickness difference. The stand-in cv is a tensile-strength figure, not a stiffness measurement, so the spread of your
+own leather is the first thing to measure.
+
+**Direction.** The textbook rule (stronger and stiffer parallel to the backbone, stretchier across) is measured at one
+point only; direction rotates over the hide, and one sheepskin study found elongation *higher* parallel. Direction is a
+strong first-order effect for long parts, unreliable for fine layout. Tear strength varies little with direction, tensile
+varies a lot (about 1.6x in strength, 2.3x in extension in one aldehyde-tanned leather), so one grain arrow understates both.
+
+**Species.** Rules do not transfer: on goat and sheep the shoulder is strongest, not the rump; kangaroo is effectively one
+region; plated hides (crocodilian, stingray, ostrich leg, snake) are composites of hard parts in a soft matrix, where failure is
+an interface problem, so the sheet-based fold screen and this simulator **must not be applied to them**. `species` is a card field
+for exactly this reason.
+
+## 7. Ageing facts the treatments library adds
+Each is tagged as the library tags it; none is a rate.
+- **Iron-mordanted black** (ferrous sulphate and tannin) is the traditional route to true black, makes the fibre brittle and accelerates
+  degradation over decades; craft guidance accepts it for an expected life of 5-10 years.
+- **Vegetable-tanned leather de-tans and acidifies as it degrades** (conservation source), leaving a powdery, acidic surface.
+- **Aldehyde (wet-white) tannages yellow in UV** and are the softest leathers, with the lowest water resistance.
+- **Pull-up and wax finishes patinate through wear**: micro-cracks in the film reveal the lighter base, so *appearance
+  change is the intended ageing mode*.
+- **Edge paint is a consumable**: it chips where the edge flexes. Hand-burnished edges (vegetable tanned only) last far longer.
+- **Heat stability is set by the tannage** and nothing later raises it much: chrome above 100 C, vegetable 70-85 C, transparent leathers
+  50-70 C (claimed, untested independently), so a transparent leather is materially less heat-stable.
+- **Over-drying** raises strength and removes elongation, and **cold** cut flex life about 4x between 23 C and -10 C in one
+  automotive comparison (not a law).
+
+## 8. Where my research and the library disagree
+**Acid and hydrolytic decay of vegetable tannins.** The library says condensed tannins (mimosa, quebracho) are "not decomposed
+by acids" while hydrolysable ones (chestnut, tara, sumac) are "more vulnerable to hydrolysis and acid degradation". My search
+of conservation sources found the opposite statement: leather tanned with condensed tannins is more susceptible to acid
+deterioration (red rot) than hydrolysable-tanned leather. They may both be right for **different decay modes** (pollution-driven
+oxidative red rot versus hydrolytic de-tanning), but I could not confirm that, so it stays **unresolved**. The simulator does not
+use either claim: ageing enters only through measured states. Check which mode matters for the wallets before choosing a tannin.
+
 ## Decisions for you
-- Which leathers first, and can you get offcuts of each (or buy a wallet-weight offcut set)?
+- Which leathers first, and can you get offcuts of each (or buy a wallet-weight offcut set)? For each, can the maker tell us the four windows?
 - Which ageing conditions matter for the wallets you care about?
 - Is "relative ranking of leathers and thicknesses" enough as the first deliverable, with calibrated cycles after the tests?
 
@@ -98,4 +161,5 @@ two or three mandrel radii. Report it as "N weeks at these conditions", never as
 - Organ leather ageing: [A Reexamination of the Aging of Organ Leather](https://www.academia.edu/83300414/A_Reexamination_of_the_Aging_of_Organ_Leather)
 - Chrome versus vegetable properties: [comparison](https://www.researchgate.net/publication/383858010_Comparison_of_physical_and_mechanical_properties_of_chrome_and_vegetable_tanned_leather)
 - Deterioration of vegetable-tanned leather: [Environment Leather Project](https://www.researchgate.net/publication/313425825_Deterioration_and_conservation_of_vegetable_tanned_leathers_The_Environment_Leather_Project), [CORDIS](https://cordis.europa.eu/project/id/STEP0105)
+- Treatments, anatomy, property matrix and failure-mode notes: the earlier research in `prior-research/reference/` (confidence tags retained)
 - Leather rigidity and thickness: [sheep garment leather](https://pmc.ncbi.nlm.nih.gov/articles/PMC8398511/), [Northampton softness](https://nectar.northampton.ac.uk/id/eprint/2658/)

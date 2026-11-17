@@ -5,7 +5,7 @@
 This is a thin-shell, pure-bending, small-strain relation. Leather is viscoelastic and anisotropic, it ignores the
 finish layer and creep, and a crease tightens progressively. Treat the numbers as a way to COMPARE two designs and to
 reject obviously bad geometry, not as a failure criterion. The thresholds below are screening heuristics taken from
-``prior-research/docs/durability.md``; they are not validated limits.
+``prior-research/reference/durability.md``; they are not validated limits.
 """
 from __future__ import annotations
 

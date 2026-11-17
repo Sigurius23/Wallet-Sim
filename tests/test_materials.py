@@ -35,3 +35,28 @@ def test_default_bending_exponent_is_marked_assumed():
     assert card.bending_exponent.source == "assumed"
     card.states["aged 28 d"] = MaterialState("aged 28 d", Value(80.0, "measured", ref="own strips"))
     assert card.state("aged 28 d").youngs_modulus_mpa.value == 80.0
+
+
+def test_sampling_matches_the_stated_mean_and_cv():
+    import numpy as np
+    x = Value(50.0, "assumed", cv=0.4).sample(200_000, seed=1)
+    assert x.mean() == pytest.approx(50.0, rel=0.02)
+    assert x.std() / x.mean() == pytest.approx(0.4, rel=0.03)
+    assert (x > 0).all()
+    assert isinstance(x, np.ndarray)
+
+
+def test_sampling_uses_the_range_when_there_is_no_cv_and_never_invents_spread():
+    x = Value(38.0, "literature", low=24.0, high=53.0).sample(10_000, seed=2)
+    assert x.min() >= 24.0 and x.max() <= 53.0 and x.std() > 5
+    assert (Value(7.0, "measured").sample(5) == 7.0).all()
+
+
+def test_negative_cv_rejected():
+    with pytest.raises(ValueError):
+        Value(1.0, "measured", cv=-0.1)
+
+
+def test_missing_windows_are_reported():
+    card = LeatherMaterial("x", "chrome", Value(1.0, "measured"), windows={"tanning": "chrome, 3-5 % Cr2O3", "finishing": ""})
+    assert card.missing_windows() == ["beamhouse", "post_tanning", "finishing"]

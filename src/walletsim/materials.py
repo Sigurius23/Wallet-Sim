@@ -12,7 +12,10 @@ No leather property values are shipped as defaults except the one range backed b
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
+
+import numpy as np
 
 
 @dataclass(frozen=True)
@@ -23,8 +26,11 @@ class Value:
     low: float | None = None
     high: float | None = None
     ref: str = ""                    # citation or test description
+    cv: float | None = None          # coefficient of variation (std / mean) across specimens of the same leather
 
     def __post_init__(self) -> None:
+        if self.cv is not None and self.cv < 0:
+            raise ValueError("cv must be >= 0")
         if self.source not in ("measured", "literature", "assumed"):
             raise ValueError(f"unknown provenance {self.source!r}")
         if (self.low is None) != (self.high is None):
@@ -35,6 +41,19 @@ class Value:
     @property
     def range(self) -> tuple[float, float]:
         return (self.value, self.value) if self.low is None else (self.low, self.high)
+
+    def sample(self, n: int, seed: int | None = None) -> np.ndarray:
+        """Draw ``n`` plausible values: lognormal with the stated mean and cv, else uniform over [low, high], else constant.
+
+        Spread is never invented: a value with neither a cv nor a range is returned unchanged.
+        """
+        rng = np.random.default_rng(seed)
+        if self.cv:
+            sigma2 = math.log(1 + self.cv ** 2)
+            return rng.lognormal(math.log(self.value) - sigma2 / 2, math.sqrt(sigma2), n)
+        if self.low is not None and self.high > self.low:
+            return rng.uniform(self.low, self.high, n)
+        return np.full(n, float(self.value))
 
 
 @dataclass
@@ -47,15 +66,30 @@ class MaterialState:
     notes: str = ""
 
 
+WINDOWS = ("beamhouse", "tanning", "post_tanning", "finishing")   # the four processing windows, see prior-research/reference/treatments/
+
+# Coefficient of variation of TENSILE STRENGTH within one leather (not of stiffness, which has not been measured):
+# aldehyde 0.31, chrome 0.44 (prior-research/reference/anatomy/properties.md section 6). Used only as a stand-in spread
+# for sensitivity runs until the stiffness spread of the real leather is measured.
+TENSILE_STRENGTH_CV_WITHIN_LEATHER = {"aldehyde": 0.31, "chrome": 0.44}
+
+
 @dataclass
 class LeatherMaterial:
     name: str
     tanning: str                                    # "vegetable" | "chrome" | "combination" | "other" | "unknown"
     thickness_mm: Value
+    species: str = "unknown"                        # bovine, ovine, caprine, ... (rules differ: do not apply bovine rules elsewhere)
+    hide_region: str = "unknown"                    # where the panel was cut; a region name does NOT guarantee a strength
+    windows: dict[str, str] = field(default_factory=dict)   # what is known about each of the four windows
     states: dict[str, MaterialState] = field(default_factory=dict)
     # D = D_ref * (t / t_ref)**n. n = 3 is the homogeneous-plate value; fibrous, layered leather may differ and the
     # exponent should be measured by testing strips of several thicknesses of the same leather.
     bending_exponent: Value = field(default_factory=lambda: Value(3.0, "assumed", ref="homogeneous plate"))
+
+    def missing_windows(self) -> list[str]:
+        """The processing windows nobody has described yet: each is a question to ask the maker."""
+        return [w for w in WINDOWS if not self.windows.get(w)]
 
     def state(self, name: str = "new") -> MaterialState:
         try:

@@ -23,8 +23,15 @@ photos: {open_outside: photos/01_open_outside.jpg}
 leather:
   - id: shell
     thickness_mm: {value: 1.2, source: measured, n: 5}      # source: measured | inferred | assumed
-    type: {value: veg-tan, source: inferred, confidence: 0.6}
-    material: {youngs_modulus_mpa: {value: 50, source: assumed}, poisson: {value: 0.3, source: assumed}}
+    species: {value: bovine, source: inferred}
+    hide_region: {value: unknown, source: assumed}          # a region name does not guarantee a strength
+    windows:                                                # the four processing windows; blank = ask the maker
+      beamhouse: unknown
+      tanning: {value: vegetable, source: inferred, confidence: 0.6}
+      post_tanning: unknown
+      finishing: {value: semi-aniline, source: inferred}
+    edge: {value: painted, source: measured}
+    material: {youngs_modulus_mpa: {value: 50, source: assumed, cv: 0.4}      # cv: spread within the leather; stand-in until measured, poisson: {value: 0.3, source: assumed}}
 panels:                                                        # flat outlines, from calibrated photos
   - {id: outer, leather: shell, outline: measured/outer.svg, grain_direction_deg: {value: 0, source: assumed}}
 folds:

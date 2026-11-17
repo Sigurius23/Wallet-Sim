@@ -5,10 +5,13 @@ import argparse
 import csv
 import sys
 
+import numpy as np
+
 from . import __version__
 from .damage import fit_law
 from .fem.bending import BendingJob, FemUnavailable, job_for_inside_radius, run_bending
 from .fold_screen import screen
+from .materials import Value
 
 
 def _screen(a: argparse.Namespace) -> int:
@@ -33,7 +36,9 @@ def _validate_fem(a: argparse.Namespace) -> int:
 
 def _sweep(a: argparse.Namespace) -> int:
     print(f"fold around inside radius {a.inside_radius:g} mm, {a.angle:g} deg, E={a.E:g} MPa, Poisson {a.poisson:g}, neo-Hookean")
-    print("  t [mm]  closed-form strain  FEM strain   moment [N mm]  (beam)   moment ratio to t=first")
+    spread = Value(a.E, "assumed", cv=a.cv).sample(a.samples, seed=0) if a.samples and a.cv else None
+    print("  t [mm]  closed-form strain  FEM strain   moment [N mm]  (beam)   moment ratio to t=first"
+          + ("   moment P5 / P50 / P95 [N mm]" if spread is not None else ""))
     base = None
     for t in a.t:
         try:
@@ -43,8 +48,16 @@ def _sweep(a: argparse.Namespace) -> int:
             return 2
         base = base or r.fem_moment_n_mm
         print(f"  {t:5.2f}   {100 * r.analytic_strain:14.1f} %   {100 * r.fem_max_strain:8.1f} %   {r.fem_moment_n_mm:12.2f}  "
-              f"({r.analytic_moment_n_mm:6.2f})   x{r.fem_moment_n_mm / base:.1f}")
+              f"({r.analytic_moment_n_mm:6.2f})   x{r.fem_moment_n_mm / base:.1f}", end="")
+        if spread is not None:
+            lo, mid, hi = (r.fem_moment_n_mm * np.percentile(spread, q) / a.E for q in (5, 50, 95))
+            print(f"   {lo:6.2f} / {mid:6.2f} / {hi:6.2f}")
+        else:
+            print()
     print("moment scales linearly with E for this (small-stress) case; strain does not depend on E.")
+    if spread is not None:
+        print(f"spread: lognormal stiffness, cv={a.cv:g}, {a.samples} samples. The cv is a stand-in (tensile-strength cv within one leather: "
+              "aldehyde 0.31, chrome 0.44); the stiffness spread of YOUR leather is not measured yet.")
     return 0
 
 
@@ -78,6 +91,8 @@ def main(argv: list[str] | None = None) -> int:
     w.add_argument("--E", type=float, default=38.0, help="Young's modulus, MPa (default: middle of the 24-53 MPa literature range)")
     w.add_argument("--poisson", type=float, default=0.3)
     w.add_argument("--angle", type=float, default=180.0)
+    w.add_argument("--cv", type=float, default=None, help="coefficient of variation of stiffness within the leather, e.g. 0.4")
+    w.add_argument("--samples", type=int, default=0, help="number of stiffness samples for the spread (needs --cv)")
     w.set_defaults(fn=_sweep)
     f = sub.add_parser("fit-law", help="fit a cycles-to-crack law to your flex-test data (csv: strain,cycles)")
     f.add_argument("csv")

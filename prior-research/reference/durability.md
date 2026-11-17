@@ -195,7 +195,12 @@ $$\lambda = 2\pi t_f \left(\frac{E_f}{3E_s}\right)^{1/3}$$
 
 Critical compressive strain to onset wrinkling:
 
-$$\varepsilon_c = \frac{1}{4}\left(\frac{3E_s}{E_f}\right)^{2/3}$$
+$$\varepsilon_c = \left(\frac{3\bar E_s}{8\bar E_f}\right)^{2/3}$$
+
+where `Ē = E/(1-ν²)` is the plane-strain modulus. This is algebraically identical to the
+more commonly quoted `¼(3E_s/E_f)^(2/3)` — check it if you like: `(3/8)^(2/3) = ¾·3^(2/3)`,
+so the two differ only by which modulus convention you fold in. **If you see the two forms
+quoted as if they disagree, they don't.**
 
 **Critical strain vs modulus ratio:**
 
@@ -269,8 +274,10 @@ nothing.
 
 ### Diagnostic B — sharp, deep folds: back out `t_f`, not `E_f/E_s`
 
-For a crease array, the spacing scales with **thickness**, and the natural length scale is
-`W/H ≈ 3.5` (Yoon et al., PRL 109, 038001). Observed spacing in the *deformed* state is
+For a crease array, the spacing scales with **thickness** only. The commonly adopted
+minimum-energy spacing is `W/H ≈ 3.5` in the **undeformed** state — the standard unit-cell
+assumption in the crease literature (used by Chen, Cai, Suo & Hayward, *PRL* **109**, 038001,
+2012, who cite it as established). Observed spacing in the *deformed* state is
 `w = (1 - ε)W`, so:
 
 $$t_f \approx \frac{w}{3.5(1-\varepsilon)}$$
@@ -284,10 +291,14 @@ $$t_f \approx \frac{w}{3.5(1-\varepsilon)}$$
 | 1.00 mm | 440 µm | 571 µm | 714 µm |
 
 This is a **different and arguably more useful measurement** for leather, because it is
-linear in `w`: a 10 % error in measuring the spacing gives a 10 % error in inferred finish
-thickness, whereas the cubic wrinkle inversion gives ±30 %. It is also **less circular** —
-Diagnostic A assumes you already know `t_f` to find `E_f/E_s`; Diagnostic B estimates
-`t_f` independently.
+linear in `w` rather than cubic, and **less circular** — Diagnostic A assumes you already
+know `t_f` to find `E_f/E_s`, whereas Diagnostic B estimates `t_f` independently.
+
+**Do not over-read the precision.** The measurement is linear, but the *prefactor* is the
+weak link. Published crease spacings span roughly `W/H` 2 to 3.5 depending on whether the
+figure is deformed or undeformed and on the strain — Hohlfeld & Mahadevan give a deformed
+`L_C/H ≈ 2` near `ε = 0.353`, against the 3.5 unit-cell convention. That is a factor-of-1.5
+spread in `t_f` before anything is measured. **Treat the table as order-of-magnitude.**
 
 Read the table like this: crease spacings of **0.1-0.3 mm** are what you expect from a
 **normal 40-130 µm finish** — unremarkable, and the geometry, not the finish, is to blame.
@@ -620,7 +631,9 @@ Each is a stiffness discontinuity or a geometric singularity.
 | **Where thick meets thick** | doubled seam, unskived fold-back, layered card stack — and the **skive line** (§2) | feather the taper. 0.4 mm over 5 mm, not a step |
 | **Hole patterns / perforation lines** | a row of holes is a tear-initiation line if it runs across the bend | perforate parallel to the fold, never across it |
 | **Finish-to-leather bond** | topcoat and PU film delaminate before the fibres fail — the **first** failure mode. This is a stiff film on a compliant substrate and buckles at 2-12 % strain, well below the bulk figure in §2 (§2b) | buy flex-rated finish and test it (§4). If creases on a worn item are far finer than the designed folds, the fault is the finish, not the pattern |
-| **Fold + salt + wet** | wet flex is a separate, harsher regime; salt accelerates it | keep the hinge out of the wetted zone; test with SATRA TM235 |
+| **Fold + salt + wet** | wet flex is a separate, harsher regime; salt accelerates it | keep the hinge out of the wetted zone; test wet flex, not just dry |
+| **Cold** | flex life drops sharply with temperature — roughly 4× between 23 °C and −10 °C in one automotive comparison | if the item will see winter, test cold; a hinge marginal at 20 °C is failing |
+| **Over-drying** | low hydration raises strength but kills elongation — the hinge stops bending before it stops pulling | condition for suppleness deliberately, and say which property you are choosing |
 
 ### A failure mode this list used to miss: permanent set
 
@@ -648,10 +661,26 @@ crack starts.
 
 ### Flex — the crease
 
+Flex testing has **three different methods**, and they are not interchangeable:
+
+| method | standard | what it does |
+|---|---|---|
+| **Flexometer / Bally** | **ISO 5402-1:2022** (IUP 20); identical method in **ISO 17694:2016** | specimen **folded in half, grain face to face**, clamped; upper clamp oscillates **22°30'** at **100 cycles/min**. The classic wallet-hinge analogue |
+| **Vamp flex** | **ISO 5402-2:2015** (IUP 39-2) | specimen folded over an **inverted-V clamp** (40° internal angle, 6.4 mm tip radius), clamps driven apart **19 mm** at **300 cycles/min**. Produces **four creases at once**, and is the method for **wet** flex |
+| **Whole-shoe flex** | **ISO 24266** (SATRA TM92) | the assembled shoe, for completeness |
+
+**ISO 5602-2's damage list is worth knowing** because it names the failure modes this document
+cares about verbatim: creasing in the central inward fold, cracking in the inward fold,
+cracking in the outward folds, **delamination or flaking of the surface finish**, cracking
+extending to the piece edge, and spue.
+
+
+
 - **ISO 5402-1:2022 / IULTCS IUP 20:2022** (edition 3, published 2022-03-30;
   **cancels and replaces ISO 5402-1:2017**, which is withdrawn). Applies to flexible
   leather **below 3.0 mm**. Part 2 is the Vamp Flex method.
-- **EN ISO 17694 / EN 13512** — footwear uppers and linings.
+- **ISO 17694:2016** — footwear uppers and linings, flex resistance. (EN 13512 could not be
+  verified and is no longer cited.)
 - **SATRA TM55**, **BS 3144**, **JIS K6545**, **ISO 32100** (coated fabrics).
 
 **ASTM D6182-23** — "Flexibility and Adhesion of Finish on Leather". Read the scope
@@ -719,7 +748,8 @@ Two jobs: material qualification, **and** the input data for any FEA calibration
 
 ### Grain crack resistance
 
-- **ISO 3378** (ball burst / lastometer type), **SATRA TM24**
+- **ISO 3378** (ball burst / lastometer type), **SATRA TM24** — note TM24 is the *lastometer
+  ball burst*, not the cold crack test
 
 Distinct from finish cracking and directly relevant at folds: this is whether the
 **grain layer itself** splits. A finish can pass while the grain underneath fails.
@@ -741,9 +771,24 @@ survive flex indefinitely and still fail by surface abrasion on the liner.
 
 ### Moisture — how it behaves when damp
 
-- **SATRA TM47 / TM172 / TM179** for water vapour permeability and absorption
-- **SATRA TM235** — repeated wetting/drying (attach this to the "fold + salt + wet"
+- **SATRA TM47 / TM172** for water vapour permeability and absorption (absorption is TM178)
+- **ISO 5402-2:2015 — wet vamp flex**, re-wetted every 25 000 cycles and inspected for spue. This is
+  the standard for the "fold + salt + wet"
   concern in §3, which previously had no test attached)
+
+### Cold — a bigger derating factor than most people expect
+
+Cold matters twice over: as a **cold crack** test (SATRA TM129) and as a **cold flex** test
+(ISO 17694 run at about −5 ± 2 °C; automotive specs go to **−30 °C**, e.g. GMW 3013 requires
+100 000 flex cycles at −30 °C without cracking).
+
+The size of the effect is the point. In one automotive comparison, 1.1 mm genuine leather
+ran **45 000 Ross flex cycles at 23 °C but only 12 000 at −10 °C** — roughly a **factor of
+four**. A wallet that passes comfortably in a temperate workshop can fail its first winter.
+That figure is from a vendor comparison rather than peer review, so treat the *direction*
+as the finding and the digits as indicative.
+
+**Design consequence:** if a hinge is marginal at 20 °C, it is not marginal, it is failing.
 
 ### Cold crack
 
@@ -753,6 +798,28 @@ survive flex indefinitely and still fail by surface abrasion on the liner.
 ---
 
 ## 5. Life prediction: honestly, there isn't one
+
+**The nearest thing to a leather fatigue result.** One study (Kaunas University of
+Technology group, *Materials Science / Medžiagotyra*) flex-tested laminated leather and its
+layers by the vamp method (LST ISO 5423:1992), ≥10 specimens per condition. Two findings
+that matter:
+
+- **Tensile strength of split leather fell 36 %** across the cyclic range tested.
+- **5 × 10⁵ cycles — more than seven days of non-stop flexing — never reached an endurance
+  limit.** The authors' own conclusion is that testing must go into the **millions**.
+
+That second point is the honest one for this document: **there is no endurance limit
+anywhere near the cycle counts a product sees.** So a "pass at 50 000 cycles" tells you the
+hinge is not yet at failure, not that it is safe. It also confirms, from a real leather
+fatigue experiment, that the S-N curve absent from §5 is not absent because nobody looked —
+it is absent because nobody has run enough cycles to find the asymptote.
+
+**No standardised permanent-set test exists for leather.** Permanent set (§3) is real and
+observable, but the nearest standard method, **ASTM D395 compression set**, is written for
+rubber and elastomers. There is no ISO/IULTCS or SATRA equivalent for leather. Set is
+assessed by eye and by whether the item lies flat. That is a genuine hole in the test
+landscape — it is not that this document failed to find the method.
+
 
 **There is no published S-N curve (stress vs. cycles) or Paris-law-type crack-growth
 model for leather** comparable to those for metals and polymers. This is a genuine
@@ -794,7 +861,27 @@ inspect at 25x for finish crazing AND measure permanent set - not just "is it br
 only then cut the pattern
 ```
 
-### Conditioning is mandatory
+### Conditioning is mandatory — but it is a trade, not a free win
+
+Two different things are called conditioning, and this document means the **test** sense:
+equilibrating specimens to a standard atmosphere before testing, required by ISO 18454 /
+ISO 2419. (In a tannery, "conditioning" means damping leather to 25-30 % moisture before
+staking — a different operation.)
+
+Before treating moisture as simply good, know the trade-off. Long et al. (*Colloids Surf A*
+**702**:134957, 2024) measured Cr-crosslinked collagen fibres from **0.031 g/g to full
+hydration**:
+
+- **Lower hydration → higher tensile and tear strength**, and *less* softness
+- **Lower hydration → smaller D-period and lateral spacing** between molecules
+- **Elongation at break has an optimum at an intermediate water content** — not at either extreme
+- Mechanism: water tunes the electrostatic and van der Waals interactions between fibres
+
+So drier leather is **stronger and more tear-resistant but stiffer and less extensible**.
+"Keep it conditioned" is good advice for a hinge that must stay supple, and *bad* advice if
+your failure mode is tear. Say which property you are trading away.
+
+### Conditioning the specimen before the test
 
 Neither ISO 5402-1 nor ASTM D6182 gives meaningful results on unconditioned specimens —
 **ASTM D6182-23 explicitly requires conditioned specimens.** Record temperature, relative
