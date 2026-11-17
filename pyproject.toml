@@ -7,11 +7,11 @@ name = "walletsim"
 version = "0.1.0"
 description = "Digital twins of leather wallets with fold and wear simulation"
 requires-python = ">=3.10"
-dependencies = ["numpy"]
+dependencies = ["numpy", "pyyaml"]
 
 [project.optional-dependencies]
 capture = ["opencv-python-headless", "shapely", "ezdxf", "trimesh"]
-viz = ["matplotlib", "pyvista"]
+viz = ["matplotlib", "pyvista"]   # matplotlib draws the wallet-report figures
 dev = ["pytest", "pyyaml"]
 
 [project.scripts]

@@ -31,7 +31,7 @@ research says about ageing, and how the simulator will handle the parts that can
   sources I could reach). `LeatherMaterial.bending_exponent` defaults to 3, marked *assumed*; measuring strips of several
   thicknesses of one leather gives the real exponent.
 - **Absolute moments scale with E, which is a placeholder.** Strains do not depend on E. Beyond roughly 20 % strain these are
-  kinematic numbers: real leather leaves its linear range, and its finish film can wrinkle at 2-12 % strain (`SCIENCE.md`).
+  kinematic numbers: real leather leaves its linear range, and a stiff finish film is said to buckle at 2-12 % compressive strain (`prior-research/reference/durability.md` section 2b, a film-on-substrate model; I have not checked its source).
 - **The solver's accuracy:** with Poisson 0 the strain is within 1 % of theory and the moment within 0.2 % (two mesh densities
   agree). With Poisson 0.3 the peak strain is 11-20 % *above* the closed form: Poisson contraction and the constrained ends of a
   wide strip are real 3D effects that the textbook formula ignores. So the closed-form screen can under-estimate.

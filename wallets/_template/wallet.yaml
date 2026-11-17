@@ -2,6 +2,7 @@
 id: change-me
 name: ""
 maker: unknown
+status: design         # design | measured
 photos: {}            # e.g. {open_outside: photos/01_open_outside.jpg}
 archive:              # drives the timeline and carousel (docs/UI.md)
   designer: null
@@ -19,6 +20,17 @@ leather:
       poisson: {value: null, source: assumed}
 components: []        # body / pockets / lining, each: {id, role, leather, hide_region: {template, region, source}}
 process_steps: []     # ordered: {order, name, window: beamhouse|tanning|post_tanning|finishing, source}
+contents:
+  cards: {value: null, source: measured}
+  card_mm: {value: 0.76, source: literature, ref: ISO/IEC 7810 ID-1 nominal}
+  extra_mm: {value: 0.0, source: assumed}
+construction:         # read by `walletsim wallet-report`
+  type: bifold        # bifold | trifold | z-fold
+  spine: {value: round, source: assumed}
+  grain: out
+  layup: plain        # plain | skived | lined | skived+lined | hinged | turned edge | bound edge
+  interior_leather_layers: {value: 0, source: assumed}
+  # closed_thickness_mm: {value: null, source: measured}   # calipers at the spine; overrides the layer count
 panels: []
 folds: []
 seams: []

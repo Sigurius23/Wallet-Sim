@@ -19,6 +19,7 @@ Every number that feeds a simulation is stored as a value with its provenance:
 id: example-bifold-01
 name: Example bifold
 maker: unknown
+status: measured            # design (numbers from a design file) | measured
 photos: {open_outside: photos/01_open_outside.jpg}
 archive:                                                       # drives the timeline and carousel (docs/UI.md)
   designer: Example Designer
@@ -51,19 +52,34 @@ process_steps:                                                 # ordered, free-f
   - {order: 2, name: Vegetable tanning, window: tanning, source: inferred}
   - {order: 3, name: Waxing and buffing, window: post_tanning, source: inferred}
   - {order: 4, name: Distressed finishing, window: finishing, source: inferred}
+contents:                                                      # what the closed wallet holds
+  cards: {value: 6, source: measured}
+  card_mm: {value: 0.76, source: literature, ref: ISO/IEC 7810 ID-1 nominal}
+  extra_mm: {value: 0.0, source: assumed}
+construction:                                                  # how the folds are made; read by walletsim wallet-report
+  type: bifold                                                 # bifold | trifold | z-fold (see docs/WALLET_TYPES.md)
+  spine: {value: round, source: inferred}                      # round | box
+  grain: out
+  layup: plain                                                 # plain | skived | lined | skived+lined | hinged | turned edge | bound edge
+  interior_leather_layers: {value: 9, source: assumed}         # slot / bank pieces lying between the two halves at the spine
+  closed_thickness_mm: {value: 12.5, source: measured}         # calipers at the spine; stack = this - 2 x shell. Overrides the layer count
 panels:                                                        # flat outlines, from calibrated photos
   - {id: outer, leather: shell, outline: measured/outer.svg, grain_direction_deg: {value: 0, source: assumed}}
 folds:
   - {id: spine, panel: outer, line: [[99.2, 0], [99.2, 87]], rest_angle_deg: 180, skived: {value: false, source: inferred}}
 seams:
-  - {id: perimeter, between: [outer, lining], stitch: {pitch_mm: {value: 3.85, source: measured}, edge_offset_mm: {value: 3.5, source: measured}}}
+  - {id: perimeter, between: [outer, lining], crosses_fold: [spine], stitch: {pitch_mm: {value: 3.85, source: measured}, edge_offset_mm: {value: 3.5, source: measured}}}
 pockets:
   - {id: left-1, panel: slot_1, card_capacity: 1, reveal_mm: {value: 8, source: measured}}
 usage: {used: false}
 ```
 
+Provenance (`source`) is one of `measured` (you measured it on the object), `inferred` (read from photos or drawings), `design` (what a design file or pattern
+specifies; the physical object may differ), `literature` (a cited publication or standard) or `assumed` (a stand-in). `walletsim.record` rejects a number without one.
+
 Rules:
 - `assumed` values are allowed, but any result that depends on one is labelled with it.
+- `status: design` means the record comes from a design file, not from a wallet in your hands; reports say so at the top.
 - Photos are never overwritten; rectified or derived images go in `measured/`.
 - A simulation result stores a copy of the record version it ran on, so results stay reproducible.
 

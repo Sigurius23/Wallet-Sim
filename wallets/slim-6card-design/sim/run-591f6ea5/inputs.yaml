@@ -1,0 +1,64 @@
+# FIRST WALLET RECORD. THIS IS A GENERATED DESIGN, NOT A PHOTOGRAPHED WALLET.
+# Source: the "slim_6card" bifold produced by the leather-patterns kernel v2.3.0 (source/report.json, source/pattern.svg).
+# Every number marked `design` is what that design specifies; the real object, if cut and sewn, will differ. Numbers marked `assumed` are mine.
+# Replace the `design` and `assumed` values with measurements as they exist; `walletsim wallet-report` shows which ones still need it.
+id: slim-6card-design
+name: Slim bifold, 6 cards (generated design)
+maker: leather-patterns kernel v2.3.0 (generated design)
+status: design            # design | measured
+photos: {}
+archive:
+  designer: null
+  year: null
+  series: null
+  bio_ref: null
+  hero_image: null
+  rights: {photos: unknown, bio: unknown}
+leather:
+  - id: shell
+    role: outer shell, folded at the spine
+    thickness_mm: {value: 1.0, source: design, ref: source/report.json params.leather_t}
+    species: {value: unknown, source: assumed}
+    hide_region: {value: unknown, source: assumed}
+    windows: {beamhouse: unknown, tanning: unknown, post_tanning: unknown, finishing: unknown}
+    edge: {value: unknown, source: assumed}
+    material:
+      youngs_modulus_mpa: {value: 72, source: assumed, cv: 0.29, ref: "placeholder: the tensile value measured for 1.2 mm calfskin (Mihai et al., Materials 2022, 15(15):5107); this design names no leather"}
+      poisson: {value: 0.3, source: assumed}
+  - id: slot
+    role: card-slot and bank leather (the inside of the wallet)
+    thickness_mm: {value: 0.7, source: design, ref: source/report.json params.slot_t}
+components: []
+process_steps: []
+contents:
+  cards: {value: 6, source: design, ref: source/report.json params.cards}
+  card_mm: {value: 0.76, source: literature, ref: ISO/IEC 7810 ID-1 nominal thickness}
+  extra_mm: {value: 0.0, source: assumed, note: no notes, receipts or coins}
+construction:
+  type: bifold
+  spine: {value: round, source: assumed}
+  grain: out
+  # leather layers lying between the two halves of the shell at the spine: 2 banks + 6 slot pieces (3 per bank) + 1 bill divider, each slot_t thick.
+  # Derived by counting source/report.json pieces. The kernel's own stack_closed_mm (5.9) counts the leather only, with different bookkeeping;
+  # adding the cards to it and removing the shell gives 9.46 mm against 10.86 mm here. MEASURE the closed wallet instead.
+  interior_leather_layers: {value: 9, source: assumed, ref: "pieces: 02_slot_bank x2, 03_slot_1..3 x2, 04_bill_divider"}
+  # stack_at_spine_mm: {value: null, source: measured}      # when you can measure it, put it here and it overrides the count above
+  layup: plain
+panels:
+  - {id: outer, leather: shell, outline: source/pattern.svg, grain_direction_deg: {value: 0, source: assumed}}
+folds:
+  - id: spine
+    panel: outer
+    line: [[99.2, 2.0], [99.2, 85.0]]
+    rest_angle_deg: 180
+    skived: {value: false, source: design, ref: the kernel does not skive}
+seams:
+  - id: perimeter
+    between: [outer, slot]
+    stitch: {pitch_mm: {value: 3.845, source: design}, edge_offset_mm: {value: 3.5, source: design, ref: "leatherkit/wallet.py: stitch_run(inset(outer.outline, 3.5))"}}
+    crosses_fold: [spine]             # the perimeter stitch line runs across the spine fold at the top and bottom edges
+    holes: {value: 140, source: design}
+pockets:
+  - {id: bank-A, card_capacity: 3, reveal_mm: {value: 8.0, source: design}}
+  - {id: bank-B, card_capacity: 3, reveal_mm: {value: 8.0, source: design}}
+usage: {used: false}

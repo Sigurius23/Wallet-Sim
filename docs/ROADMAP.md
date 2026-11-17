@@ -7,7 +7,7 @@ and layup, measured leather cards (lining stiffness first), a stitched hinge and
 set and wear once flex data exist (the pleat crease and the turned-edge turn both depend on it). The UI outline ([`UI.md`](UI.md)) waits until there is something worth showing in its Behaviour view.
 
 ## Decisions needed from you
-1. **First wallet.** Which one, and does it have wear history? A used wallet gives us validation data from day one.
+1. **First real wallet.** Which one, and does it have wear history? A used wallet gives us validation data from day one. (`slim-6card-design` is a stand-in generated design, not a wallet.)
 2. **Physical flex tests.** Are you willing to cut strips and fold them to failure? Without them, "x folds" stays a
    relative index. This is the biggest lever on how far the simulator can be trusted.
 3. **GPU, and when.** Not needed for phases 1-3. Needed when we want design sweeps, many drops, or differentiable
@@ -24,7 +24,7 @@ set and wear once flex data exist (the pleat crease and the turned-edge turn bot
 | # | Phase | Ends with | Needs |
 |---|---|---|---|
 | 0 | **Foundation** (this commit) | repo, validated FEM benchmark, strain screen, calibration hook, docs | - |
-| 1 | **Capture to record** for wallet #1 | `wallets/<slug>/wallet.yaml` plus rectified outlines, every inferred field confirmed by you | photos + measurements (`CAPTURE.md`) |
+| 1 | **Capture to record** for wallet #1 | `wallets/<slug>/wallet.yaml` plus rectified outlines, every inferred field confirmed by you | photos + measurements (`CAPTURE.md`). **Reader, report and figures are built and run on a generated design (`slim-6card-design`); a real wallet is still needed** |
 | 1b | **Capture pilots** (`CAPTURE_FEASIBILITY.md`) | answers to: how good is photo-only inference, scan accuracy on leather, stiffness spread in one offcut, whether CT separates the layers | a spare wallet, a bend test, optionally a CT service |
 | 2a | **Fold styles** (`FOLD_STYLES.md`, catalogue in `CONSTRUCTIONS.md`) | plain / skived / lined / hinged / turned-edge / bound-edge folds compared in a free fold and around a stack, V/S/W gusset pleats at several openings, a box-shaped spine, and the turned-edge turn screened; layered FEM validated against closed forms | **done for these constructions** |
 | 2b | **Wallet fold types** (`WALLET_TYPES.md`) | bifold, trifold and z-fold: each fold's stack from the type, strain per fold, which fold wears first, types compared at the same contents | **done, folds one at a time** |

@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | edge-turn | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | wallet-types | wallet-report | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -166,6 +166,28 @@ def _wallet_types(a: argparse.Namespace) -> int:
     return 0
 
 
+def _wallet_report(a: argparse.Namespace) -> int:
+    from .fem.fold import FemUnavailable as _NoFem
+    from .record import RecordError, load_wallet
+    from .report import build_report, write_report
+    try:
+        rec = load_wallet(a.wallet)
+        rep = build_report(rec, a.taut, sensitivity=not a.no_sensitivity)
+        out = write_report(rep, a.out, figures=not a.no_figures)
+    except RecordError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except (FemUnavailable, _NoFem) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(f"{rec.name}: {rec.provenance_counts()} (inputs by source), stack at the spine {rec.stack_at_spine_mm:.2f} mm")
+    for o in rep.base.outcomes:
+        if o.taut is not None:
+            print(f"  {o.fold.name}: tension-face strain {100 * o.tension('loose'):.1f} % loose, {100 * o.tension('taut'):.1f} % taut (limit {100 * o.closed_form:.1f} %), R/t {o.radius_mm / rec.shell_t:.1f}")
+    print(f"report written to {out}/report.md")
+    return 0
+
+
 def _edge_turn(a: argparse.Namespace) -> int:
     from .fold_styles import edge_turn_table, format_edge_turn_report
     print(format_edge_turn_report(edge_turn_table(a.t, tuple(a.skive_ratios), tuple(a.cores)), a.t))
@@ -269,6 +291,13 @@ def main(argv: list[str] | None = None) -> int:
     wt.add_argument("--groove-width", type=float, default=2.0)
     wt.add_argument("--groove-taper", type=float, default=1.5)
     wt.set_defaults(fn=_wallet_types)
+    wr = sub.add_parser("wallet-report", help="run a wallet record (wallets/<id>) through the simulator and write its report, figures and inputs")
+    wr.add_argument("wallet", help="a wallets/<id> folder or a wallet.yaml")
+    wr.add_argument("--out", default=None, help="output folder (default: <wallet>/sim/run-<hash>)")
+    wr.add_argument("--taut", type=float, default=0.1)
+    wr.add_argument("--no-sensitivity", action="store_true", help="skip the stack-size scenarios (faster)")
+    wr.add_argument("--no-figures", action="store_true")
+    wr.set_defaults(fn=_wallet_report)
     et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
     et.add_argument("--t", type=float, default=1.2)
     et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])

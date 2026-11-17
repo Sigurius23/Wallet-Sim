@@ -400,6 +400,8 @@ class FoldResult:
     moment_n_mm: float                  # reaction moment at the fold centre, per mm of width
     standoff_mm: float                  # wrap: largest gap between the leather's inner face and the stack inside the bend
     penetration_mm: float               # wrap: deepest overlap of the leather into the stack (penalty contact; should be small)
+    outer_xz: np.ndarray                # (nodes along the strip, 2): deformed outer-face line (x, z)
+    inner_xz: np.ndarray                # same for the inner face
     leg_overlap_mm: float               # free: how far the inner face crosses the symmetry plane, i.e. how far the two mirror legs would
                                         # interpenetrate (self-contact is not modelled); 0 when the legs clear each other
     contact_stiffness: float            # wrap: penalty stiffness that converged (MPa/mm)
@@ -521,6 +523,13 @@ def _read_results(job: FoldJob, mesh: Mesh, dat: str, runtime: float, tail: str,
             face[i, li] = (icpt + slope * z_top, icpt + slope * z_bot)
     U = _last_block(dat, r"displacements \(vx,vy,vz\) for set STRIPN")
     ref = {int(r[0]): r for r in U}
+    def _xz(k):
+        out = []
+        for i in range(nx + 1):
+            n = mesh.ids[(i, 0, k)]
+            out.append((mesh.nodes[n - 1][0] + ref[n][1], mesh.nodes[n - 1][2] + ref[n][3]))
+        return np.array(out)
+    outer_xz, inner_xz = _xz(0), _xz(K)
     ang = np.zeros(nx + 1)
     for i in range(nx + 1):
         a, b = mesh.ids[(i, 0, 0)], mesh.ids[(i, 0, K)]
@@ -555,4 +564,4 @@ def _read_results(job: FoldJob, mesh: Mesh, dat: str, runtime: float, tail: str,
     if job.skip_mm is None and job.mode == "wrap":
         skip = min(skip, 0.3 * job.bend_mm)                 # a tight bend is short: do not exclude all of it
     u_c = 0.5 * (mesh.us[1:] + mesh.us[:-1])
-    return FoldResult(job, u_c, face, ang, mesh.us, moment, standoff, penetration, leg_overlap, k_contact, runtime, skip, tail)
+    return FoldResult(job, u_c, face, ang, mesh.us, moment, standoff, penetration, outer_xz, inner_xz, leg_overlap, k_contact, runtime, skip, tail)
