@@ -10,6 +10,27 @@
 You want to compare how different leathers and thicknesses bend, and how they age. This is what works today, what the
 research says about ageing, and how the simulator will handle the parts that cannot be predicted.
 
+## 0. How far the leather data goes (read this first)
+The framework is in place; the data is not. `walletsim.species` sorts every hide into a group from the anatomy library and a class (`sheet`, `caution`, `composite`). `cards/*.yaml` holds the leathers a paper
+describes, each value with its source. The Lab's *Leather cards and coverage* tab (`walletsim build-site`) maps every hide group against every property the simulator needs:
+
+| | |
+|---|---|
+| Hide groups (the library's 12 files, split where the class differs) | 15: 9 sheet, 3 caution, 3 composite |
+| Cards | 3: calfskin upper (E, thickness), Nile tilapia (thickness, tensile strength, elongation, tear), rabbit (the same four) |
+| Cells filled for the sheet hides | **10 of 90** |
+| Species with no card at all | pig, horse, goat, sheep, deer and the rest: nothing was found that I could read in full |
+| Properties no card holds for any species | **bending stiffness, strain at grain crack, along-versus-across ratio, hide-region effect, aged state** |
+
+What this means for behaviour today: every leather is simulated as the same isotropic elastic sheet with a placeholder stiffness, so species, tanning and hide region change nothing in the strain; only thickness does.
+Strain is set by geometry (t and the fold radius); a leather decides the closing force, the capacity (strain at grain crack, unknown for every leather here) and how both change with age and direction.
+- **Plated and scaled hides** (crocodilian, snake and lizard, stingray) are **refused**: `walletsim wallet-report` exits with code 3 and writes nothing, and the app says *not simulated*. The composite model they need is not built.
+- **Caution hides** (ostrich, elephant and other heavy exotics, toad and turtle) run with a warning.
+- **Tilapia is not Nile perch.** The only fish card is *Oreochromis niloticus*, chrome-tanned; the Sruli Recht WHALET family in the corpus is Nile perch, for which no leather data was found.
+- Tensile elongation (79 % for tilapia, 110 % for rabbit) is **not** the strain at which a bent grain cracks. Nothing here compares a fold's strain with it.
+- The `Measure a strip` tool (live in the Lab) turns a cantilever test and a weighed strip into a bending modulus, and fits a thickness exponent, so the first missing column can be filled from your own offcuts.
+- The paper behind the calfskin card also measured stitched and perforated strips: the modulus fell from 72 to 7 to 13 N/mm2 with a seam and to 21 to 32 with perforations. That is a measured effect of seams and holes on a tensile strip, not yet used by the simulator.
+
 ## 1. Thickness: works now
 
 `walletsim sweep` folds a strip around a fixed inside radius (what a wallet's contents impose) for several thicknesses.
@@ -52,7 +73,7 @@ tannages disagree (see below). So every leather in the archive gets a
 | Strain to crack | flex-test strips over several mandrel radii | needs tests, enables `fit-law` |
 | Finish and fat content | known from the supplier or not at all | recorded, not simulated |
 
-Only one card ships: the calfskin upper (72 N/mm2, CV 29 %, tanning unknown), because it is the one measurement I have read in full. No chrome-tanned, oil-pull-up or other values are built in,
+Three cards ship (`cards/`): the calfskin upper (72 N/mm2, CV 29 %, tanning unknown) and the chrome-tanned Nile tilapia and rabbit skins, each read in full from an open-access paper. No oil-pull-up, goat, pig, horse or other values are built in,
 because I did not find matched, cited numbers and I will not invent them. They come from your strips.
 
 ## 3. Ageing: what is known

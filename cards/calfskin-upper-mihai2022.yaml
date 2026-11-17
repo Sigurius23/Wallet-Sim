@@ -1,0 +1,21 @@
+id: calfskin-upper-mihai2022
+name: Calfskin footwear upper, 1.2 mm
+species: bovine (calf)
+tanning: unknown                       # the paper does not say how the calfskin was tanned
+test: "ISO 3376:2020 tensile test on the SATRA STM 466 tester; 20 C, 65 +- 2 % RH; unprocessed strips (S1); n = 9; thickness measured by hand"
+cite: "Mihai A, Seul T, Curteza A, Costea M. Materials 2022, 15(15):5107, doi:10.3390/ma15155107, Table 1 (S1, M1) and Table 2 (S1, M1). Open access."
+thickness_mm: {value: 1.2, low: 1.1, high: 1.3, source: literature, ref: "'1.2 +- 0.1 mm' for calfskin M1 in the same paper"}
+youngs_modulus_mpa: {value: 72, cv: 0.29, source: literature, ref: "Table 1, S1, M1: 72 N/mm2, CV 29 %. The instrument's value at the maximum elastic load: a TENSILE figure, not a bending one"}
+poisson: {value: 0.60, cv: 0.108, source: literature, ref: "Table 2, S1, M1. A lateral-contraction figure measured by hand just before break; not an isotropic bulk value"}
+bending_modulus_mpa: null
+tensile_strength_mpa: null
+elongation_at_break_pct: null
+tear_strength_n_mm: null
+grain_crack_strain: null
+direction: {tested: "not stated", ratio: null}
+regions: {}
+ageing: {}
+not_this:
+  - "a bending stiffness: a tensile modulus overstates it (see the cantilever test in the Lab)"
+  - "a wallet leather: footwear-upper calfskin, tanning unknown, one lot"
+  - "the stitched or perforated samples in the same paper (S2, S3): those moduli are 7 to 32 N/mm2 and describe seams and holes, not the leather"

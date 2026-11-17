@@ -362,6 +362,17 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
       '<p class="small muted">' + cor + ". " + esc(w.rights_note || "") + "</p></div>" +
       '<div class="sect"><h3>Photographs the record points to</h3>' + photos + "</div>";
   }
+  var CLASSNAME = { sheet: "sheet", caution: "caution", composite: "composite", unknown: "unknown" };
+  function hideHTML(w) {
+    var h = w.hide; if (!h) return "";
+    var cards = DATA.cards.filter(function (c) { return h.cards.indexOf(c.id) >= 0; });
+    var list = cards.length ? '<ul class="plain">' + cards.map(function (c) { return "<li><b style=\"font-weight:500\">" + esc(c.name) + "</b> (" + esc(c.species) + ", " + esc(c.tanning) + " tanned): " + c.rows.map(function (r) { return esc(r.label.toLowerCase()) + " " + esc(r.text); }).join("; ") + ". <a href=\"#lab\" data-lab=\"cards\" style=\"text-decoration:underline\">Source and limits</a></li>"; }).join("") + "</ul>" :
+      '<p class="muted small">No measured card exists for this hide group, so nothing here says how this leather behaves beyond its thickness once that is measured.</p>';
+    var tone = h["class"] === "composite" ? "var(--accent)" : h["class"] === "caution" || h["class"] === "unknown" ? "var(--amber)" : "var(--blue)";
+    return '<div class="sect"><p class="eyebrow">What kind of hide, and what is known about how it behaves</p><div class="result"><span><b style="font-weight:500">' + (h.group ? esc(h.name) : "Hide group not recognised") + '</b> <span class="pill" style="color:' + tone + '">' + esc(CLASSNAME[h["class"]]) + "</span></span>" +
+      '<span class="small muted">' + esc(h.why) + "</span><span class=\"small\"><b style=\"font-weight:500\">Reference cards for this group:</b></span>" + list +
+      '<span class="small muted">A card describes the leather in its paper, not this wallet\u2019s leather. No card holds a bending stiffness, a strain at grain crack, a direction ratio or a hide-region effect for any species yet.</span></div></div>';
+  }
   function materials(w) {
     var steps = '<div class="process">' + w.pipeline.map(function (s) {
       var known = s.value != null && s.value !== "";
@@ -392,11 +403,13 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
     var matrix = '<div class="matrix"><div>' + plate(w) + '<p class="caption">' + esc(short(w.name)) + ", cross-section from the record</p></div><div class=\"comps\">" + comps + "</div></div>";
     return '<h2>Materials &amp; Source</h2><p class="muted" style="margin:6px 0 26px">‘' + esc(short(w.name)) + '’</p><p class="eyebrow">Treatment process</p>' + steps +
       '<p class="small muted" style="max-width:70ch">' + (w.pipeline.every(function (s) { return s.value == null; }) ? "The record has no treatment steps for this wallet." : "Only the steps the record states are filled in; the rest stay marked as not recorded.") + "</p>" +
-      '<div class="sect"><p class="eyebrow">Leather and where it comes from</p>' + matrix + '<p class="small muted">The hide is a schematic, not a scan. A cut zone is shaded only when the record names the region. A region says where a piece came from, not how strong it is.</p></div>' + cmp;
+      '<div class="sect"><p class="eyebrow">Leather and where it comes from</p>' + matrix + '<p class="small muted">The hide is a schematic, not a scan. A cut zone is shaded only when the record names the region. A region says where a piece came from, not how strong it is.</p></div>' + hideHTML(w) + cmp;
   }
   function behaviour(w) {
     var b = w.behaviour, out = '<h2>Behaviour</h2><p class="muted" style="margin:6px 0 18px;max-width:70ch">What the fold model says about this wallet, how far to trust it, and what a measurement would settle.</p>';
     out += '<div class="banner">' + esc(w.status_note) + " Every radius and stack below is a stated value, an inference or an assumption; the figures are model output for those inputs, not a prediction of how this wallet wears.</div>";
+    if (w.hide && w.hide["class"] === "composite") return out + '<div class="banner" style="background:var(--zone);color:var(--accent)"><b>Not simulated.</b> ' + esc(w.hide.name) + " is a composite hide. " + esc(w.hide.why) + "</div>";
+    if (w.hide && (w.hide["class"] === "caution" || w.hide["class"] === "unknown")) out += '<div class="banner"><b>Use with caution.</b> ' + esc(w.hide.why) + "</div>";
     if (!b.has_run) return out + '<div class="empty">No simulation run is stored for this wallet. Run <code>' + esc(b.command) + "</code> and rebuild the site.</div>";
     out += '<div class="sect" style="margin-top:8px"><h3>Strain at each fold</h3><p>' + esc(b.finding) + '</p><div class="chartwrap">' + b.chart +
       '<div class="legend"><span class="l1">closed form, recorded stack</span><span class="l2">across the stack range</span><span class="l3">simulation, taut</span><span class="l4">simulation, bridging</span></div></div>' +
@@ -542,7 +555,7 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
   }
 
   // ---- the lab: the simulator's tools, stored and live ----------------------------------------------------------------------------------------------------------------
-  var LIVE = [["screen", "Strain screen"], ["rank", "Where it wears first"], ["fit", "Fit a damage law"]];
+  var LIVE = [["screen", "Strain screen"], ["strip", "Measure a strip"], ["rank", "Where it wears first"], ["fit", "Fit a damage law"], ["cards", "Leather cards and coverage"]];
   function labTools() { return (DATA.lab ? DATA.lab.results : []).filter(function (r) { return r.id !== "screen"; }); }
   function lab() {
     var sel = S.lab || "screen", stored = labTools(), body = "";
@@ -550,6 +563,11 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
       stored.map(function (r) { return '<button data-lab="' + r.id + '" aria-pressed="' + (sel === r.id) + '">' + esc(r.title) + "</button>"; }).join("") + "</div>";
     if (sel === "screen") body = '<h3>Strain screen</h3><p class="muted small" style="max-width:70ch">The level-0 closed form for the outer fibre of a bent sheet, with the screening flags of the simulator. Live in this page; no solver. It compares designs and rejects obviously bad geometry, and it is not a failure limit.</p>' +
       '<div class="fields"><div class="field"><label for="st">Sheet thickness, mm</label><input id="st" type="number" step="0.05" min="0.1" value="1.0" data-live="screen"></div><div class="field"><label for="sr">Inside radius, mm</label><input id="sr" type="number" step="0.1" min="0" value="2.0" data-live="screen"></div></div><div class="result" id="labout"></div>';
+    else if (sel === "cards") body = cardsLab();
+    else if (sel === "strip") body = '<h3>Measure a strip</h3><p class="muted small" style="max-width:72ch">The bending stiffness of a strip, from a cantilever test (Peirce, 41.5 degrees): slide the strip over an edge until its free end has dropped by 41.5 degrees and read the overhang. Weigh and measure the same strip. This gives a bending modulus, the number the simulator most needs and no card holds yet. It is lower than a tensile modulus.</p>' +
+      '<div class="fields"><div class="field"><label for="so">Overhang L, mm</label><input id="so" type="number" step="0.5" min="1" data-live="strip" placeholder="e.g. 60"></div><div class="field"><label for="sm">Strip mass, g</label><input id="sm" type="number" step="0.01" min="0" data-live="strip"></div><div class="field"><label for="sl">Strip length, mm</label><input id="sl" type="number" step="0.5" min="1" data-live="strip"></div><div class="field"><label for="sw">Strip width, mm</label><input id="sw" type="number" step="0.5" min="1" data-live="strip"></div><div class="field"><label for="sth">Thickness, mm</label><input id="sth" type="number" step="0.01" min="0.05" data-live="strip"></div></div><div class="result" id="labout"></div>' +
+      '<h3 style="margin-top:34px">Thickness exponent</h3><p class="muted small" style="max-width:72ch">Strips of one leather at several thicknesses: one row per strip, <code>thickness mm, rigidity N m</code> (the rigidity above). A homogeneous plate gives 3; fibrous, layered leather may not, and no published value was found. It needs 3 thicknesses spanning a factor of 1.3.</p>' +
+      '<div class="field" style="max-width:520px"><label for="te">Thickness and rigidity</label><textarea id="te" data-live="strip" placeholder="0.8, 0.00012\n1.2, 0.00041\n1.6, 0.00095"></textarea></div><div class="result" id="labout2"></div>';
     else if (sel === "rank") body = '<h3>Where it wears first</h3><p class="muted small" style="max-width:70ch">Rank locations by cycles per use times strain to the power m, across a range of m, because no leather-specific exponent is known. One row per location: <code>name, strain %, cycles per use</code>. The rows below are an example of the format, not a wallet.</p>' +
       '<div class="field" style="max-width:520px"><label for="rk">Locations</label><textarea id="rk" data-live="rank">spine, 12, 1\nloop, 21, 1\ncard slot edge, 6, 4</textarea></div><div class="result" id="labout"></div>';
     else if (sel === "fit") body = '<h3>Fit a damage law to your own flex data</h3><p class="muted small" style="max-width:70ch">Least squares on ln N = ln A − m ln ε, from your own flex-to-crack tests: one row per specimen, <code>strain, cycles</code>. It needs at least 3 points that span a factor of 1.5 in strain, and it flags any prediction outside the tested range. There is no example data: none exists for this leather.</p>' +
@@ -558,8 +576,42 @@ pre.out { margin: 0; padding: 16px 18px; overflow-x: auto; background: var(--sur
     app.innerHTML = '<div class="page-h"><p class="eyebrow">Simulator lab</p><h2>The tools behind the numbers</h2></div>' + (DATA.lab ? "" : '<div class="banner">No stored results. Run <code>walletsim lab-run</code> and rebuild the site to add the solver-based tools.</div>') + tabs + body;
     liveLab();
   }
+  function cardsLab() {
+    var C = DATA.coverage, ps = C.properties, rows = C.rows.map(function (r) {
+      return '<tr><td>' + esc(r.name) + ' <span class="pill" style="' + (r.hide_class === "composite" ? "color:var(--accent)" : r.hide_class === "caution" ? "color:var(--amber)" : "") + '">' + esc(r.hide_class) + "</span></td>" + ps.map(function (p) {
+        var c = r.cells[p.key]; return "<td style=\"text-align:center\">" + (c.cards.length ? '<b title="' + esc(c.cards.join(", ")) + '">' + c.cards.length + "</b>" : c.partial.length ? '<span title="tested one direction only" style="color:var(--amber)">\u25d0</span>' : '<span class="muted">\u2013</span>') + "</td>"; }).join("") + "</tr>"; }).join("");
+    return '<h3>How far the leather data goes</h3><p class="muted small" style="max-width:72ch">For every hide group in the anatomy library and every property the simulator would need: how many cards hold a measured or published value. A dash means nobody has measured it here. <b style="font-weight:500">' + C.sheet_cells_filled + " of " + C.sheet_cells_total + "</b> cells for the sheet hides have any value. Composite hides (plates or scales) are not simulated at all.</p>" +
+      '<div class="scroll"><table><thead><tr><th>Hide group</th>' + ps.map(function (p) { return "<th style=\"text-align:center\">" + esc(p.name) + "</th>"; }).join("") + "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
+      '<p class="small muted">\u25d0 = tested in one direction only (no along-versus-across ratio). Only literature values from papers read in full are in the cards; your own strip measurements come from the tool in this Lab and are added as <code>cards/*.yaml</code>.</p>' +
+      '<h3 style="margin-top:30px">The cards</h3>' + DATA.cards.map(function (c) {
+        return '<div class="result" style="max-width:none;margin-bottom:12px"><span><b style="font-weight:500">' + esc(c.name) + '</b> <span class="muted small">' + esc(c.species) + " \u00b7 " + esc(c.tanning) + " tanned</span></span><span class=\"small muted\">" + esc(c.test) + "</span><span class=\"small\">" + esc(c.cite) + "</span>" +
+          '<table><tbody>' + c.rows.map(function (r) { return "<tr><td>" + esc(r.label) + "</td><td>" + esc(r.text) + (r.source ? " " + chip(r.source, r.ref) : "") + '</td><td class="small muted">' + esc(r.ref) + "</td></tr>"; }).join("") + "</tbody></table>" +
+          '<span class="small"><b style="font-weight:500">Do not use it for:</b></span><ul class="plain">' + c.not_this.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>"; }).join("");
+  }
   function liveLab() {
     var out = document.getElementById("labout"); if (!out) return; var sel = S.lab || "screen";
+    if (sel === "strip") {
+      var num = function (id) { var e = document.getElementById(id); return e ? parseFloat(e.value) : NaN; }, L = num("so"), m = num("sm"), a = num("sl"), b = num("sw"), t = num("sth");
+      if (!(L > 0 && m > 0 && a > 0 && b > 0 && t > 0)) out.innerHTML = '<span class="muted small">Enter all five numbers from the same strip.</span>';
+      else {
+        var ma = (m / 1000) / ((a / 1000) * (b / 1000)), c = L / 2000, B = ma * 9.80665 * Math.pow(c, 3), Eb = 12 * B / Math.pow(t / 1000, 3) / 1e6;
+        out.innerHTML = '<span class="big">' + Eb.toFixed(1) + ' MPa</span><span>effective bending modulus, E<sub>b</sub> = 12 B / t\u00b3</span><span>Flexural rigidity B = ' + B.toExponential(3) + " N m (mass per area " + ma.toFixed(3) + " kg/m\u00b2, bending length " + (L / 2).toFixed(1) + ' mm)</span><span class="small muted">One strip is one specimen. Test several strips (the stiffness of one calfskin lot varied by 29 % between specimens in the only paper with a card) and keep the spread.</span>';
+      }
+      var o2 = document.getElementById("labout2"), te = document.getElementById("te");
+      if (o2 && te) {
+        var pts = te.value.split(/\n/).map(function (l) { var p = l.split(","); return [parseFloat(p[0]), parseFloat(p[1])]; }).filter(function (p) { return p[0] > 0 && p[1] > 0; });
+        if (pts.length < 3) o2.innerHTML = '<span class="muted small">Enter at least 3 strips.</span>';
+        else {
+          var tmin = Math.min.apply(null, pts.map(function (p) { return p[0]; })), tmax = Math.max.apply(null, pts.map(function (p) { return p[0]; }));
+          if (tmax / tmin < 1.3) o2.innerHTML = '<span class="unk">The thickness range is too narrow to fit an exponent (need max/min of at least 1.3).</span>';
+          else { var xs = pts.map(function (p) { return Math.log(p[0]); }), ys = pts.map(function (p) { return Math.log(p[1]); }), n = pts.length, mx = xs.reduce(function (s, v) { return s + v; }) / n, my = ys.reduce(function (s, v) { return s + v; }) / n, sxx = 0, sxy = 0;
+            xs.forEach(function (x, i) { sxx += (x - mx) * (x - mx); sxy += (x - mx) * (ys[i] - my); }); var sl = sxy / sxx, ic = my - sl * mx, sse = 0, sst = 0; xs.forEach(function (x, i) { sse += Math.pow(ys[i] - (ic + sl * x), 2); sst += Math.pow(ys[i] - my, 2); });
+            o2.innerHTML = '<span class="big">n = ' + sl.toFixed(2) + "</span><span>R\u00b2 = " + (sst > 0 ? 1 - sse / sst : 1).toFixed(3) + " (" + n + " strips). A homogeneous plate gives 3.</span>"; }
+        }
+      }
+      return;
+    }
+    if (sel === "cards") return;
     if (sel === "screen") {
       var t = +document.getElementById("st").value, R = +document.getElementById("sr").value;
       if (!(t > 0) || !(R >= 0)) { out.innerHTML = '<span class="unk">Enter a thickness above 0 and a radius of 0 or more.</span>'; return; }

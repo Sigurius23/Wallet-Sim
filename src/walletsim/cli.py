@@ -169,7 +169,7 @@ def _wallet_types(a: argparse.Namespace) -> int:
 def _wallet_report(a: argparse.Namespace) -> int:
     from .fem.fold import FemUnavailable as _NoFem
     from .record import RecordError, load_wallet
-    from .report import build_report, write_report
+    from .report import NotApplicable, build_report, write_report
     try:
         rec = load_wallet(a.wallet)
         rep = build_report(rec, a.taut, sensitivity=not a.no_sensitivity)
@@ -177,6 +177,9 @@ def _wallet_report(a: argparse.Namespace) -> int:
     except RecordError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+    except NotApplicable as exc:
+        print(f"not applicable: {exc}", file=sys.stderr)
+        return 3
     except (FemUnavailable, _NoFem) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

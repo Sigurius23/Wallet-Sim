@@ -4,6 +4,7 @@
 
 - wallet: `sr-whalet-sr202-2022` (custom, 2 folds listed in the record, plain layup); status: photos-only
 - inputs by source: 2 reported, 1 literature, 7 assumed (of 10)
+- leather: horse (equine) -> Horse, pony, donkey (sheet). Reference cards for this group: none. No card holds a strain at grain crack, so this report shows the strain each fold demands, not a margin against a limit.
 - model: walletsim 0.1.0, CalculiX ccx 2.21, plane-strain neo-Hookean fold, pull for 'taut' 0.1 N per mm; run `6666bfd6`
 
 ## Inputs and where each came from
@@ -62,7 +63,7 @@ The stacks are inferences or assumptions, so each fold is run at the low, record
 | 1 | Grain crack at the hinge | **computed** | flap hinge (right end): tension-face strain 10.4 % loose to 11.8 % taut (closed-form limit 11.1 %), inside radius 4.00 mm, R/t = 4.0; within the screening rules. Cycles to crack need flex-test data. |
 | 2 | Permanent set | **not modelled** | needs a cyclic viscoplastic model and fold-and-measure data; it is the usual first visible sign of a worn hinge |
 | 3 | Finish crazing or delamination | **not modelled** | a film-on-substrate model quoted in prior-research/reference/durability.md section 2b has a stiff finish buckling at 2-12 % compressive strain; at flap hinge (right end) the compression face is -10.6 % and the grain is in tension, not compression |
-| 4 | Stress at stitch holes | **unknown** | the wallet is stitched, but whether the stitching crosses or pins a fold is not recorded |
+| 4 | Stress at stitch holes | **unknown** | the record lists rivets, but whether it crosses or pins a fold is not recorded |
 | 5 | Skive-line or thickness step | **unknown** | whether the folds are skived is not recorded; a skive line is a stiffness step where cracks start |
 | 6 | Edge paint chipping | **unknown** | the edge treatment is not recorded; record it (painted edges chip where they flex) |
 | 7 | Pocket-mouth and corner abrasion | **not modelled** | 2 pocket(s) recorded; needs the card-pull scenario (roadmap phase 4) and wear photos to calibrate |

@@ -4,6 +4,7 @@
 
 - wallet: `ma-one-piece-double-wallet` (custom, 5 folds listed in the record, plain layup); status: photos-only
 - inputs by source: 1 reported, 1 inferred, 1 literature, 9 assumed (of 12)
+- leather: bovine (calf) -> Cow, calf, steer, buffalo (sheet). Reference cards for this group: calfskin-upper-mihai2022. No card holds a strain at grain crack, so this report shows the strain each fold demands, not a margin against a limit.
 - model: walletsim 0.1.0, CalculiX ccx 2.21, plane-strain neo-Hookean fold, pull for 'taut' 0.1 N per mm; run `a2fbdd74`
 
 ## Inputs and where each came from

@@ -132,3 +132,12 @@ def test_wallet_styles_runs_the_comparison_at_the_wallets_own_radius(tmp_path):
     assert s["inside_radius_mm"] == pytest.approx(4.0) and [r["style"] for r in s["rows"]][:2] == ["plain", "skived"]
     plain = s["rows"][0]
     assert plain["wrap_taut"] == pytest.approx(0.118, abs=0.01) and plain["limit"] == pytest.approx(1 / 9, abs=0.002)   # matches the wallet report's 11.8 % and 11.1 %
+
+
+def test_each_wallet_carries_its_hide_class_reference_cards_and_the_coverage_map():
+    d = build_data(WALLETS)
+    hides = {w["id"]: w["hide"] for w in d["wallets"]}
+    assert hides["ma-one-piece-wallet"]["group"] == "bovine" and hides["ma-one-piece-wallet"]["cards"] == ["calfskin-upper-mihai2022"]
+    assert hides["sr-whalet-sr202-2022"]["group"] == "equine" and hides["sr-whalet-sr202-2022"]["cards"] == []      # no horse card exists
+    assert all(h["class"] == "sheet" for h in hides.values())
+    assert len(d["cards"]) == 3 and d["coverage"]["sheet_cells_total"] == 90 and d["coverage"]["sheet_cells_filled"] == 10

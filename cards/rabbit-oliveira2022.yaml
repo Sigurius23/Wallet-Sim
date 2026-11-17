@@ -1,0 +1,19 @@
+id: rabbit-oliveira2022
+name: Rabbit skin, chrome-tanned, 1.43 mm
+species: rabbit (Oryctolagus cuniculus)
+tanning: chrome
+test: "As the tilapia card: same paper, same tannery run and equipment, same methods; specimens cut longitudinally along the body"
+cite: "Oliveira GG, Gasparino E, et al. Scientific World Journal 2022, 4561404, doi:10.1155/2022/4561404 (PMC9586800), Tables 1 and 2. Open access."
+thickness_mm: {value: 1.43, cv: 0.154, source: literature, ref: "Table 1: 1.43 +- 0.22 mm"}
+youngs_modulus_mpa: null
+bending_modulus_mpa: null
+tensile_strength_mpa: {value: 8.98, cv: 0.297, source: literature, ref: "Table 2, 'Traction' 8.98 +- 2.67 N/mm2"}
+elongation_at_break_pct: {value: 109.97, cv: 0.123, source: literature, ref: "Table 2, 'Stretching' 109.97 +- 13.52 %"}
+tear_strength_n_mm: {value: 24.25, cv: 0.179, source: literature, ref: "Table 1, progressive tearing 24.25 +- 4.34 N/mm"}
+grain_crack_strain: null
+direction: {tested: "longitudinal (cephalo-tail axis) only", ratio: null}
+regions: {}
+ageing: {}
+not_this:
+  - "a stiffness: the paper reports no modulus"
+  - "a bending capacity: tensile elongation is not the strain at which a bent grain cracks"

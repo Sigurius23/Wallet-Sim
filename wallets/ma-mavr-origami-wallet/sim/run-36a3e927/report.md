@@ -5,6 +5,7 @@
 - wallet: `ma-mavr-origami-wallet` (custom, 2 folds listed in the record, plain layup); status: photos-only
 - usage: used. The seller rates it 9/10 ('flawless'). Photograph 04 shows light abrasion on the flap; it has not been analysed.
 - inputs by source: 3 reported, 1 inferred, 1 literature, 5 assumed (of 10)
+- leather: porcine (pig) -> Pig, hog, peccary (sheet). Reference cards for this group: none. No card holds a strain at grain crack, so this report shows the strain each fold demands, not a margin against a limit.
 - model: walletsim 0.1.0, CalculiX ccx 2.21, plane-strain neo-Hookean fold, pull for 'taut' 0.1 N per mm; run `36a3e927`
 
 ## Inputs and where each came from

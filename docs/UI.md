@@ -23,6 +23,12 @@ This table is the audit: every feature in the outline below and in the README's 
 | Behaviour: predicted hot spots next to real wear photos | **not built** | there is no wear model and no wear photographs; the record for the used origami notes its wear photo as not analysed |
 | Lab: strain screen, damage ranking, damage-law fit | **built, live** | the same arithmetic as `walletsim screen`, `walletsim.damage.rank_locations` and `fit-law`; the fit takes your own flex data and refuses a narrow strain range |
 | Lab: FEM backend check, thickness sweep, fold styles, gussets, box spine, turned edge, wallet types | **built, stored** | verbatim output of the command, how long it took, the walletsim version; refresh with `walletsim lab-run` |
+| Leather types: hide group and class for every wallet, reference cards, plated hides refused | **built** | `species.py`, `cards/`; a composite hide (crocodilian, snake, stingray) is not simulated and the app and report say so |
+| Leather behaviour data: cards and a coverage map | **built, mostly empty** | 3 cards; **10 of 90** property cells filled for the sheet hides (Lab: *Leather cards and coverage*) |
+| Measuring a leather: cantilever bending stiffness, thickness exponent | **built, live** | Lab: *Measure a strip*; no card holds a bending stiffness yet |
+| Direction, hide-region and through-the-hide layer effects in the solver | **not built** | needs measured ratios and maps; none exist for any leather |
+| Aged states | **structure only** | no measured aged state exists |
+| Composite model for plated hides (alligator, crocodile, snake, stingray) | **not built** | refused instead; needs plate geometry and an interface-failure model |
 | Functional twin of every wallet | **one of four** | only the WHALET has `assembly.yaml`; the One Piece wallets and the origami need their interiors read from photographs |
 | glTF assets from a build step | **not built** | the animals are embedded as compact triangle data instead |
 

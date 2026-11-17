@@ -19,6 +19,7 @@ Nothing here simulates a full wallet yet. What exists and is tested:
 | **First wallet record and per-wallet report**: a `wallet.yaml` with provenance on every number, run through the simulator into a report (inputs and sources, fold results, sensitivity, all 14 failure modes, what to measure first) with figures. The first record is a **generated design**, not a photographed wallet | `walletsim wallet-report wallets/slim-6card-design`; [`wallets/`](wallets/README.md) | pipeline works; nothing is measured yet |
 | **Archive app (first build)**: Discover timeline, Artists, Years, search, and per-wallet Overview, Materials & Source and Behaviour, built from the records in `wallets/` as one HTML file; undated wallets and unrecorded fields are shown as such | `walletsim build-site` then open `site/index.html`; [`docs/UI.md`](docs/UI.md) | real CC0 animal models for cow, pig, horse and sheep (no free goat found); no photographs (rights); most records are undated; no leather swap (one material card) and no wear hot spots (no wear data). Full audit: [`docs/UI.md`](docs/UI.md) |
 | **Overall wallet fold types**: bifold, trifold (letter fold) and z-fold (accordion): the stack each fold wraps, which fold wears first, types compared at the same contents | `walletsim wallet-types`; [`docs/WALLET_TYPES.md`](docs/WALLET_TYPES.md) | folds evaluated one at a time; assumptions stated | **current focus**; agrees with closed forms to 2-3 % where they apply |
+| **Leather types and data**: hide classes from the anatomy library, leather cards with a source on every value, a coverage map, a strip-test calculator, and refusal to simulate plated or scaled hides | `walletsim.species`, `cards/`, the app's Lab; [`docs/MATERIALS.md`](docs/MATERIALS.md) section 0 | 3 cards, **10 of 90** property cells filled for sheet hides; no bending stiffness, grain-crack strain, direction or region effect for any leather; composite hides refused |
 | Level-0 fold screen: `eps = t/(2R+t)` with screening flags | `walletsim screen --t 1.0 --radius 2.0` | done |
 | "x folds" bookkeeping: rank locations by cycles per use x strain^m across a range of exponents, and fit a cycles-to-crack law to **your own** flex-test data | `walletsim fit-law`, `walletsim.damage` | done, refuses uncalibrated absolute life |
 | Docs: architecture, claims policy, capture protocol, **capture feasibility research**, **materials and ageing**, data model, roadmap | `docs/` | draft for review |
@@ -36,7 +37,7 @@ No validated leather fatigue law exists; the leather-specific research codes (Fr
 ```bash
 pip install -e ".[dev]"            # numpy only; the FEM check also needs CalculiX
 sudo apt-get install calculix-ccx  # Debian/Ubuntu
-pytest                             # 122 tests, ~280 s
+pytest                             # 143 tests, ~280 s
 walletsim validate-fem             # the 180° bending benchmark
 walletsim fold-styles              # compare fold constructions, about 15 s
 walletsim gusset                   # accordion pleat, about 17 s

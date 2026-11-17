@@ -17,7 +17,9 @@ from pathlib import Path
 
 from . import __version__ as _version  # noqa: F401  (kept so the site can state which walletsim built it)
 from .page import chart_rows, finding_text, latest_run, _chart
+from .leather_cards import LeatherCard, PROPERTIES, coverage, load_cards
 from .record import WalletRecord, load_wallet, measure_first
+from .species import classify, species_of
 from .viewer import ViewerError, build_viewer, config as viewer_config
 
 STATUS_LABEL = {
@@ -166,6 +168,26 @@ def _behaviour(rec: WalletRecord, wdir: Path) -> dict:
     }
 
 
+def card_view(c: LeatherCard) -> dict:
+    """A card as the app shows it: one row per property that has a value, each with its source, plus what the card must not be used for."""
+    rows = []
+    for key, label in PROPERTIES:
+        v = c.props.get(key)
+        if c.has(key) and isinstance(v, dict) and "value" in v:
+            text = f"{v['value']:g}" + (f" (low {v['low']:g}, high {v['high']:g})" if v.get("low") is not None else "") + (f", spread {100 * v['cv']:.0f} %" if v.get("cv") else "")
+            rows.append({"label": label, "text": text, "source": v["source"], "ref": v.get("ref", "")})
+        elif c.partial(key):
+            rows.append({"label": label, "text": "not measured; only tested " + c.partial(key), "source": "", "ref": ""})
+    return {"id": c.id, "name": c.name, "species": c.species, "group": c.group, "tanning": c.tanning, "test": c.test, "cite": c.cite, "rows": rows, "not_this": c.not_this}
+
+
+def _hide(rec: WalletRecord, cards: list[LeatherCard]) -> dict:
+    sp = species_of(rec.raw)
+    cls = classify(sp)
+    return {"species": sp, "group": cls.group, "name": cls.name, "class": cls.hide_class, "why": cls.why, "anatomy": cls.anatomy_file,
+            "cards": [c.id for c in cards if cls.group and c.group == cls.group]}
+
+
 def _fold_models(rec: WalletRecord) -> dict | None:
     """How each fold's stack depends on the sheet thickness, so the app can recompute the closed-form strain live when a viewer moves the thickness slider.
 
@@ -194,7 +216,7 @@ def _styles(wdir: Path) -> dict | None:
     return json.loads(p.read_text(encoding="utf-8")) if p.exists() else None
 
 
-def wallet_entry(wdir: Path) -> dict:
+def wallet_entry(wdir: Path, cards: list[LeatherCard] | None = None) -> dict:
     rec = load_wallet(wdir)
     arch = rec.raw.get("archive") or {}
     behaviour = _behaviour(rec, wdir)
@@ -210,7 +232,7 @@ def wallet_entry(wdir: Path) -> dict:
         "status": rec.status, "status_label": STATUS_LABEL.get(rec.status, rec.status), "status_note": STATUS_NOTE.get(rec.status, ""),
         "usage": rec.raw.get("usage") or {}, "bio_ref": arch.get("bio_ref"), "rights": arch.get("rights") or {}, "rights_note": rec.raw.get("rights_note", ""),
         "hero": _hero(rec, wdir), "facts": _facts(rec, behaviour), "components": _components(rec), "pipeline": _pipeline(rec),
-        "photos": _photos(rec), "corpus": _corpus(rec), "behaviour": behaviour, "viewer": viewer, "swap": _fold_models(rec), "styles": _styles(wdir),
+        "photos": _photos(rec), "corpus": _corpus(rec), "behaviour": behaviour, "viewer": viewer, "swap": _fold_models(rec), "styles": _styles(wdir), "hide": _hide(rec, cards or []),
         "counts": rec.provenance_counts(),
     }
 
@@ -218,12 +240,13 @@ def wallet_entry(wdir: Path) -> dict:
 def build_data(wallets_root: str | Path = "wallets", include_designs: bool = False) -> dict:
     root = Path(wallets_root)
     entries, skipped = [], []
+    cards = load_cards(root.parent / "cards")
     for wdir in sorted(p for p in root.iterdir() if (p / "wallet.yaml").exists() and not p.name.startswith("_")):
         rec = load_wallet(wdir)
         if rec.status == "design" and not include_designs:                # generated test designs are not archive items
             skipped.append(rec.name)
             continue
-        entries.append(wallet_entry(wdir))
+        entries.append(wallet_entry(wdir, cards))
     lab_path = root.parent / "lab" / "results.json"
     lab = json.loads(lab_path.read_text(encoding="utf-8")) if lab_path.exists() else None
     from .materials import calfskin_upper_literature
@@ -231,7 +254,8 @@ def build_data(wallets_root: str | Path = "wallets", include_designs: bool = Fal
     mat = [{"name": card.name, "species": card.species, "tanning": card.tanning, "E": card.states["new"].youngs_modulus_mpa.value if hasattr(card.states["new"], "youngs_modulus_mpa") else 72.0,
             "source": "literature"}]
     animals = json.loads(resources.files("walletsim").joinpath("assets/animals.json").read_text(encoding="utf-8"))
-    return {"version": _version, "wallets": entries, "hidden_designs": skipped, "lab": lab, "materials": mat, "animals": animals}
+    return {"version": _version, "wallets": entries, "hidden_designs": skipped, "lab": lab, "materials": mat, "animals": animals,
+            "cards": [card_view(c) for c in cards], "coverage": coverage(cards)}
 
 
 def build_site(wallets_root: str | Path = "wallets", include_designs: bool = False) -> str:

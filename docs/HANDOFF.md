@@ -58,6 +58,17 @@ App https://claude.ai/artifact/Kgo4K1tcbVzmxCTqW8xt7R. Report pages: One Piece T
 18. Roadmap phases 2 to 5: full kinematic assembly, FEM fold cycle with contents, wear and card-pull (Archard), drop test (what failure means is undecided). Not modelled: permanent set, finish crazing, wet and salt flex, ageing.
 19. Material library from offcuts and bend tests; the `fit-law` tool needs the owner's own flex data.
 
+### E2. Leather types, hide parts and behaviour (the owner says all of it matters)
+Built: `src/walletsim/species.py` (hide group and class), `src/walletsim/leather_cards.py` and `cards/*.yaml` (3 cards, a source on every value), coverage map (10 of 90 sheet-hide cells), strip-test functions in `materials.py` and the Lab's *Measure a strip*, the composite-hide refusal (`NotApplicable`, exit code 3). Open:
+- Find and read in full more literature cards: pig leather, horse leather, goat (a Kenyan vegetable-tanned goat study reports 0.81 mm, 27.5 N/mm2 and 18 % elongation, which looks low and was not verified), sheep, Nile perch (none found; tilapia is a different fish), crocodilian. Never add a value you have not read in a table; the earlier 24 to 53 MPa misattribution is the cautionary tale.
+- Get the owner's strips measured (thickness at several points, cantilever bending length, mass and size, along and across the backbone, several thicknesses of one leather) and add them as `cards/*.yaml` with `source: measured`.
+- Add strain at grain crack: lastometer grain-crack distension (ISO 3379) or flex-to-crack at several mandrel radii. Only then can the report show a margin (capacity against demand); until then it shows demand only and says so.
+- Put measured direction ratios, hide-region maps (thickness and stiffness by region) and through-the-hide layers (grain and corium, for finish cracking) into the solver. They need data first; do not use the library's directional priors as numbers.
+- Aged states: run the experiment in `docs/MATERIALS.md` section 5 and store each state as a card state.
+- A composite model for plated and scaled hides (the six Isaac Sellam alligator and crocodile wallets, snake, stingray): plate geometry, a soft-matrix hinge model and an interface-failure criterion. Until then they stay refused.
+- Use the measured seam and perforation effect (the calfskin paper's S2 and S3 samples) once there is a way to apply it.
+- No free 3D model exists for goat, fish, reptiles or exotics in the app.
+
 ### F. Code hygiene
 20. `sim/styles.json` carries no input hash, so it goes stale silently when a record changes. Add the hash and make `build-site` flag stale results; do the same for `viewer.html` and `lab/results.json`.
 21. `page.latest_run` picks by file modification time; make it deterministic. Add cleanup of superseded run directories.

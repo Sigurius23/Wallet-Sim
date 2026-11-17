@@ -118,3 +118,45 @@ def calfskin_upper_literature() -> LeatherMaterial:
         thickness_mm=Value(1.2, "literature", low=1.1, high=1.3, ref="1.2 +- 0.1 mm, same paper"),
         states={"new": MaterialState("new", e, notes="tensile modulus; Poisson's ratio 0.6 in the paper was measured by hand just before break and "
                                                      "is a lateral-contraction figure for a fibrous sheet, not an isotropic bulk value")})
+
+
+# ---- the strip test that gives a BENDING stiffness (the number the simulator most needs) ---------------------------------------------------------------------------------
+G_M_S2 = 9.80665
+
+
+def flexural_rigidity_n_m(overhang_mm: float, mass_per_area_kg_m2: float) -> float:
+    """Flexural rigidity per unit width, B = m g c^3 (N m), from a Peirce cantilever test.
+
+    ``overhang_mm`` is the length L at which the strip's free end has dropped by 41.5 degrees; the bending length is c = L / 2. ``mass_per_area_kg_m2`` is the strip's mass divided by its
+    area (weigh the strip and measure it; do not use a density from a table).
+    """
+    if overhang_mm <= 0 or mass_per_area_kg_m2 <= 0:
+        raise ValueError("overhang and mass per area must be positive")
+    c = overhang_mm / 2000.0
+    return mass_per_area_kg_m2 * G_M_S2 * c ** 3
+
+
+def bending_modulus_mpa(rigidity_n_m: float, thickness_mm: float) -> float:
+    """The effective bending modulus of a strip, E_b = 12 B / t^3 (MPa), treating it as a homogeneous beam. It is a BENDING figure: it is not the tensile modulus and is usually lower."""
+    if thickness_mm <= 0:
+        raise ValueError("thickness must be positive")
+    return 12.0 * rigidity_n_m / (thickness_mm / 1000.0) ** 3 / 1e6
+
+
+def fit_thickness_exponent(thickness_mm: list[float], rigidity_n_m: list[float]) -> tuple[float, float]:
+    """Least squares on ln B = ln a + n ln t for strips of several thicknesses of ONE leather: returns (n, R^2). n = 3 is the homogeneous plate; needs at least 3 thicknesses spanning a factor 1.3."""
+    if len(thickness_mm) != len(rigidity_n_m) or len(thickness_mm) < 3:
+        raise ValueError("need at least 3 (thickness, rigidity) pairs")
+    if min(thickness_mm) <= 0 or min(rigidity_n_m) <= 0:
+        raise ValueError("thickness and rigidity must be positive")
+    if max(thickness_mm) / min(thickness_mm) < 1.3:
+        raise ValueError("thickness range too narrow to fit an exponent (need max/min >= 1.3)")
+    x, y = [math.log(t) for t in thickness_mm], [math.log(b) for b in rigidity_n_m]
+    n = len(x)
+    mx, my = sum(x) / n, sum(y) / n
+    sxx = sum((a - mx) ** 2 for a in x)
+    slope = sum((a - mx) * (b - my) for a, b in zip(x, y)) / sxx
+    icpt = my - slope * mx
+    ss_res = sum((b - (icpt + slope * a)) ** 2 for a, b in zip(x, y))
+    ss_tot = sum((b - my) ** 2 for b in y)
+    return slope, (1 - ss_res / ss_tot if ss_tot > 0 else 1.0)

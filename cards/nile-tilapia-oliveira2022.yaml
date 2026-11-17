@@ -1,0 +1,20 @@
+id: nile-tilapia-oliveira2022
+name: Nile tilapia skin, chrome-tanned, 1.0 mm
+species: Nile tilapia (Oreochromis niloticus)
+tanning: chrome
+test: "Tensile strength and elongation per the paper's method on an EMIC dynamometer at 200 +- 20 mm/min; progressive tearing; 23 +- 2 C, 50 +- 5 % RH after 24 h; specimens cut longitudinally along the body (cephalo-tail axis); skins from fish tanned together with rabbit skin"
+cite: "Oliveira GG, Gasparino E, et al. Scientific World Journal 2022, 4561404, doi:10.1155/2022/4561404 (PMC9586800), Tables 1 and 2. Open access."
+thickness_mm: {value: 1.00, cv: 0.12, source: literature, ref: "Table 1: 1.00 +- 0.12 mm (the paper's +- is a spread; the cv here is that spread divided by the mean)"}
+youngs_modulus_mpa: null
+bending_modulus_mpa: null
+tensile_strength_mpa: {value: 13.52, cv: 0.138, source: literature, ref: "Table 2, 'Traction' 13.52 +- 1.86 N/mm2"}
+elongation_at_break_pct: {value: 78.97, cv: 0.106, source: literature, ref: "Table 2, 'Stretching' 78.97 +- 8.40 %"}
+tear_strength_n_mm: {value: 53.85, cv: 0.124, source: literature, ref: "Table 1, progressive tearing 53.85 +- 6.66 N/mm"}
+grain_crack_strain: null
+direction: {tested: "longitudinal (cephalo-tail axis) only", ratio: null}
+regions: {}
+ageing: {}
+not_this:
+  - "Nile PERCH (Lates niloticus), the species of the Sruli Recht WHALET in the corpus: this is tilapia, a different fish; no Nile perch leather data was found"
+  - "a stiffness: the paper reports no modulus"
+  - "a bending capacity: tensile elongation is not the strain at which a bent grain cracks"

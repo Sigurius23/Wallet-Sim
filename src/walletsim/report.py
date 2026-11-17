@@ -67,7 +67,26 @@ def _elasticities(rec: WalletRecord) -> tuple[float, float]:
     return float(es), float(et)
 
 
+class NotApplicable(Exception):
+    """The sheet model must not be applied to this hide (plates or scales in a soft matrix)."""
+
+
+def leather_line(rec: WalletRecord) -> str:
+    """One line for the report header: what kind of hide this is, which reference cards exist for it, and the limit that follows."""
+    from .leather_cards import load_cards
+    from .species import classify, species_of
+    sp = species_of(rec.raw)
+    cls = classify(sp)
+    cards = [c.id for c in load_cards(Path(rec.path).resolve().parents[1] / "cards") if c.group == cls.group] if cls.group else []
+    return (f"- leather: {sp or 'species not recorded'} -> {cls.name} ({cls.hide_class}). Reference cards for this group: {', '.join(cards) if cards else 'none'}. "
+            "No card holds a strain at grain crack, so this report shows the strain each fold demands, not a margin against a limit.")
+
+
 def build_report(rec: WalletRecord, taut_n_per_mm: float = 0.1, sensitivity: bool = True) -> Report:
+    from .species import classify, species_of
+    cls = classify(species_of(rec.raw))
+    if cls.hide_class == "composite":
+        raise NotApplicable(f"{rec.name}: the species ({species_of(rec.raw)}) is a composite hide ({cls.name}). {cls.why}")
     params = rec.style_params()
     base = evaluate_wallet(rec.plan(), params, rec.layup, rec.spine, rec.corner_mm, taut_n_per_mm)
     scenarios: list[Scenario] = []
@@ -301,6 +320,7 @@ def format_markdown(rep: Report, figures: dict[str, list[str]] | None = None) ->
     L += [f"- wallet: `{rec.id}` ({what}); status: {rec.status}",
           *([f"- usage: used. {rec.raw['usage'].get('condition', '')}"] if isinstance(rec.raw.get("usage"), dict) and rec.raw["usage"].get("used") else []),
           "- inputs by source: " + ", ".join(f"{n} {k}" for k, n in counts.items() if n) + f" (of {len(rec.inputs)})",
+          leather_line(rec),
           f"- model: walletsim {rep.meta['walletsim']}, {rep.meta['ccx']}, plane-strain neo-Hookean fold, pull for 'taut' {rep.meta['taut_n_per_mm']} N per mm; run `{rep.meta['hash']}`", ""]
     L += ["## Inputs and where each came from", "", "| input | value | source | what it changes | note |", "|---|---|---|---|---|"]
     for i in rec.inputs:
