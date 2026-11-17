@@ -168,3 +168,16 @@ def test_ma_report_ranks_the_tight_loops_by_the_closed_form_because_the_elastic_
     md = (out / "report.md").read_text()
     assert "retailer's text and product photographs" in md and "bridges" in md and "no pockets recorded" in md
     assert all((out / f"fold{k}_shape.png").exists() for k in (1, 2, 3))
+
+
+def test_json_sweep_rows_keep_the_name_of_the_fold_they_belong_to():
+    """Regression: a dict merge once overwrote each sweep row's fold name with the variant name ('spine @ high')."""
+    from types import SimpleNamespace
+    from walletsim.report import _json
+    from walletsim.wallet_types import Fold, FoldOutcome
+    o = FoldOutcome(Fold("spine @ high", 9.1, "out"), 4.55, 0.0, None, None, 0.099, note="stub")
+    rep = SimpleNamespace(rec=SimpleNamespace(id="x", status="photos-only", inputs=[], stack_at_spine_mm=3.0), base=SimpleNamespace(outcomes=[o]),
+                          scenarios=[], sweeps=[{"fold": "spine", "label": "high", "stack_mm": 9.1, "outcome": o}], meta={}, modes=[],
+                          elasticity_stack=0.0, elasticity_thickness=0.0)
+    row = _json(rep)["sweeps"][0]
+    assert row["fold"] == "spine" and row["end"] == "high" and row["stack_mm"] == 9.1

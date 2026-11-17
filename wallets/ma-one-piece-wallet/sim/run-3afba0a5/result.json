@@ -120,10 +120,9 @@
  "scenarios": [],
  "sweeps": [
   {
-   "fold": "spine @ high",
-   "end": "high",
-   "stack_mm": 9.1,
+   "fold": "spine",
    "sense": "out",
+   "stack_mm": 9.1,
    "inside_radius_mm": 4.55,
    "tension_loose": 0.09703189885677954,
    "tension_taut": 0.1054360614423342,
@@ -132,13 +131,13 @@
    "note": "",
    "moment_taut_n_mm_per_mm": 1.265843,
    "standoff_loose_mm": 0.5256670128641154,
-   "error": ""
+   "error": "",
+   "end": "high"
   },
   {
-   "fold": "loop 1 (end opposite the spine) @ low",
-   "end": "low",
-   "stack_mm": 0.5,
+   "fold": "loop 1 (end opposite the spine)",
    "sense": "out",
+   "stack_mm": 0.5,
    "inside_radius_mm": 0.25,
    "tension_loose": null,
    "tension_taut": null,
@@ -147,13 +146,13 @@
    "note": "R/t = 0.25 < 0.5: closed form only; the elastic model cannot say whether the leather survives",
    "moment_taut_n_mm_per_mm": null,
    "standoff_loose_mm": null,
-   "error": ""
+   "error": "",
+   "end": "low"
   },
   {
-   "fold": "loop 1 (end opposite the spine) @ high",
-   "end": "high",
-   "stack_mm": 4.0,
+   "fold": "loop 1 (end opposite the spine)",
    "sense": "out",
+   "stack_mm": 4.0,
    "inside_radius_mm": 2.0,
    "tension_loose": 0.14003369999633064,
    "tension_taut": 0.15342388386679162,
@@ -162,13 +161,13 @@
    "note": "",
    "moment_taut_n_mm_per_mm": 2.009731,
    "standoff_loose_mm": 0.874137474090761,
-   "error": ""
+   "error": "",
+   "end": "high"
   },
   {
-   "fold": "loop 2 (end opposite the spine) @ low",
-   "end": "low",
-   "stack_mm": 0.5,
+   "fold": "loop 2 (end opposite the spine)",
    "sense": "in",
+   "stack_mm": 0.5,
    "inside_radius_mm": 0.25,
    "tension_loose": null,
    "tension_taut": null,
@@ -177,13 +176,13 @@
    "note": "R/t = 0.25 < 0.5: closed form only; the elastic model cannot say whether the leather survives",
    "moment_taut_n_mm_per_mm": null,
    "standoff_loose_mm": null,
-   "error": ""
+   "error": "",
+   "end": "low"
   },
   {
-   "fold": "loop 2 (end opposite the spine) @ high",
-   "end": "high",
-   "stack_mm": 4.0,
+   "fold": "loop 2 (end opposite the spine)",
    "sense": "in",
+   "stack_mm": 4.0,
    "inside_radius_mm": 2.0,
    "tension_loose": 0.14003369999633064,
    "tension_taut": 0.15342388386679162,
@@ -192,7 +191,8 @@
    "note": "",
    "moment_taut_n_mm_per_mm": 2.009731,
    "standoff_loose_mm": 0.874137474090761,
-   "error": ""
+   "error": "",
+   "end": "high"
   }
  ],
  "elasticity_stack": -0.7497261488040282,

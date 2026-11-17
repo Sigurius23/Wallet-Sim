@@ -387,7 +387,7 @@ def _json(rep: Report) -> dict:
             "inputs": [{"name": i.name, "value": i.value, "unit": i.unit, "source": i.source, "ref": i.ref} for i in rep.rec.inputs],
             "stack_at_spine_mm": rep.rec.stack_at_spine_mm, "folds": [fo(o) for o in rep.base.outcomes],
             "scenarios": [{"label": s.label, "stack_mm": s.stack_mm, "folds": [fo(o) for o in s.result.outcomes]} for s in rep.scenarios],
-            "sweeps": [{"fold": sw["fold"], "end": sw["label"], "stack_mm": sw["stack_mm"], **fo(sw["outcome"])} for sw in rep.sweeps],
+            "sweeps": [{**fo(sw["outcome"]), "fold": sw["fold"], "end": sw["label"], "stack_mm": sw["stack_mm"]} for sw in rep.sweeps],
             "elasticity_stack": rep.elasticity_stack, "elasticity_thickness": rep.elasticity_thickness, "failure_modes": rep.modes}
 
 
