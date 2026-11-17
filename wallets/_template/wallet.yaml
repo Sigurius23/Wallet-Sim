@@ -3,6 +3,13 @@ id: change-me
 name: ""
 maker: unknown
 photos: {}            # e.g. {open_outside: photos/01_open_outside.jpg}
+archive:              # drives the timeline and carousel (docs/UI.md)
+  designer: null
+  year: null
+  series: null
+  bio_ref: null
+  hero_image: null
+  rights: {photos: unknown, bio: unknown}
 leather:
   - id: shell
     thickness_mm: {value: null, source: measured, n: 0}
@@ -10,6 +17,8 @@ leather:
     material:
       youngs_modulus_mpa: {value: null, source: assumed}
       poisson: {value: null, source: assumed}
+components: []        # body / pockets / lining, each: {id, role, leather, hide_region: {template, region, source}}
+process_steps: []     # ordered: {order, name, window: beamhouse|tanning|post_tanning|finishing, source}
 panels: []
 folds: []
 seams: []

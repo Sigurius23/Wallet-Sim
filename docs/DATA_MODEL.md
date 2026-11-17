@@ -38,13 +38,14 @@ leather:
       post_tanning: unknown
       finishing: {value: semi-aniline, source: inferred}
     edge: {value: painted, source: measured}
-    material: {youngs_modulus_mpa: {value: 50, source: assumed, cv: 0.4}      # cv: spread within the leather; stand-in until measured, poisson: {value: 0.3, source: assumed}}
+    material:                                               # stand-ins until measured; cv = spread within the leather
+      youngs_modulus_mpa: {value: 50, source: assumed, cv: 0.4}
+      poisson: {value: 0.3, source: assumed}
 components:                                                     # what the UI maps to animals: body, pockets, lining
   - id: body
     role: exterior body
     leather: shell
-    hide_region: {template: bovine, region: unknown, source: assumed}   # region ids from the species template;
-                                                                                                  # unknown is a valid answer
+    hide_region: {template: bovine, region: unknown, source: assumed}   # region id on the species template; unknown is valid
 process_steps:                                                 # ordered, free-form; each tagged with its window
   - {order: 1, name: Raw hide, window: beamhouse, source: inferred}
   - {order: 2, name: Vegetable tanning, window: tanning, source: inferred}

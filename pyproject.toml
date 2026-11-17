@@ -12,7 +12,7 @@ dependencies = ["numpy"]
 [project.optional-dependencies]
 capture = ["opencv-python-headless", "shapely", "ezdxf", "trimesh"]
 viz = ["matplotlib", "pyvista"]
-dev = ["pytest"]
+dev = ["pytest", "pyyaml"]
 
 [project.scripts]
 walletsim = "walletsim.cli:main"
