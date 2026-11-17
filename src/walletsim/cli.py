@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -80,6 +80,34 @@ def _fold_styles(a: argparse.Namespace) -> int:
     return 0
 
 
+def _style_params(a: argparse.Namespace):
+    from .fold_styles import StyleParams
+    return StyleParams(t=a.t, E=a.E, nu=a.poisson, skive_ratio=a.skive_ratio, lining_t=a.lining_t,
+                       lining_e_ratio=a.lining_e_ratio, groove_half_mm=a.groove_width / 2, groove_taper_mm=a.groove_taper)
+
+
+def _gusset(a: argparse.Namespace) -> int:
+    from .fem.fold import FemUnavailable as _NoFem
+    from .fold_styles import compare_pleats, format_pleat_report
+    p = _style_params(a)
+    try:
+        res = compare_pleats(p, angles=tuple(a.angles), layups=tuple(a.layups))
+    except (FemUnavailable, _NoFem) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except (ValueError, KeyError, RuntimeError) as exc:
+        print(f"error: {str(exc).strip().splitlines()[0]}", file=sys.stderr)
+        return 1
+    print(format_pleat_report(res, p))
+    return 0
+
+
+def _edge_turn(a: argparse.Namespace) -> int:
+    from .fold_styles import edge_turn_table, format_edge_turn_report
+    print(format_edge_turn_report(edge_turn_table(a.t, tuple(a.skive_ratios), tuple(a.cores)), a.t))
+    return 0
+
+
 def _fit_law(a: argparse.Namespace) -> int:
     with open(a.csv, newline="") as f:
         rows = [(float(r["strain"]), float(r["cycles"])) for r in csv.DictReader(f)]
@@ -126,8 +154,25 @@ def main(argv: list[str] | None = None) -> int:
     fs.add_argument("--lining-e-ratio", type=float, default=1.0, help="lining stiffness / shell stiffness (an assumption you vary)")
     fs.add_argument("--hinge-t-ratio", type=float, default=0.6)
     fs.add_argument("--hinge-e-ratio", type=float, default=0.5)
-    fs.add_argument("--styles", nargs="+", default=None, help="subset of: plain skived lined skived+lined hinged")
+    fs.add_argument("--styles", nargs="+", default=None, help="subset of: plain skived lined skived+lined hinged 'turned edge'")
     fs.set_defaults(fn=_fold_styles)
+    gu = sub.add_parser("gusset", help="accordion pleat: two opposed folds at several opening angles, with and without a skived crease groove")
+    gu.add_argument("--t", type=float, default=1.2)
+    gu.add_argument("--E", type=float, default=72.0)
+    gu.add_argument("--poisson", type=float, default=0.3)
+    gu.add_argument("--angles", type=float, nargs="+", default=[180, 135, 90, 45], help="fold angles; 180 = collapsed")
+    gu.add_argument("--layups", nargs="+", default=["plain", "grooved", "grooved+lined"], help="plain grooved grooved+lined")
+    gu.add_argument("--skive-ratio", type=float, default=0.5, help="thickness left in the groove / t")
+    gu.add_argument("--groove-width", type=float, default=2.0, help="width of the thinnest part of the groove, mm")
+    gu.add_argument("--groove-taper", type=float, default=1.5, help="length over which the groove returns to full thickness, mm")
+    gu.add_argument("--lining-t", type=float, default=0.5)
+    gu.add_argument("--lining-e-ratio", type=float, default=1.0)
+    gu.set_defaults(fn=_gusset)
+    et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
+    et.add_argument("--t", type=float, default=1.2)
+    et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])
+    et.add_argument("--cores", type=float, nargs="+", default=[0.6, 0.3, 0.1], help="thickness of what the leather is folded around, mm")
+    et.set_defaults(fn=_edge_turn)
     f = sub.add_parser("fit-law", help="fit a cycles-to-crack law to your flex-test data (csv: strain,cycles)")
     f.add_argument("csv")
     f.add_argument("--at", type=float, nargs="*", help="strains (fraction) to predict at")

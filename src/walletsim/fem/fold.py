@@ -6,7 +6,7 @@ One model describes every "bending style" a wallet fold can have, because a fold
 * skived         the flesh side of the shell is thinned over the fold (the grain face stays flat)
 * lined          shell + glued lining (or an interlining), each with its own thickness and stiffness
 * hinged         the fold zone is a different (softer / thinner) leather than the panels
-* grain in / out which face of the leather is in tension
+* grain in / out which face of the leather is in tension (``flat_face`` keeps the grain face the flat one)
 
 Two load cases, both symmetric halves of a 180 degree fold (the symmetry plane is the fold centre, u = 0):
 
@@ -77,6 +77,8 @@ class FoldJob:
     grain_layer: str | None = None      # name of the layer whose OUTER face is the grain (reporting only)
     skip_mm: float | None = None        # ignore the strip this far from the bend start (constraint effects); default 2 x thickness
     tension_n_per_mm: float = 0.0       # wrap: pull on the free start of the strip (N per mm of width); 0 = leather lies on the stack untensioned
+    flat_face: str = "outer"            # which face of the layup stays flat where thickness varies: "outer" (grain out, flesh side thinned)
+                                        # or "inner" (grain in: the grain face is the one against the stack / on the inside of the fold)
 
     def total_thickness(self, u: float) -> float:
         return sum(l.thickness(u) for l in self.layers)
@@ -120,6 +122,8 @@ def build_mesh(job: FoldJob) -> Mesh:
         row_layer += [li] * l.nz
         row_sub += list(range(l.nz))
     K = len(row_layer)
+    if job.flat_face not in ("outer", "inner"):
+        raise ValueError("flat_face must be 'outer' or 'inner'")
     # wrap: the flat tail lies on the stack, so the outer face sits one tail-thickness above it (thinner zones then hang above the stack)
     ztop = job.inside_radius_mm + job.total_thickness(u0) if job.mode == "wrap" else 0.0
     z = np.zeros((nx + 1, K + 1))
@@ -133,6 +137,8 @@ def build_mesh(job: FoldJob) -> Mesh:
                 z[i, k + s] = zc - t * s / l.nz
             zc -= t
             k += l.nz
+    if job.flat_face == "inner":                    # keep the inner face flat instead (on the stack for a wrap), thickness change on the outer face
+        z += (job.inside_radius_mm if job.mode == "wrap" else 0.0) - z[:, [K]]
     ids, nodes = {}, []
     for i in range(nx + 1):
         for j in (0, 1):
@@ -366,6 +372,8 @@ class FoldResult:
     moment_n_mm: float                  # reaction moment at the fold centre, per mm of width
     standoff_mm: float                  # wrap: largest gap between the leather's inner face and the stack inside the bend
     penetration_mm: float               # wrap: deepest overlap of the leather into the stack (penalty contact; should be small)
+    leg_overlap_mm: float               # free: how far the inner face crosses the symmetry plane, i.e. how far the two mirror legs would
+                                        # interpenetrate (self-contact is not modelled); 0 when the legs clear each other
     contact_stiffness: float            # wrap: penalty stiffness that converged (MPa/mm)
     runtime_s: float
     skip_mm: float
@@ -493,7 +501,18 @@ def _read_results(job: FoldJob, mesh: Mesh, dat: str, runtime: float, tail: str,
         ang[i] = math.atan2(dx, dz)
     rot_rf = _last_block(dat, r"forces \(fx,fy,fz\) for set ROT")
     moment = float(abs(rot_rf[0][2]))
-    standoff = penetration = 0.0
+    standoff = penetration = leg_overlap = 0.0
+    if job.mode == "free":
+        # the symmetry plane is the end face; the mirror leg is the strip reflected in it. Overlap = the inner face crossing that line.
+        def pos(i, k):
+            n = mesh.ids[(i, 0, k)]
+            return np.array([mesh.nodes[n - 1][0] + ref[n][1], mesh.nodes[n - 1][2] + ref[n][3]])
+        a, b = pos(nx, 0), pos(nx, K)                           # outer and inner node of the end face
+        d = (b - a) / np.linalg.norm(b - a)
+        nrm = np.array([-d[1], d[0]])
+        side = np.sign(float((pos(nx - 2, K // 2) - a) @ nrm)) or 1.0       # which side of the line the strip body lies on
+        dist = [side * float((pos(i, K) - a) @ nrm) for i in range(nx + 1)]
+        leg_overlap = float(max(0.0, -min(dist)))
     if job.mode == "wrap":
         R = job.inside_radius_mm
         gaps = []
@@ -508,4 +527,4 @@ def _read_results(job: FoldJob, mesh: Mesh, dat: str, runtime: float, tail: str,
     if job.skip_mm is None and job.mode == "wrap":
         skip = min(skip, 0.3 * job.arc_mm)                  # a tight bend is short: do not exclude all of it
     u_c = 0.5 * (mesh.us[1:] + mesh.us[:-1])
-    return FoldResult(job, u_c, face, ang, mesh.us, moment, standoff, penetration, k_contact, runtime, skip, tail)
+    return FoldResult(job, u_c, face, ang, mesh.us, moment, standoff, penetration, leg_overlap, k_contact, runtime, skip, tail)

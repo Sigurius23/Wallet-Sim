@@ -6,7 +6,9 @@ import pytest
 
 from walletsim.fem.fold import (FoldJob, Layer, analytic_free, analytic_wrap, build_fold_input, build_mesh, run_fold, section,
                                 uniform, wrap_strain_closed_form)
-from walletsim.fold_styles import (STYLES, StyleParams, compare_styles, damage_rate_vs_reference, skived, stack_inside_radius)
+from walletsim.fold_screen import outer_fibre_strain
+from walletsim.fold_styles import (STYLES, StyleParams, compare_pleats, compare_styles, damage_rate_vs_reference, edge_turn_table,
+                                   format_edge_turn_report, pleat_layers, skived, stack_inside_radius, turned_edge)
 
 needs_ccx = pytest.mark.skipif(shutil.which("ccx") is None, reason="CalculiX not installed")
 fem = pytest.mark.fem
@@ -165,3 +167,82 @@ def test_results_are_mesh_converged_to_a_few_percent():
     b = run_fold(FoldJob(layers, "wrap", inside_radius_mm=3.0, tension_n_per_mm=0.1, dx_mm=0.25))
     assert b.peak_outer == pytest.approx(a.peak_outer, rel=0.04)
     assert b.moment_n_mm == pytest.approx(a.moment_n_mm, rel=0.06)
+
+
+# ---- grain-in folds, the gusset pleat and the turned edge -----------------------------------------------------------
+
+def test_flat_inner_face_keeps_the_inner_face_flat_and_the_outer_face_dips():
+    job = FoldJob(skived(StyleParams()), "wrap", inside_radius_mm=3.0, flat_face="inner")
+    mesh = build_mesh(job)
+    K = len(mesh.row_layer)
+    assert np.allclose(mesh.z[:, K], 3.0)                               # inner face on the stack everywhere
+    assert mesh.z[-1, 0] < mesh.z[0, 0] - 0.5                           # outer face dips where the leather is skived
+    with pytest.raises(ValueError):
+        build_mesh(FoldJob(skived(StyleParams()), "free", flat_face="middle"))
+
+
+def test_turned_edge_is_a_shell_plus_a_lip_of_the_same_leather():
+    p = StyleParams(t=1.2, lip_ratio=0.5)
+    layers = turned_edge(p)
+    assert [l.name for l in layers] == ["shell", "lip"]
+    assert layers[1].thickness(0.0) == pytest.approx(0.6)
+    assert layers[1].youngs_modulus_mpa == layers[0].youngs_modulus_mpa      # same leather
+    plain = FoldJob(STYLES["plain"][0](p), "wrap", inside_radius_mm=3.0)
+    hem = FoldJob(layers, "wrap", inside_radius_mm=3.0)
+    assert analytic_wrap(hem, 0.0)["outer"] > 1.2 * analytic_wrap(plain, 0.0)["outer"]   # the double layer strains the shell more
+
+
+def test_edge_turn_table_is_the_kinematic_formula_and_is_flagged():
+    rows = edge_turn_table(1.2, skive_ratios=(1.0, 0.5), cores=(0.6, 0.3))
+    assert len(rows) == 4
+    for r in rows:
+        assert r.strain == pytest.approx(outer_fibre_strain(r.t_turn_mm, r.inside_radius_mm))
+        assert r.flags and r.strain > 0.30                                      # nowhere near the elastic range
+        assert outer_fibre_strain(r.max_thickness_for_20pct_mm, r.inside_radius_mm) == pytest.approx(0.20)
+    assert "no permanent set" in format_edge_turn_report(rows, 1.2)
+    thinner = [r.strain for r in rows if r.core_mm == 0.6]
+    assert thinner[1] < thinner[0]                                              # skiving lowers the kinematic strain
+
+
+def test_unknown_pleat_layup_is_rejected():
+    with pytest.raises(KeyError):
+        pleat_layers(StyleParams(), "nonsense")
+
+
+@fem
+@needs_ccx
+def test_grain_in_free_fold_is_the_mirror_of_grain_out_for_one_leather():
+    layers = (uniform("shell", 1.4, 72.0, 0.0),)
+    out = run_fold(FoldJob(layers, "free", run_mm=15.0, flat_face="outer"))
+    inn = run_fold(FoldJob(layers, "free", run_mm=15.0, flat_face="inner"))
+    assert inn.peak_inner == pytest.approx(out.peak_inner, rel=0.02)
+    assert inn.moment_n_mm == pytest.approx(out.moment_n_mm, rel=0.01)
+    assert inn.peak_outer == pytest.approx(out.peak_outer, rel=0.02)            # same layup, same fold: which face stays flat is only the reference shape
+
+
+@fem
+@needs_ccx
+def test_reversed_lined_layup_with_flat_inner_face_matches_the_composite_beam():
+    layers = tuple(reversed(STYLE_SET["lined"]))
+    job = FoldJob(layers, "free", run_mm=15.0, flat_face="inner")
+    r, a = run_fold(job), analytic_free(job)
+    assert r.moment_n_mm == pytest.approx(a["moment"], rel=0.04)
+    w = r.window()
+    closed = np.interp(r.u, a["u"], a["outer"])
+    assert np.abs(r.outer_strain[w] - closed[w]).max() < 0.04 * np.abs(closed[w]).max()
+
+
+@fem
+@needs_ccx
+def test_pleat_groove_creates_a_tight_crease_and_strain_follows_the_fold_angle():
+    res = compare_pleats(StyleParams(), angles=(180.0, 90.0), layups=("plain", "grooved"))
+    d = {(r.layup, r.fold_deg): r for r in res}
+    assert d[("grooved", 180.0)].crease_radius_mm() < 0.35 * d[("plain", 180.0)].crease_radius_mm()
+    assert d[("grooved", 180.0)].grain1 > 2 * d[("plain", 180.0)].grain1       # the groove concentrates the fold
+    g180, g90 = d[("grooved", 180.0)], d[("grooved", 90.0)]
+    assert g180.crease_radius_mm() * 180 == pytest.approx(g90.crease_radius_mm() * 90, rel=0.08)   # curvature proportional to the angle
+    assert g90.grain1 < g180.grain1
+    assert g180.grain1 > 0 > g180.grain2                                         # grain in tension in fold 1, in compression in fold 2
+    plain = d[("plain", 180.0)]
+    assert abs(plain.grain2) == pytest.approx(plain.grain1, rel=0.12)           # mirror folds of one leather, up to tension/compression asymmetry
+    assert all(r.fold1.leg_overlap_mm < 0.02 and r.fold2.leg_overlap_mm < 0.02 for r in res)

@@ -14,7 +14,7 @@ Nothing here simulates a full wallet yet. What exists and is tested:
 | FEM backend check: a strip bent 180° in CalculiX vs closed form (Poisson 0) | `walletsim validate-fem` | **strain +1.0 %, bending moment -0.2 % vs theory**, same on two mesh densities; 8 s on 4 CPU cores |
 | Thickness sweep at a fixed fold radius: strain and bending moment per thickness | `walletsim sweep` | works; stiffness is a placeholder until measured |
 | Material cards with provenance, aged states as measured data | `walletsim.materials` | structure only; one literature card (calfskin upper, 72 MPa tensile, CV 29 %) |
-| **Fold styles**: plain, skived, lined, skived + lined and hinged folds, in a free fold and wrapped around a card stack (layered CalculiX model with contact) | `walletsim fold-styles`, [`docs/FOLD_STYLES.md`](docs/FOLD_STYLES.md) | **current focus**; agrees with closed forms to 2-3 % where they apply |
+| **Fold styles**: plain, skived, lined, skived + lined, hinged and turned-edge folds in a free fold and wrapped around a card stack; **gusset** (accordion pleat) at several opening angles; the turned-edge turn (closed form) | `walletsim fold-styles`, `gusset`, `edge-turn`; [`docs/FOLD_STYLES.md`](docs/FOLD_STYLES.md) | **current focus**; agrees with closed forms to 2-3 % where they apply |
 | Level-0 fold screen: `eps = t/(2R+t)` with screening flags | `walletsim screen --t 1.0 --radius 2.0` | done |
 | "x folds" bookkeeping: rank locations by cycles per use x strain^m across a range of exponents, and fit a cycles-to-crack law to **your own** flex-test data | `walletsim fit-law`, `walletsim.damage` | done, refuses uncalibrated absolute life |
 | Docs: architecture, claims policy, capture protocol, **capture feasibility research**, **materials and ageing**, data model, roadmap | `docs/` | draft for review |
@@ -32,9 +32,10 @@ No validated leather fatigue law exists; the leather-specific research codes (Fr
 ```bash
 pip install -e ".[dev]"            # numpy only; the FEM check also needs CalculiX
 sudo apt-get install calculix-ccx  # Debian/Ubuntu
-pytest                             # 50 tests, ~90 s
+pytest                             # 57 tests, ~100 s
 walletsim validate-fem             # the 180° bending benchmark
-walletsim fold-styles              # compare fold constructions, about 12 s
+walletsim fold-styles              # compare fold constructions, about 15 s
+walletsim gusset                   # accordion pleat, about 17 s
 ```
 
 ## Layout

@@ -15,7 +15,10 @@ constructions the *ratio* of stiffnesses decides how the layers share the bend.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+import math
 from dataclasses import dataclass
+
+import numpy as np
 
 from .fem.fold import FoldJob, FoldResult, Layer, analytic_wrap, run_fold, uniform
 
@@ -41,6 +44,9 @@ class StyleParams:
     hinge_half_mm: float = 4.0          # hinged: half width of the hinge zone
     hinge_t_ratio: float = 0.6          # hinge leather thickness / t
     hinge_e_ratio: float = 0.5          # hinge leather stiffness / shell stiffness (assumed)
+    lip_ratio: float = 0.5              # turned edge: thickness of the folded-over lip / t (skived; the lip is the same leather)
+    groove_half_mm: float = 1.0         # gusset pleat: half width of the thinnest part of the skived crease groove ...
+    groove_taper_mm: float = 1.5        # ... and the length over which it returns to full thickness
 
 
 def _skived_profile(p: StyleParams) -> tuple[tuple[float, float], ...]:
@@ -70,12 +76,19 @@ def hinged(p: StyleParams) -> tuple[Layer, ...]:
     return (Layer("shell", prof, p.E, p.nu, 4, zones=((-(p.hinge_half_mm + p.taper_mm / 2), 0.0, eh, p.nu),)),)
 
 
+def turned_edge(p: StyleParams) -> tuple[Layer, ...]:
+    """The hem of a turned edge seen where the spine fold crosses it: the shell plus the folded-over lip, the same leather skived
+    to ``lip_ratio`` x t and glued flesh to flesh (perfect bond). Its grain face is the one against the stack."""
+    return (uniform("shell", p.t, p.E, p.nu, nz=4), uniform("lip", p.t * p.lip_ratio, p.E, p.nu, nz=2))
+
+
 STYLES = {
     "plain": (plain, "one layer, constant thickness"),
     "skived": (skived, "flesh side thinned over the fold, grain face flat"),
     "lined": (lined, "shell with a glued lining (perfect bond)"),
     "skived+lined": (skived_lined, "shell skived at the fold, glued lining"),
     "hinged": (hinged, "thinner, softer leather across the fold zone, bonded butt joint"),
+    "turned edge": (turned_edge, "shell + folded-over lip of the same leather (the hem where the spine crosses a turned edge)"),
 }
 
 
@@ -164,4 +177,146 @@ def format_report(results: list[StyleResult], params: StyleParams, inside_radius
     L += ["  - the ranking can flip between A and B: a skived or hinged fold concentrates the bend (higher strain in a free fold) but is thinner at the stack (lower strain around it).",
           "  - strains within one thickness of the fold centre or of the start of the bend are excluded (constraint effects).",
           "  - not modelled: permanent set, creep, finish-film cracking, glue-line shear, stitching, friction, and anything that changes with age."]
+    return "\n".join(L)
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Gusset: the accordion pleat (two opposed folds)
+
+PLEAT_LAYUPS = ("plain", "grooved", "grooved+lined")
+
+
+def pleat_layers(p: StyleParams, layup: str) -> tuple[Layer, ...]:
+    """Layup of the strip that forms a pleat, listed from the OUTER face of fold 1 (grain out). 'plain' is an unskived strip,
+    'grooved' has the flesh side skived to skive_ratio x t over a crease groove, 'grooved+lined' adds a glued lining."""
+    if layup not in PLEAT_LAYUPS:
+        raise KeyError(f"unknown pleat layup {layup!r}; known: {PLEAT_LAYUPS}")
+    ts = p.t * p.skive_ratio
+    groove = ((-BIG, p.t), (-(p.groove_half_mm + p.groove_taper_mm), p.t), (-p.groove_half_mm, ts), (0.0, ts))
+    shell = uniform("shell", p.t, p.E, p.nu, 4) if layup == "plain" else Layer("shell", groove, p.E, p.nu, 4)
+    if layup == "grooved+lined":
+        return (shell, uniform("lining", p.lining_t, p.E * p.lining_e_ratio, p.nu, nz=2))
+    return (shell,)
+
+
+@dataclass
+class PleatResult:
+    layup: str
+    fold_deg: float
+    fold1: FoldResult                   # grain out: the grain face is the tension face
+    fold2: FoldResult                   # the mirror fold of the S: layers reversed, grain in: the grain face is the compression face
+
+    @property
+    def grain1(self) -> float:
+        return self.fold1.peak_outer
+
+    @property
+    def flesh1(self) -> float:
+        return self.fold1.peak_inner
+
+    @property
+    def grain2(self) -> float:
+        return self.fold2.peak_inner
+
+    @property
+    def flesh2(self) -> float:
+        return self.fold2.peak_outer
+
+    def crease_radius_mm(self, over_mm: float = 1.0) -> float:
+        """Radius of the neutral fibre at the fold centre, from the turning of the cross-section over the central ``over_mm``."""
+        a = self.fold1.angle
+        lo, hi = (float(v) for v in np.interp([-over_mm, 0.0], self.fold1.angle_u, a))
+        return over_mm / (hi - lo) if hi > lo else math.inf
+
+    def centre_share(self, half_width_mm: float = 3.0) -> float:
+        return self.fold1.angle_share(-half_width_mm, 0.0)
+
+
+def compare_pleats(params: StyleParams | None = None, angles=(180.0, 135.0, 90.0, 45.0), layups=PLEAT_LAYUPS,
+                   free_run_mm: float = 15.0, dx_mm: float = 0.25, workers: int = 4) -> list[PleatResult]:
+    """A pleat folded to each angle (180 = collapsed, smaller = more open), in both senses of the S."""
+    p = params or StyleParams()
+    jobs, keys = [], []
+    for lay in layups:
+        L = pleat_layers(p, lay)
+        for a in angles:
+            jobs.append(FoldJob(L, "free", fold_deg=a, run_mm=free_run_mm, dx_mm=dx_mm, flat_face="outer")); keys.append((lay, a, 1))
+            jobs.append(FoldJob(tuple(reversed(L)), "free", fold_deg=a, run_mm=free_run_mm, dx_mm=dx_mm, flat_face="inner")); keys.append((lay, a, 2))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        out = dict(zip(keys, pool.map(run_fold, jobs)))
+    return [PleatResult(lay, a, out[(lay, a, 1)], out[(lay, a, 2)]) for lay in layups for a in angles]
+
+
+def format_pleat_report(results: list[PleatResult], p: StyleParams) -> str:
+    L = [f"gusset (accordion pleat): shell {p.t:g} mm, E = {p.E:g} MPa (supply your own: strain does not depend on it, moment does)",
+         f"crease groove: flesh side skived to {p.skive_ratio:g} x t over {2 * p.groove_half_mm:g} mm with {p.groove_taper_mm:g} mm tapers (an assumption you vary). "
+         "Free fold, 15 mm legs, plane strain, layers bonded.",
+         "A pleat is two opposed folds (an S). Fold 1 has the grain outside (grain in tension); fold 2 is its mirror, grain inside (grain in compression).",
+         "Fold angle 180 = pleat collapsed, smaller = opened. Moment is per mm of width: it is what the pleat pushes back with.",
+         "'grain' = the grain face of the shell; 'back' = the opposite face of the whole layup (the flesh side of a single leather, the lining of a lined one).", ""]
+    for lay in dict.fromkeys(r.layup for r in results):
+        rows = [r for r in results if r.layup == lay]
+        L += [f"layup: {lay}",
+              f"  {'fold':>5s} {'moment':>8s} {'crease':>9s} {'central':>8s} | {'fold 1 grain':>13s} {'fold 1 back':>13s} | {'fold 2 grain':>13s} {'fold 2 back':>13s} | {'legs':>5s}",
+              f"  {'angle':>5s} {'N mm/mm':>8s} {'radius':>9s} {'6 mm':>8s} | {'(tension)':>13s} {'(compr.)':>13s} | {'(compr.)':>13s} {'(tension)':>13s} | {'clear':>5s}"]
+        for r in rows:
+            ok = "yes" if max(r.fold1.leg_overlap_mm, r.fold2.leg_overlap_mm) < 0.02 else "NO"
+            L.append(f"  {r.fold_deg:5.0f} {r.fold1.moment_n_mm:8.2f} {r.crease_radius_mm():6.1f} mm {100 * r.centre_share():7.0f}% | "
+                     f"{100 * r.grain1:12.1f}% {100 * r.flesh1:12.1f}% | {100 * r.grain2:12.1f}% {100 * r.flesh2:12.1f}% | {ok:>5s}")
+        hi = max(rows, key=lambda r: r.fold_deg)
+        mid = next((r for r in rows if r.fold_deg == 90.0), rows[-1])
+        L += [f"  strain swing of the grain face between {hi.fold_deg:.0f} and {mid.fold_deg:.0f} deg: fold 1 {100 * (hi.grain1 - mid.grain1):.1f} points, "
+              f"fold 2 {100 * abs(hi.grain2 - mid.grain2):.1f} points (per open/close cycle)", ""]
+    L += ["NOTES",
+          "  - crease radius = radius of the neutral fibre at the fold centre as the FEM found it. A pleat is normally pressed into a sharper crease, which this elastic model cannot do",
+          "    (no permanent set), so real creases are tighter and more strained than the groove alone gives.",
+          "  - 'legs clear' = the inner face stays on its own side of the symmetry plane; contact between the two legs and with the contents is not modelled.",
+          "  - the strain swing, not the peak, is what repeats each time the pleat opens and closes. How often that happens per use is not known here.",
+          "  - not modelled: permanent set, creep, finish cracking, glue-line shear, stitching of the pleat edges, friction, ageing."]
+    return "\n".join(L)
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Turned edge: the 180 degree turn itself (closed form only)
+
+@dataclass
+class EdgeTurn:
+    skive_ratio: float
+    core_mm: float
+    t_turn_mm: float                    # leather thickness at the turn
+    inside_radius_mm: float             # half the core
+    strain: float                       # kinematic tension-face strain if the leather follows the core exactly
+    flags: list[str]
+    max_thickness_for_20pct_mm: float   # thickness at the turn that would keep that kinematic strain at the screening threshold
+
+
+def edge_turn_table(t: float = 1.2, skive_ratios=(1.0, 0.5, 0.35, 0.25), cores=(0.6, 0.3, 0.1)) -> list[EdgeTurn]:
+    """Kinematic strain at the fold of a turned edge: the leather folded 180 deg around a core (adhesive, tape, the other leg)
+    of thickness ``core``. Closed form only: the elastic FEM does not model the pressing and gluing that forces this fold,
+    so it would show the leather bridging the core instead."""
+    from .fold_screen import STRAIN_SCREEN, outer_fibre_strain, screen
+    rows = []
+    for sr in skive_ratios:
+        for core in cores:
+            ts, r = t * sr, core / 2
+            rows.append(EdgeTurn(sr, core, ts, r, outer_fibre_strain(ts, r), screen(ts, r).flags,
+                                 STRAIN_SCREEN * 2 * r / (1 - STRAIN_SCREEN)))
+    return rows
+
+
+def format_edge_turn_report(rows: list[EdgeTurn], t: float) -> str:
+    lo, hi = min(r.strain for r in rows), max(r.strain for r in rows)
+    L = [f"turned edge, the 180 deg turn: {t:g} mm leather folded around a core (glue line, tape, or the other leg); kinematic strain t_turn / (2R + t_turn), R = core / 2",
+         "", f"  {'skive':>6s} {'leather at':>11s} {'core':>6s} {'R/t':>5s} {'tension face':>13s}   {'thickness that would give 20 %':>31s}",
+         f"  {'ratio':>6s} {'the turn':>11s} {'[mm]':>6s} {'':>5s} {'(kinematic)':>13s}   {'at this core':>31s}"]
+    for r in rows:
+        L.append(f"  {r.skive_ratio:6.2f} {r.t_turn_mm:8.2f} mm {r.core_mm:6.2f} {r.inside_radius_mm / r.t_turn_mm:5.2f} {100 * r.strain:12.0f}% {r.max_thickness_for_20pct_mm:28.3f} mm")
+    L += ["", "NOTES",
+          f"  - every row is far above the 20 % screening threshold ({100 * lo:.0f} % to {100 * hi:.0f} %). Strains like these are not elastic, so a real turn must rely on",
+          "    permanent deformation, thinning and the glue. This model has none of those (no permanent set), so it cannot say whether a given turn survives.",
+          "  - what it does say is how much skiving buys: the kinematic strain falls as the leather at the turn gets thinner, and the last column is the thickness",
+          "    that would bring a turn around that core down to the screening threshold.",
+          "  - the hem as a double layer where the spine fold crosses it IS simulated: see the 'turned edge' row of `walletsim fold-styles`.",
+          "  - an elastic FEM of this turn was tried and rejected: around a 0.3-0.6 mm core the leather bridges the gap (strain 10-22 % against 41-80 % kinematic),",
+          "    because nothing in the model presses and glues it down."]
     return "\n".join(L)
