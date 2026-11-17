@@ -1,0 +1,17 @@
+# Template. Replace every value; keep the provenance (source: measured | inferred | assumed).
+id: change-me
+name: ""
+maker: unknown
+photos: {}            # e.g. {open_outside: photos/01_open_outside.jpg}
+leather:
+  - id: shell
+    thickness_mm: {value: null, source: measured, n: 0}
+    type: {value: null, source: inferred}
+    material:
+      youngs_modulus_mpa: {value: null, source: assumed}
+      poisson: {value: null, source: assumed}
+panels: []
+folds: []
+seams: []
+pockets: []
+usage: {used: false}
