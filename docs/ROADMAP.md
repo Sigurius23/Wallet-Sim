@@ -24,7 +24,8 @@
 | 3 | **FEM fold cycle** | strain and contact-pressure maps for one fold cycle with contents, CalculiX backend; compared with level 0 at each fold | phase 2 |
 | 4 | **Wear** | hot-spot maps, location ranking, card-pull wear (Archard), predicted vs photographed wear on used wallets; calibrated cycles to crack if flex data exist | phase 3, wear photos, optional flex tests |
 | 5 | **Drop test** | defined after decision 6 | phase 3 |
-| 6 | **Archive and viewer** | browse wallets, replay folds, compare designs side by side | several wallets |
+| 6a | **Clickable UI prototype** (`UI.md`) | timeline, carousel and the Materials and Source view with mock data, in the sketched style, so layout can be judged before real data exists | your answers to the UI questions |
+| 6 | **Archive and viewer** | browse wallets, replay folds, compare designs side by side, Behaviour mode | several wallets |
 
 Research items with no model yet (see `FAILURE_MODES.md`): permanent set under repeated flexing, finish crazing and delamination, wet and salt flex.
 

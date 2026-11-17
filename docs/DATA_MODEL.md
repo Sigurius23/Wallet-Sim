@@ -20,6 +20,13 @@ id: example-bifold-01
 name: Example bifold
 maker: unknown
 photos: {open_outside: photos/01_open_outside.jpg}
+archive:                                                       # drives the timeline and carousel (docs/UI.md)
+  designer: Example Designer
+  year: 2018
+  series: Example Series No. 1
+  bio_ref: designers/example-designer.md
+  hero_image: photos/hero.jpg
+  rights: {photos: unknown, bio: unknown}
 leather:
   - id: shell
     thickness_mm: {value: 1.2, source: measured, n: 5}      # source: measured | inferred | assumed
@@ -32,6 +39,17 @@ leather:
       finishing: {value: semi-aniline, source: inferred}
     edge: {value: painted, source: measured}
     material: {youngs_modulus_mpa: {value: 50, source: assumed, cv: 0.4}      # cv: spread within the leather; stand-in until measured, poisson: {value: 0.3, source: assumed}}
+components:                                                     # what the UI maps to animals: body, pockets, lining
+  - id: body
+    role: exterior body
+    leather: shell
+    hide_region: {template: bovine, region: unknown, source: assumed}   # region ids from the species template;
+                                                                                                  # unknown is a valid answer
+process_steps:                                                 # ordered, free-form; each tagged with its window
+  - {order: 1, name: Raw hide, window: beamhouse, source: inferred}
+  - {order: 2, name: Vegetable tanning, window: tanning, source: inferred}
+  - {order: 3, name: Waxing and buffing, window: post_tanning, source: inferred}
+  - {order: 4, name: Distressed finishing, window: finishing, source: inferred}
 panels:                                                        # flat outlines, from calibrated photos
   - {id: outer, leather: shell, outline: measured/outer.svg, grain_direction_deg: {value: 0, source: assumed}}
 folds:
