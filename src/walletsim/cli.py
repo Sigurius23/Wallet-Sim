@@ -1,4 +1,4 @@
-"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | edge-turn | fit-law"""
+"""Command line entry point:  walletsim screen | validate-fem | sweep | fold-styles | gusset | box-spine | edge-turn | fit-law"""
 from __future__ import annotations
 
 import argparse
@@ -88,10 +88,11 @@ def _style_params(a: argparse.Namespace):
 
 def _gusset(a: argparse.Namespace) -> int:
     from .fem.fold import FemUnavailable as _NoFem
-    from .fold_styles import compare_pleats, format_pleat_report
+    from .fold_styles import compare_pleats, fold_angle_for_expansion, format_pleat_report
     p = _style_params(a)
+    angles = tuple(fold_angle_for_expansion(f) for f in a.expansion) if a.expansion else tuple(a.angles)
     try:
-        res = compare_pleats(p, angles=tuple(a.angles), layups=tuple(a.layups))
+        res = compare_pleats(p, angles=angles, layups=tuple(a.layups))
     except (FemUnavailable, _NoFem) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
@@ -99,6 +100,23 @@ def _gusset(a: argparse.Namespace) -> int:
         print(f"error: {str(exc).strip().splitlines()[0]}", file=sys.stderr)
         return 1
     print(format_pleat_report(res, p))
+    return 0
+
+
+def _box_spine(a: argparse.Namespace) -> int:
+    from .fem.fold import FemUnavailable as _NoFem
+    from .fold_styles import compare_box_spines, format_box_report, stack_inside_radius
+    p = _style_params(a)
+    half = a.half_thickness if a.half_thickness is not None else stack_inside_radius(a.cards)
+    try:
+        res = compare_box_spines(p, a.style, half, tuple(a.corners), a.taut)
+    except (FemUnavailable, _NoFem) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except (ValueError, KeyError, RuntimeError) as exc:
+        print(f"error: {str(exc).strip().splitlines()[0]}", file=sys.stderr)
+        return 1
+    print(format_box_report(res, p, a.style, half))
     return 0
 
 
@@ -154,13 +172,14 @@ def main(argv: list[str] | None = None) -> int:
     fs.add_argument("--lining-e-ratio", type=float, default=1.0, help="lining stiffness / shell stiffness (an assumption you vary)")
     fs.add_argument("--hinge-t-ratio", type=float, default=0.6)
     fs.add_argument("--hinge-e-ratio", type=float, default=0.5)
-    fs.add_argument("--styles", nargs="+", default=None, help="subset of: plain skived lined skived+lined hinged 'turned edge'")
+    fs.add_argument("--styles", nargs="+", default=None, help="subset of: plain skived lined skived+lined hinged 'turned edge' 'bound edge'")
     fs.set_defaults(fn=_fold_styles)
     gu = sub.add_parser("gusset", help="accordion pleat: two opposed folds at several opening angles, with and without a skived crease groove")
     gu.add_argument("--t", type=float, default=1.2)
     gu.add_argument("--E", type=float, default=72.0)
     gu.add_argument("--poisson", type=float, default=0.3)
     gu.add_argument("--angles", type=float, nargs="+", default=[180, 135, 90, 45], help="fold angles; 180 = collapsed")
+    gu.add_argument("--expansion", type=float, nargs="+", default=None, help="instead of --angles: how far the gusset has opened, as a fraction of its unfolded length (0 = collapsed, 1 = flat)")
     gu.add_argument("--layups", nargs="+", default=["plain", "grooved", "grooved+lined"], help="plain grooved grooved+lined")
     gu.add_argument("--skive-ratio", type=float, default=0.5, help="thickness left in the groove / t")
     gu.add_argument("--groove-width", type=float, default=2.0, help="width of the thinnest part of the groove, mm")
@@ -168,6 +187,22 @@ def main(argv: list[str] | None = None) -> int:
     gu.add_argument("--lining-t", type=float, default=0.5)
     gu.add_argument("--lining-e-ratio", type=float, default=1.0)
     gu.set_defaults(fn=_gusset)
+    bs = sub.add_parser("box-spine", help="spine with a flat end wall and two corners, against a round spine, for the same stack")
+    bs.add_argument("--t", type=float, default=1.2)
+    bs.add_argument("--E", type=float, default=72.0)
+    bs.add_argument("--poisson", type=float, default=0.3)
+    g2 = bs.add_mutually_exclusive_group()
+    g2.add_argument("--cards", type=float, default=5.0, help="cards in the stack (0.76 mm each)")
+    g2.add_argument("--half-thickness", type=float, default=None, help="half the stack thickness, mm (overrides --cards)")
+    bs.add_argument("--corners", type=float, nargs="+", default=[1.9, 1.5, 1.0, 0.5], help="corner radii, mm; the largest allowed is the half thickness (= round)")
+    bs.add_argument("--style", default="plain", help="layup: plain skived lined skived+lined hinged")
+    bs.add_argument("--taut", type=float, default=0.1)
+    bs.add_argument("--skive-ratio", type=float, default=0.5)
+    bs.add_argument("--lining-t", type=float, default=0.5)
+    bs.add_argument("--lining-e-ratio", type=float, default=1.0)
+    bs.add_argument("--groove-width", type=float, default=2.0)
+    bs.add_argument("--groove-taper", type=float, default=1.5)
+    bs.set_defaults(fn=_box_spine)
     et = sub.add_parser("edge-turn", help="turned edge: kinematic strain of the 180 deg turn for several skive depths and core thicknesses")
     et.add_argument("--t", type=float, default=1.2)
     et.add_argument("--skive-ratios", type=float, nargs="+", default=[1.0, 0.5, 0.35, 0.25])

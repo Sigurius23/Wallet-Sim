@@ -77,6 +77,9 @@ class FoldJob:
     grain_layer: str | None = None      # name of the layer whose OUTER face is the grain (reporting only)
     skip_mm: float | None = None        # ignore the strip this far from the bend start (constraint effects); default 2 x thickness
     tension_n_per_mm: float = 0.0       # wrap: pull on the free start of the strip (N per mm of width); 0 = leather lies on the stack untensioned
+    wall_half_mm: float = 0.0           # wrap: half the height of a FLAT end wall on the stack (a box-shaped spine). 0 = the stack end is a
+                                        # half-round of radius inside_radius_mm; > 0 = flat wall of this half-height, with corners of radius
+                                        # inside_radius_mm (the stack's half thickness is then inside_radius_mm + wall_half_mm)
     flat_face: str = "outer"            # which face of the layup stays flat where thickness varies: "outer" (grain out, flesh side thinned)
                                         # or "inner" (grain in: the grain face is the one against the stack / on the inside of the fold)
 
@@ -88,9 +91,18 @@ class FoldJob:
         return math.radians(self.fold_deg) / 2
 
     @property
-    def arc_mm(self) -> float:
-        """Length of the bent part of the half model (wrap): the neutral fibre around the stack."""
+    def bend_mm(self) -> float:
+        """Length of the neutral fibre around the corner (or the whole half-round) of the stack."""
         return self.half_angle * (self.inside_radius_mm + self.total_thickness(0.0) / 2)
+
+    @property
+    def arc_mm(self) -> float:
+        """Length of the part of the half model that lies on the stack (wrap): the corner plus any flat end wall."""
+        return self.bend_mm + self.wall_half_mm
+
+    @property
+    def stack_half_mm(self) -> float:
+        return self.inside_radius_mm + self.wall_half_mm
 
     @property
     def u_start(self) -> float:
@@ -125,7 +137,7 @@ def build_mesh(job: FoldJob) -> Mesh:
     if job.flat_face not in ("outer", "inner"):
         raise ValueError("flat_face must be 'outer' or 'inner'")
     # wrap: the flat tail lies on the stack, so the outer face sits one tail-thickness above it (thinner zones then hang above the stack)
-    ztop = job.inside_radius_mm + job.total_thickness(u0) if job.mode == "wrap" else 0.0
+    ztop = job.stack_half_mm + job.total_thickness(u0) if job.mode == "wrap" else 0.0
     z = np.zeros((nx + 1, K + 1))
     for i, u in enumerate(us):
         zc = ztop
@@ -138,7 +150,7 @@ def build_mesh(job: FoldJob) -> Mesh:
             zc -= t
             k += l.nz
     if job.flat_face == "inner":                    # keep the inner face flat instead (on the stack for a wrap), thickness change on the outer face
-        z += (job.inside_radius_mm if job.mode == "wrap" else 0.0) - z[:, [K]]
+        z += (job.stack_half_mm if job.mode == "wrap" else 0.0) - z[:, [K]]
     ids, nodes = {}, []
     for i in range(nx + 1):
         for j in (0, 1):
@@ -175,17 +187,32 @@ def _neo_hooke(E: float, nu: float) -> list[str]:
     return ["*HYPERELASTIC, NEO HOOKE", f"{E / (4 * (1 + nu)):.8g}, {6 * (1 - 2 * nu) / E:.8g}"]
 
 
+def mandrel_gap(job: FoldJob, X: float, Z: float) -> float:
+    """Signed distance from a point to the stack surface (positive outside): flat top, corner arc, flat end wall."""
+    R, hw = job.inside_radius_mm, job.wall_half_mm
+    if X <= 0:
+        return Z - (hw + R)
+    if Z >= hw:
+        return math.hypot(X, Z - hw) - R
+    return X - R
+
+
 def _mandrel(job: FoldJob, first_node: int, first_elem: int):
-    """Rigid rounded stack: flat top for x <= 0, then a quarter-circle of radius R about the origin. Returns nodes, elements,
-    the element ids of the contact (top) faces."""
-    R = job.inside_radius_mm
+    """Rigid stack: flat top for x <= 0, a quarter-circle corner of radius R about (0, wall_half), then a flat end wall down to the
+    symmetry plane z = 0. With wall_half = 0 this is the half-round of radius R. Returns nodes, elements and the element ids of the
+    contact (top) faces."""
+    R, hw = job.inside_radius_mm, job.wall_half_mm
     flat_x = list(np.arange(-(job.run_mm + 3.0), 0.0, 1.0)) + [0.0]
-    st = [((x, R), (0.0, 1.0)) for x in flat_x]
+    st = [((x, hw + R), (0.0, 1.0)) for x in flat_x]
     dphi = 1.5 if R > 1.0 else 1.0
     n_arc = max(8, int(round(math.degrees(job.half_angle) / dphi)))
     for j in range(1, n_arc + 1):
         phi = job.half_angle * j / n_arc
-        st.append(((R * math.sin(phi), R * math.cos(phi)), (math.sin(phi), math.cos(phi))))
+        st.append(((R * math.sin(phi), hw + R * math.cos(phi)), (math.sin(phi), math.cos(phi))))
+    if hw > 0:
+        n_wall = max(2, int(math.ceil(hw / 0.5)))
+        for j in range(1, n_wall + 1):
+            st.append(((R, hw * (1 - j / n_wall)), (1.0, 0.0)))
     depth = min(1.0, 0.5 * R)
     nodes, ids = [], {}
     for m, ((px, pz), (nx_, nz_)) in enumerate(st):
@@ -265,15 +292,16 @@ def build_fold_input(job: FoldJob, contact_stiffness: float | None = None) -> tu
             deck += ["2", f"{n}, 1, 1.0, {left[0]}, 1, -1.0"]
         deck += ["*BOUNDARY", "MANDN, 1, 3", "LEFT, 3, 3", "NOTEND, 2, 2", f"{ref}, 2, 2", f"{rot}, 1, 1", f"{rot}, 3, 3"]
         # roll the end face onto the stack along its true path: tangent point at angle phi, straight tangent beyond
-        R, th, L = job.inside_radius_mm, job.half_angle, job.arc_mm
-        # radius of the end face's mid-thickness point: starts where the outer-flat layup puts it and is drawn down until
-        # the end face's inner face lies on the stack (a skived or hinged zone is thinner than the tail, so it starts above it)
+        R, th, L, hw = job.inside_radius_mm, job.half_angle, job.arc_mm, job.wall_half_mm
+        # radius (from the corner's centre, which is at height hw) of the end face's mid-thickness point: starts where the
+        # outer-flat layup puts it and is drawn down until the end face's inner face lies on the stack (a skived or hinged zone
+        # is thinner than the tail, so it starts above it)
         rn_final = R + job.total_thickness(0.0) / 2
         x_e = float(mesh.xs[nx])
         phis = np.linspace(0.0, th, 41)
-        rn = zmid + (rn_final - zmid) * phis / th
+        rn = (zmid - hw) + (rn_final - (zmid - hw)) * phis / th
         px = rn * np.sin(phis) + (L - phis * rn) * np.cos(phis) - x_e
-        pz = rn * np.cos(phis) - (L - phis * rn) * np.sin(phis) - zmid
+        pz = hw + rn * np.cos(phis) - (L - phis * rn) * np.sin(phis) - zmid
         ts = np.linspace(0.0, 1.0, len(phis))
         for name, vals in (("AX", px), ("AZ", pz), ("AR", phis)):
             amp += [f"*AMPLITUDE, NAME={name}"] + [f"{t:.6f}, {v:.8f}" for t, v in zip(ts, vals)]
@@ -385,7 +413,7 @@ class FoldResult:
         start = (-self.job.arc_mm if self.job.mode == "wrap" else self.job.u_start) + self.skip_mm
         end = self.job.total_thickness(0.0)
         if self.job.mode == "wrap":
-            end = min(end, 0.25 * self.job.arc_mm)               # a tight bend is short: keep a usable middle
+            end = min(end, 0.25 * self.job.bend_mm)              # a tight bend is short: keep a usable middle
         return (self.u >= start) & (self.u <= -end)
 
     @property
@@ -520,11 +548,11 @@ def _read_results(job: FoldJob, mesh: Mesh, dat: str, runtime: float, tail: str,
             n = mesh.ids[(i, 0, K)]
             X, Z = mesh.nodes[n - 1][0] + ref[n][1], mesh.nodes[n - 1][2] + ref[n][3]
             if mesh.us[i] > -job.arc_mm:                    # inside the bend
-                gaps.append((math.hypot(X, Z) if X > 0 else Z) - R)
+                gaps.append(mandrel_gap(job, X, Z))
         standoff = float(max(gaps)) if gaps else 0.0
         penetration = float(max(0.0, -min(gaps))) if gaps else 0.0
     skip = job.skip_mm if job.skip_mm is not None else 2.0 * max(job.total_thickness(u) for u in (job.u_start, 0.0))
     if job.skip_mm is None and job.mode == "wrap":
-        skip = min(skip, 0.3 * job.arc_mm)                  # a tight bend is short: do not exclude all of it
+        skip = min(skip, 0.3 * job.bend_mm)                 # a tight bend is short: do not exclude all of it
     u_c = 0.5 * (mesh.us[1:] + mesh.us[:-1])
     return FoldResult(job, u_c, face, ang, mesh.us, moment, standoff, penetration, leg_overlap, k_contact, runtime, skip, tail)

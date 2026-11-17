@@ -3,7 +3,7 @@
 ## Current focus
 **Bending styles first** (set by you): simulate different fold constructions, with the leather and thickness swappable, before any
 whole-wallet model or UI. Status and results: [`FOLD_STYLES.md`](FOLD_STYLES.md). Next in that thread: your wallet's real fold
-and layup, measured leather cards (lining stiffness first), a box-shaped gusseted spine and a stitched hinge, then permanent
+and layup, measured leather cards (lining stiffness first), a stitched hinge and grain-in wraps in the comparison table, then permanent
 set and wear once flex data exist (the pleat crease and the turned-edge turn both depend on it). The UI outline ([`UI.md`](UI.md)) waits until there is something worth showing in its Behaviour view.
 
 ## Decisions needed from you
@@ -26,7 +26,7 @@ set and wear once flex data exist (the pleat crease and the turned-edge turn bot
 | 0 | **Foundation** (this commit) | repo, validated FEM benchmark, strain screen, calibration hook, docs | - |
 | 1 | **Capture to record** for wallet #1 | `wallets/<slug>/wallet.yaml` plus rectified outlines, every inferred field confirmed by you | photos + measurements (`CAPTURE.md`) |
 | 1b | **Capture pilots** (`CAPTURE_FEASIBILITY.md`) | answers to: how good is photo-only inference, scan accuracy on leather, stiffness spread in one offcut, whether CT separates the layers | a spare wallet, a bend test, optionally a CT service |
-| 2a | **Fold styles** (`FOLD_STYLES.md`) | plain / skived / lined / hinged / turned-edge folds compared in a free fold and around a stack, a gusset pleat at several openings, and the turned-edge turn screened; layered FEM validated against closed forms | **done for these styles** |
+| 2a | **Fold styles** (`FOLD_STYLES.md`, catalogue in `CONSTRUCTIONS.md`) | plain / skived / lined / hinged / turned-edge / bound-edge folds compared in a free fold and around a stack, V/S/W gusset pleats at several openings, a box-shaped spine, and the turned-edge turn screened; layered FEM validated against closed forms | **done for these constructions** |
 | 2 | **Assembly and kinematic fold** | a 3D model that opens and closes in the viewer, with stack thickness, bulge, interference and level-0 strain per fold; checked against the edge-on photos | phase 1 |
 | 2b | **Material library** (`MATERIALS.md`) | cards for your first leathers: measured thickness, bending stiffness along/across, flex-to-crack; aged states from strips aged under stated conditions | offcuts, a bend test, a few weeks of ageing strips |
 | 3 | **FEM fold cycle** | strain and contact-pressure maps for one fold cycle with contents, CalculiX backend; compared with level 0 at each fold | phase 2 |

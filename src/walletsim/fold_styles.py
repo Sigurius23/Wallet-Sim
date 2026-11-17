@@ -45,6 +45,8 @@ class StyleParams:
     hinge_t_ratio: float = 0.6          # hinge leather thickness / t
     hinge_e_ratio: float = 0.5          # hinge leather stiffness / shell stiffness (assumed)
     lip_ratio: float = 0.5              # turned edge: thickness of the folded-over lip / t (skived; the lip is the same leather)
+    binding_ratio: float = 0.4          # bound edge: thickness of each binding layer / t (a strip folded over the edge, one layer per face)
+    binding_e_ratio: float = 1.0        # bound edge: binding stiffness / shell stiffness (an assumption you vary)
     groove_half_mm: float = 1.0         # gusset pleat: half width of the thinnest part of the skived crease groove ...
     groove_taper_mm: float = 1.5        # ... and the length over which it returns to full thickness
 
@@ -82,6 +84,13 @@ def turned_edge(p: StyleParams) -> tuple[Layer, ...]:
     return (uniform("shell", p.t, p.E, p.nu, nz=4), uniform("lip", p.t * p.lip_ratio, p.E, p.nu, nz=2))
 
 
+def bound_edge(p: StyleParams) -> tuple[Layer, ...]:
+    """The edge-binding zone seen where the spine fold crosses it: a strip folded over the edge leaves a layer on each face of the
+    shell (perfect bond). Outer binding, shell, inner binding."""
+    tb, eb = p.t * p.binding_ratio, p.E * p.binding_e_ratio
+    return (uniform("binding out", tb, eb, p.nu, nz=2), uniform("shell", p.t, p.E, p.nu, nz=4), uniform("binding in", tb, eb, p.nu, nz=2))
+
+
 STYLES = {
     "plain": (plain, "one layer, constant thickness"),
     "skived": (skived, "flesh side thinned over the fold, grain face flat"),
@@ -89,6 +98,7 @@ STYLES = {
     "skived+lined": (skived_lined, "shell skived at the fold, glued lining"),
     "hinged": (hinged, "thinner, softer leather across the fold zone, bonded butt joint"),
     "turned edge": (turned_edge, "shell + folded-over lip of the same leather (the hem where the spine crosses a turned edge)"),
+    "bound edge": (bound_edge, "shell with a binding strip folded over the edge: one layer on each face where the spine crosses it"),
 }
 
 
@@ -257,17 +267,23 @@ def format_pleat_report(results: list[PleatResult], p: StyleParams) -> str:
     for lay in dict.fromkeys(r.layup for r in results):
         rows = [r for r in results if r.layup == lay]
         L += [f"layup: {lay}",
-              f"  {'fold':>5s} {'moment':>8s} {'crease':>9s} {'central':>8s} | {'fold 1 grain':>13s} {'fold 1 back':>13s} | {'fold 2 grain':>13s} {'fold 2 back':>13s} | {'legs':>5s}",
-              f"  {'angle':>5s} {'N mm/mm':>8s} {'radius':>9s} {'6 mm':>8s} | {'(tension)':>13s} {'(compr.)':>13s} | {'(compr.)':>13s} {'(tension)':>13s} | {'clear':>5s}"]
+              f"  {'fold':>5s} {'opened':>7s} {'moment':>8s} {'crease':>9s} {'central':>8s} | {'fold 1 grain':>13s} {'fold 1 back':>13s} | {'fold 2 grain':>13s} {'fold 2 back':>13s} | {'legs':>5s}",
+              f"  {'angle':>5s} {'by':>7s} {'N mm/mm':>8s} {'radius':>9s} {'6 mm':>8s} | {'(tension)':>13s} {'(compr.)':>13s} | {'(compr.)':>13s} {'(tension)':>13s} | {'clear':>5s}"]
         for r in rows:
             ok = "yes" if max(r.fold1.leg_overlap_mm, r.fold2.leg_overlap_mm) < 0.02 else "NO"
-            L.append(f"  {r.fold_deg:5.0f} {r.fold1.moment_n_mm:8.2f} {r.crease_radius_mm():6.1f} mm {100 * r.centre_share():7.0f}% | "
+            L.append(f"  {r.fold_deg:5.0f} {100 * expansion_for_fold_angle(r.fold_deg):6.0f}% {r.fold1.moment_n_mm:8.2f} {r.crease_radius_mm():6.1f} mm {100 * r.centre_share():7.0f}% | "
                      f"{100 * r.grain1:12.1f}% {100 * r.flesh1:12.1f}% | {100 * r.grain2:12.1f}% {100 * r.flesh2:12.1f}% | {ok:>5s}")
         hi = max(rows, key=lambda r: r.fold_deg)
         mid = next((r for r in rows if r.fold_deg == 90.0), rows[-1])
         L += [f"  strain swing of the grain face between {hi.fold_deg:.0f} and {mid.fold_deg:.0f} deg: fold 1 {100 * (hi.grain1 - mid.grain1):.1f} points, "
               f"fold 2 {100 * abs(hi.grain2 - mid.grain2):.1f} points (per open/close cycle)", ""]
-    L += ["NOTES",
+    L += ["KINDS OF GUSSET (all built from the two folds above)",
+          f"  {'kind':38s} {'creases':>8s}  how it is simulated"]
+    for name, n, _, _, how in GUSSET_KINDS:
+        L.append(f"  {name:38s} {('n' if n is None else str(n)):>8s}  {how}")
+    L += ["  'opened by' = how far the gusset has opened, as a fraction of its unfolded length: length x cos(fold angle / 2). For a zigzag of equal segments this is",
+          "  independent of the number of creases, so more creases do NOT lower the strain per crease at a given opening; they put the same strain on more creases.", "",
+          "NOTES",
           "  - crease radius = radius of the neutral fibre at the fold centre as the FEM found it. A pleat is normally pressed into a sharper crease, which this elastic model cannot do",
           "    (no permanent set), so real creases are tighter and more strained than the groove alone gives.",
           "  - 'legs clear' = the inner face stays on its own side of the symmetry plane; contact between the two legs and with the contents is not modelled.",
@@ -320,3 +336,92 @@ def format_edge_turn_report(rows: list[EdgeTurn], t: float) -> str:
           "  - an elastic FEM of this turn was tried and rejected: around a 0.3-0.6 mm core the leather bridges the gap (strain 10-22 % against 41-80 % kinematic),",
           "    because nothing in the model presses and glues it down."]
     return "\n".join(L)
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Box-shaped (flat-walled) spine: the stack has a flat end and the leather turns two corners
+
+@dataclass
+class BoxSpineResult:
+    corner_radius_mm: float
+    wall_half_mm: float
+    loose: FoldResult
+    taut: FoldResult
+    closed_form: float                  # corner strain if the leather followed the corner exactly
+
+    @property
+    def is_round(self) -> bool:
+        return self.wall_half_mm <= 1e-9
+
+
+def compare_box_spines(params: StyleParams | None = None, style: str = "plain", half_thickness_mm: float = 1.9,
+                       corner_radii=(1.9, 1.5, 1.0, 0.5), taut_n_per_mm: float = 0.1, workers: int = 4) -> list[BoxSpineResult]:
+    """The same stack (half thickness ``half_thickness_mm``) with the end of the spine shaped from fully round (corner radius =
+    half thickness) to nearly square (small corner radius, flat wall between the corners). Wrap load case, loose and taut."""
+    p = params or StyleParams()
+    if style not in STYLES:
+        raise KeyError(f"unknown style {style!r}; known: {sorted(STYLES)}")
+    layers = STYLES[style][0](p)
+    radii = [min(r, half_thickness_mm) for r in corner_radii]
+    jobs = []
+    for rc in radii:
+        wall = half_thickness_mm - rc
+        probe = FoldJob(layers, "wrap", inside_radius_mm=rc, wall_half_mm=wall)
+        dx = min(0.5, max(0.08, probe.bend_mm / 14))
+        jobs += [FoldJob(layers, "wrap", inside_radius_mm=rc, wall_half_mm=wall, dx_mm=dx),
+                 FoldJob(layers, "wrap", inside_radius_mm=rc, wall_half_mm=wall, dx_mm=dx, tension_n_per_mm=taut_n_per_mm)]
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        out = list(pool.map(run_fold, jobs))
+    res = []
+    for i, rc in enumerate(radii):
+        loose, taut = out[2 * i], out[2 * i + 1]
+        res.append(BoxSpineResult(rc, half_thickness_mm - rc, loose, taut, _closed_form_taut(taut)[0]))
+    return res
+
+
+def format_box_report(results: list[BoxSpineResult], params: StyleParams, style: str, half_thickness_mm: float) -> str:
+    L = [f"box-shaped spine: {style} layup, shell {params.t:g} mm, E = {params.E:g} MPa; stack half thickness {half_thickness_mm:g} mm "
+         f"(= {2 * half_thickness_mm / 0.76:.1f} cards of 0.76 mm). Wrap load case, plane strain, layers bonded.",
+         "The end of the stack goes from a half-round (corner radius = half thickness) to a flat wall with two corners of smaller radius.", "",
+         f"  {'corner':>7s} {'flat wall':>10s} | {'tension face at the corner':^28s} | {'compression':>12s} {'stand-off':>10s}",
+         f"  {'radius':>7s} {'height':>10s} | {'loose':>8s} {'taut':>8s} {'limit':>9s} | {'face (taut)':>12s} {'loose, mm':>10s}"]
+    for r in results:
+        tag = "round" if r.is_round else f"{2 * r.wall_half_mm:.1f} mm"
+        L.append(f"  {r.corner_radius_mm:5.2f} mm {tag:>10s} | {100 * r.loose.peak_outer:7.1f}% {100 * r.taut.peak_outer:7.1f}% {100 * r.closed_form:8.1f}% | "
+                 f"{100 * r.taut.peak_inner:11.1f}% {r.loose.standoff_mm:10.2f}")
+    L += ["", "  limit = the leather follows the corner exactly (closed form, no solver).", "",
+          "NOTES",
+          "  - a square corner is not followed: the leather bridges it (stand-off), so the strain stays far below the limit. That is partly the model's elastic",
+          "    leather; a real corner is pressed and set, and would be tighter.",
+          "  - the flat wall is straight, so it carries no strain of its own; only the two corners do.",
+          "  - no closing moment is reported: the solver measures it at the fold centre, which on a box is the middle of the flat wall and says nothing about the corners,",
+          "    so it cannot be compared with the round spine's.",
+          "  - the stack is a rigid, frictionless block; not modelled: permanent set, creep, finish cracking, stitching, friction, ageing."]
+    return "\n".join(L)
+
+
+# --------------------------------------------------------------------------------------------------------------------
+# Gusset kinds and how much a pleat opens
+
+def fold_angle_for_expansion(fraction: float) -> float:
+    """Fold angle (deg) of every crease of an equal-segment zigzag gusset that has opened by ``fraction`` of its unfolded length:
+    the extension is L * sin(beta / 2) with interior angle beta = 180 - fold angle, so fold angle = 2 * acos(fraction).
+    It does not depend on the number of creases."""
+    if not 0.0 <= fraction <= 1.0:
+        raise ValueError("fraction must be in [0, 1]")
+    return math.degrees(2 * math.acos(fraction))
+
+
+def expansion_for_fold_angle(fold_deg: float) -> float:
+    return math.cos(math.radians(fold_deg) / 2)
+
+
+GUSSET_KINDS = [
+    # name, creases, grain-in-tension creases, grain-in-compression creases, how it is simulated
+    ("V gusset (one fold)", 1, 1, 0, "one crease; fold 1 (grain out) or fold 2 (grain in) depending on which way it is folded"),
+    ("S / Z accordion (two opposed folds)", 2, 1, 1, "fold 1 and fold 2 of `walletsim gusset`"),
+    ("W / M accordion (three folds)", 3, 2, 1, "the same two folds, one of them twice: each crease behaves as in the S"),
+    ("n-fold zigzag", None, None, None, "ceil(n/2) creases like fold 1 and floor(n/2) like fold 2"),
+    ("round (U) gusset", 0, 0, 0, "no crease: the strip wraps the contents; use `fold-styles --radius` with half the depth"),
+    ("box gusset / flat spine", 0, 0, 0, "two corners and a flat wall: `walletsim box-spine`"),
+]

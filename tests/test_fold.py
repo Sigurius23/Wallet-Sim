@@ -1,4 +1,5 @@
 """Fold-style simulator: closed forms (no solver needed) and the FEM checks against them (need CalculiX)."""
+import math
 import shutil
 
 import numpy as np
@@ -7,8 +8,9 @@ import pytest
 from walletsim.fem.fold import (FoldJob, Layer, analytic_free, analytic_wrap, build_fold_input, build_mesh, run_fold, section,
                                 uniform, wrap_strain_closed_form)
 from walletsim.fold_screen import outer_fibre_strain
-from walletsim.fold_styles import (STYLES, StyleParams, compare_pleats, compare_styles, damage_rate_vs_reference, edge_turn_table,
-                                   format_edge_turn_report, pleat_layers, skived, stack_inside_radius, turned_edge)
+from walletsim.fold_styles import (GUSSET_KINDS, STYLES, StyleParams, bound_edge, compare_box_spines, compare_pleats, compare_styles,
+                                   damage_rate_vs_reference, edge_turn_table, expansion_for_fold_angle, fold_angle_for_expansion,
+                                   format_box_report, format_edge_turn_report, pleat_layers, skived, stack_inside_radius, turned_edge)
 
 needs_ccx = pytest.mark.skipif(shutil.which("ccx") is None, reason="CalculiX not installed")
 fem = pytest.mark.fem
@@ -246,3 +248,76 @@ def test_pleat_groove_creates_a_tight_crease_and_strain_follows_the_fold_angle()
     plain = d[("plain", 180.0)]
     assert abs(plain.grain2) == pytest.approx(plain.grain1, rel=0.12)           # mirror folds of one leather, up to tension/compression asymmetry
     assert all(r.fold1.leg_overlap_mm < 0.02 and r.fold2.leg_overlap_mm < 0.02 for r in res)
+
+
+# ---- box-shaped spine, bound edge, gusset kinds ----------------------------------------------------------------------
+
+def test_box_stack_geometry_adds_a_flat_wall_to_the_path_and_raises_the_stack():
+    round_ = FoldJob((uniform("shell", 1.2, 72.0, 0.0),), "wrap", inside_radius_mm=1.0)
+    box = FoldJob((uniform("shell", 1.2, 72.0, 0.0),), "wrap", inside_radius_mm=1.0, wall_half_mm=0.9)
+    assert box.arc_mm == pytest.approx(round_.arc_mm + 0.9)                     # the wall lengthens the path on the stack
+    assert box.bend_mm == pytest.approx(round_.bend_mm)                         # the corner itself is the same
+    assert box.stack_half_mm == pytest.approx(1.9)
+    deck, mesh = build_fold_input(box)
+    K = len(mesh.row_layer)
+    assert mesh.z[0, K] == pytest.approx(1.9)                                    # the tail lies on the top of the taller stack
+    assert "*CONTACT PAIR" in deck
+
+
+def test_bound_edge_is_a_symmetric_three_layer_stack():
+    p = StyleParams(t=1.2, binding_ratio=0.4)
+    layers = bound_edge(p)
+    assert [l.name for l in layers] == ["binding out", "shell", "binding in"]
+    assert layers[0].thickness(0.0) == pytest.approx(layers[2].thickness(0.0)) == pytest.approx(0.48)
+    job = FoldJob(layers, "free")
+    sec = section(job, 0.0)
+    assert sec["z_na"] == pytest.approx(sec["thickness"] / 2)                     # symmetric layup: neutral axis at mid thickness
+    plain = FoldJob(STYLES["plain"][0](p), "wrap", inside_radius_mm=1.9)
+    wrap = FoldJob(layers, "wrap", inside_radius_mm=1.9)
+    assert analytic_wrap(wrap, 0.0)["outer"] > analytic_wrap(plain, 0.0)["outer"]
+
+
+def test_gusset_expansion_and_fold_angle_are_inverse():
+    for f in (0.0, 0.25, 0.5, 0.75, 1.0):
+        assert expansion_for_fold_angle(fold_angle_for_expansion(f)) == pytest.approx(f)
+    assert fold_angle_for_expansion(0.0) == pytest.approx(180.0)               # collapsed
+    assert fold_angle_for_expansion(1.0) == pytest.approx(0.0)                 # flat
+    assert fold_angle_for_expansion(math.cos(math.radians(45))) == pytest.approx(90.0)
+    with pytest.raises(ValueError):
+        fold_angle_for_expansion(1.5)
+
+
+def test_gusset_kinds_count_the_creases_consistently():
+    for name, n, tens, comp, how in GUSSET_KINDS:
+        if n is not None:
+            assert n == tens + comp
+    kinds = {k[0].split(" ")[0]: k for k in GUSSET_KINDS}
+    assert kinds["S"][2] == kinds["S"][3] == 1                                  # an S has one grain-out and one grain-in crease
+    assert kinds["W"][2] == 2 and kinds["W"][3] == 1
+
+
+@fem
+@needs_ccx
+def test_box_spine_matches_the_closed_form_at_a_gentle_corner_and_reduces_to_the_round_spine_without_a_wall():
+    layers = (uniform("shell", 1.4, 38.0, 0.0),)
+    box = FoldJob(layers, "wrap", inside_radius_mm=8.0, wall_half_mm=2.0, skip_mm=3.0)
+    r = run_fold(box)
+    w = r.window()
+    closed = max(analytic_wrap(box, u)["outer"] for u in r.u[w])
+    assert r.outer_strain[w].max() == pytest.approx(closed, rel=0.04)
+    assert r.penetration_mm < 0.02
+    thin = (uniform("shell", 1.2, 72.0, 0.3),)
+    a = run_fold(FoldJob(thin, "wrap", inside_radius_mm=1.9))
+    b = run_fold(FoldJob(thin, "wrap", inside_radius_mm=1.9, wall_half_mm=0.0))
+    assert b.peak_outer == pytest.approx(a.peak_outer, rel=1e-6)
+
+
+@fem
+@needs_ccx
+def test_square_corners_cost_strain_against_a_round_spine_of_the_same_stack():
+    res = compare_box_spines(StyleParams(), "plain", 1.9, corner_radii=(1.9, 0.5))
+    round_, square = res
+    assert round_.is_round and not square.is_round
+    assert square.loose.peak_outer > round_.loose.peak_outer                     # tighter corner, more strain
+    assert square.loose.peak_outer < 0.6 * square.closed_form                    # but the leather bridges the corner, far below the textbook limit
+    assert "no closing moment is reported" in format_box_report(res, StyleParams(), "plain", 1.9)
