@@ -11,10 +11,12 @@ Nothing here simulates a full wallet yet. What exists and is tested:
 
 | What | Where | State |
 |---|---|---|
-| FEM backend check: a leather strip bent 180° in CalculiX, outer-fibre strain vs theory | `walletsim validate-fem` | **3.96 % vs 3.93 % analytic (+0.9 %), 7 s on 4 CPU cores** |
+| FEM backend check: a strip bent 180° in CalculiX vs closed form (Poisson 0) | `walletsim validate-fem` | **strain +1.0 %, bending moment -0.2 % vs theory**, same on two mesh densities; 8 s on 4 CPU cores |
+| Thickness sweep at a fixed fold radius: strain and bending moment per thickness | `walletsim sweep` | works; stiffness is a placeholder until measured |
+| Material cards with provenance, aged states as measured data | `walletsim.materials` | structure only; one literature card (vegetable-tanned range) |
 | Level-0 fold screen: `eps = t/(2R+t)` with screening flags | `walletsim screen --t 1.0 --radius 2.0` | done |
 | "x folds" bookkeeping: rank locations by cycles per use x strain^m across a range of exponents, and fit a cycles-to-crack law to **your own** flex-test data | `walletsim fit-law`, `walletsim.damage` | done, refuses uncalibrated absolute life |
-| Docs: architecture, claims policy, capture protocol, data model, roadmap | `docs/` | draft for review |
+| Docs: architecture, claims policy, capture protocol, **capture feasibility research**, **materials and ageing**, data model, roadmap | `docs/` | draft for review |
 | Earlier exploratory research (flat-pattern kernel, photo-to-pattern prototype, durability literature review) | `prior-research/` | reference only, not a dependency |
 
 ## What this will and will not claim
@@ -27,14 +29,14 @@ No validated leather fatigue law exists; the leather-specific research codes (Fr
 ```bash
 pip install -e ".[dev]"            # numpy only; the FEM check also needs CalculiX
 sudo apt-get install calculix-ccx  # Debian/Ubuntu
-pytest                             # 19 tests, ~12 s
+pytest                             # 26 tests, ~50 s
 walletsim validate-fem             # the 180° bending benchmark
 ```
 
 ## Layout
 ```
-src/walletsim/     fold_screen.py (level 0), damage.py (cycle bookkeeping), fem/bending.py (CalculiX benchmark)
-docs/              ROADMAP, ARCHITECTURE, SCIENCE, CAPTURE, DATA_MODEL
+src/walletsim/     fold_screen.py (level 0), damage.py (cycle bookkeeping), fem/bending.py (CalculiX benchmark), materials.py (cards)
+docs/              ROADMAP, ARCHITECTURE, SCIENCE, CAPTURE, CAPTURE_FEASIBILITY, MATERIALS, DATA_MODEL
 wallets/           the archive: one folder per wallet (see docs/DATA_MODEL.md; template in wallets/_template/)
 prior-research/    first exploratory research, kept for reference
 tests/

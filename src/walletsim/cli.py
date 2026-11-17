@@ -7,7 +7,7 @@ import sys
 
 from . import __version__
 from .damage import fit_law
-from .fem.bending import BendingJob, FemUnavailable, run_bending
+from .fem.bending import BendingJob, FemUnavailable, job_for_inside_radius, run_bending
 from .fold_screen import screen
 
 
@@ -18,15 +18,34 @@ def _screen(a: argparse.Namespace) -> int:
 
 def _validate_fem(a: argparse.Namespace) -> int:
     try:
-        res = run_bending(BendingJob(thickness_mm=a.t, angle_deg=a.angle))
+        res = run_bending(BendingJob(thickness_mm=a.t, angle_deg=a.angle, poisson=0.0))
     except FemUnavailable as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    print(f"strip bent {a.angle:g} deg, t={a.t:g} mm: inside radius {res.inside_radius_mm:.2f} mm")
-    print(f"  analytic outer-fibre strain  {100 * res.analytic_strain:.2f} %")
-    print(f"  CalculiX outer-fibre strain  {100 * res.fem_max_strain:.2f} %   ({100 * res.relative_error:+.1f} % vs analytic, "
-          f"{res.runtime_s:.1f} s, {res.n_integration_points} integration points)")
-    return 0 if abs(res.relative_error) < 0.05 else 1
+    print(f"strip bent {a.angle:g} deg, t={a.t:g} mm, Poisson 0 (closed form assumes none): inside radius {res.inside_radius_mm:.2f} mm")
+    print(f"  outer-fibre strain  closed form {100 * res.analytic_strain:.2f} %   CalculiX {100 * res.fem_max_strain:.2f} %  "
+          f"({100 * res.relative_error:+.1f} %)")
+    print(f"  bending moment      beam theory {res.analytic_moment_n_mm:.3f} N mm   CalculiX {res.fem_moment_n_mm:.3f} N mm  "
+          f"(ratio {res.moment_ratio:.3f})   [{res.runtime_s:.1f} s]")
+    ok = abs(res.relative_error) < 0.03 and abs(res.moment_ratio - 1) < 0.02
+    return 0 if ok else 1
+
+
+def _sweep(a: argparse.Namespace) -> int:
+    print(f"fold around inside radius {a.inside_radius:g} mm, {a.angle:g} deg, E={a.E:g} MPa, Poisson {a.poisson:g}, neo-Hookean")
+    print("  t [mm]  closed-form strain  FEM strain   moment [N mm]  (beam)   moment ratio to t=first")
+    base = None
+    for t in a.t:
+        try:
+            r = run_bending(job_for_inside_radius(t, a.inside_radius, a.angle, youngs_modulus_mpa=a.E, poisson=a.poisson))
+        except FemUnavailable as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        base = base or r.fem_moment_n_mm
+        print(f"  {t:5.2f}   {100 * r.analytic_strain:14.1f} %   {100 * r.fem_max_strain:8.1f} %   {r.fem_moment_n_mm:12.2f}  "
+              f"({r.analytic_moment_n_mm:6.2f})   x{r.fem_moment_n_mm / base:.1f}")
+    print("moment scales linearly with E for this (small-stress) case; strain does not depend on E.")
+    return 0
 
 
 def _fit_law(a: argparse.Namespace) -> int:
@@ -53,6 +72,13 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--t", type=float, default=1.0)
     v.add_argument("--angle", type=float, default=180.0)
     v.set_defaults(fn=_validate_fem)
+    w = sub.add_parser("sweep", help="how strain and bending moment change with leather thickness at a fixed fold radius")
+    w.add_argument("--inside-radius", type=float, default=3.0, help="inside bend radius, mm (what the contents impose)")
+    w.add_argument("--t", type=float, nargs="+", default=[0.6, 1.0, 1.4, 2.0], help="thicknesses, mm")
+    w.add_argument("--E", type=float, default=38.0, help="Young's modulus, MPa (default: middle of the 24-53 MPa literature range)")
+    w.add_argument("--poisson", type=float, default=0.3)
+    w.add_argument("--angle", type=float, default=180.0)
+    w.set_defaults(fn=_sweep)
     f = sub.add_parser("fit-law", help="fit a cycles-to-crack law to your flex-test data (csv: strain,cycles)")
     f.add_argument("csv")
     f.add_argument("--at", type=float, nargs="*", help="strains (fraction) to predict at")

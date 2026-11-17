@@ -24,7 +24,7 @@ leather:
   - id: shell
     thickness_mm: {value: 1.2, source: measured, n: 5}      # source: measured | inferred | assumed
     type: {value: veg-tan, source: inferred, confidence: 0.6}
-    material: {youngs_modulus_mpa: {value: 100, source: assumed}, poisson: {value: 0.3, source: assumed}}
+    material: {youngs_modulus_mpa: {value: 50, source: assumed}, poisson: {value: 0.3, source: assumed}}
 panels:                                                        # flat outlines, from calibrated photos
   - {id: outer, leather: shell, outline: measured/outer.svg, grain_direction_deg: {value: 0, source: assumed}}
 folds:

@@ -30,8 +30,11 @@ before anything is published:
 empirical, which is why this project asks for physical tests instead of pretending a solver covers them.
 
 ## Validation plan
-1. **Numerical (done for the simplest case):** FEM reproduces `t/(2R+t)` for pure bending. Repeated for each new
-   scenario that has a closed form before it is trusted without one.
+1. **Numerical (done for the simplest case):** with Poisson 0 the FEM strip reproduces `t/(2R+t)` to +1.0 % and the beam
+   bending moment to -0.2 %, on two mesh densities. With Poisson 0.3 the peak strain is 11-20 % higher than the closed form
+   (3D contraction and constrained ends), so the closed-form screen can under-estimate. An earlier +0.9 % figure for the
+   0.3 case came from a coarse mesh and was a coincidence; it is withdrawn. Repeat this for each new scenario that has a
+   closed form before trusting it without one.
 2. **Physical, cheap:** flex-test strips cut from the same leather as a wallet, folded over a few mandrel radii, cycles
    to first crack recorded -> `walletsim fit-law`. This turns "relative damage index" into a calibrated, range-limited
    prediction.
@@ -41,8 +44,9 @@ empirical, which is why this project asks for physical tests instead of pretendi
 4. **Comparative:** two wallets with a known real-world difference in durability should rank the same way in simulation.
 
 ## Known simplifications of what exists today
-- The FEM benchmark is linear elastic; leather is viscoelastic, anisotropic and nonlinear at the strains of a tight fold.
-  It validates the solver's large-rotation behaviour, not leather physics. The material parameters in it are placeholders.
+- The FEM benchmark uses a neo-Hookean (hyperelastic) material; leather is viscoelastic, anisotropic and has a finish
+  film. It validates the solver's large-rotation behaviour and bending mechanics, not leather physics. The stiffness and
+  Poisson's ratio in it are placeholders.
 - The strain screen ignores the finish layer, creep and permanent set. Its 20 % and R/t thresholds are screening
   heuristics, not failure criteria.
 - `rank_locations` uses an assumed exponent range (3..12) only to test whether a ranking is robust. It is not a

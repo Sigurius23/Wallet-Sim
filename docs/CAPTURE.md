@@ -34,6 +34,14 @@ From an offcut or a spare wallet of the same leather: a few 10 x 60 mm strips, f
 cycles as it takes to see the first grain crack. Record radius and cycles. `walletsim fit-law` fits the law and states
 the range it is valid for. Condition the strips first (same temperature and humidity, a day or more).
 
+## Bending test and spare cross-section (Tier 2, see `CAPTURE_FEASIBILITY.md`)
+- **Bending-length test:** cut 2-3 strips (about 20 x 100 mm) from an offcut, along and across the backbone if known. Slide a
+  strip over the edge of a table until its tip drops to a 41.5 degree line (or photograph the overhang and measure it with the
+  scale). Record the overhang length, strip width and thickness. Folds are bending-dominated, so this is the most useful
+  single material measurement.
+- **Spare cross-section:** if you have a second copy of a wallet, cut it across the spine and across a pocket, sand or slice
+  cleanly, and photograph the cut edge with a ruler. It shows the true layer stack and glue lines.
+
 ## What happens next
 Photos and numbers go into `wallets/<slug>/` as described in `DATA_MODEL.md`. I propose the construction record from the
 photos; every inferred field is listed for you to confirm or correct before any simulation is run on it.

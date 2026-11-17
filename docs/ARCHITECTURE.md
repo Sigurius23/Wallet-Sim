@@ -43,7 +43,8 @@ start: the first wallets, the strain screens and the calibration workflow all ru
 | Gaussian splatting | very good appearance, not a measurable mesh | only for the viewer, if wanted |
 | Vision-model inference | construction: which layers, how pockets stack, where seams join | needed, but every inferred field is marked `inferred` and confirmed by you |
 
-Leather thickness cannot be seen in a photo. It is measured with calipers.
+Leather thickness cannot be seen in a photo. It is measured with calipers. What photos cannot capture at all, and the
+methods that close each gap, is set out in `CAPTURE_FEASIBILITY.md`.
 
 ## Decisions this design leaves open
 See `ROADMAP.md`.
